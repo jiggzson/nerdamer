@@ -1,7 +1,7 @@
 import { Decimal } from 'decimal.js';
 
 export function gcd(a: Decimal, b: Decimal) {
-	while (!b.equals(0)) {
+	while (!b.eq(0)) {
 		const t = a;
 		a = b;
 		b = t.mod(b);

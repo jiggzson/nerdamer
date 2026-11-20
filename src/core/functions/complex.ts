@@ -41,8 +41,11 @@ export function realPart(a: Expression) {
 	else if (x.isEXP()) {
 		const p = x.getPower();
 		const multiplier = Expression.fromRational(x.getMultiplier());
-		if (p.isInteger()) {
-			retval = multiply(multiplier, realPart(power(x.getBase(), p)));
+		// A power too large to compute exactly comes back as the same EXP node, so it
+		// goes to the polar form below rather than recursing.
+		const raised = p.isInteger() ? power(x.getBase(), p) : undefined;
+		if (raised && !raised.isEXP()) {
+			retval = multiply(multiplier, realPart(raised));
 		} else if (x.isE() && p.isComplex()) {
 			const pReal = realPart(p);
 			const pImaginary = imagPart(p);
@@ -51,10 +54,8 @@ export function realPart(a: Expression) {
 				multiply(power(Expression.Variable(E), pReal), cos(pImaginary))
 			);
 		} else {
-			const [r, theta] = toPolarFormArray(x.getBase());
-			const rp = power(r, p);
-			const re = cos(multiply(p, theta));
-			retval = multiply(multiplier, multiply(rp, re));
+			const [rp, theta] = polarPower(x.getBase(), p);
+			retval = multiply(multiplier, multiply(rp, cos(theta)));
 		}
 	}
 	// realpart(...) and imagpart(...) are real-valued by definition. Preserve
@@ -86,9 +87,13 @@ export function realPart(a: Expression) {
 			}
 		}
 
-		// A real product scales the components of its single complex factor.
+		// A real product scales the components of its single complex factor. A zero
+		// component stays zero even when the real factor is infinite: i*Inf has no real part.
 		if (complexFactorCount === 1 && complexFactor) {
-			retval = multiply(multiplier, multiply(realFactor, realPart(complexFactor)));
+			const component = realPart(complexFactor);
+			retval = component.isZero()
+				? zero()
+				: multiply(multiplier, multiply(realFactor, component));
 		} else {
 			let productReal = one();
 			let productImaginary = zero();
@@ -110,8 +115,14 @@ export function realPart(a: Expression) {
 				}
 			}
 
-			retval = multiply(multiplier, multiply(realFactor, productReal));
+			retval = productReal.isZero()
+				? zero()
+				: multiply(multiplier, multiply(realFactor, productReal));
 		}
+	}
+	// Real infinity is its own real part.
+	else if (x.isInf()) {
+		retval = x.copy();
 	}
 	// The real part will be any known constants.
 	// Handle pi, e, numbers, x, a*b
@@ -166,8 +177,11 @@ export function imagPart(a: Expression) {
 	else if (x.isEXP()) {
 		const p = x.getPower();
 		const multiplier = Expression.fromRational(x.getMultiplier());
-		if (p.isInteger()) {
-			retval = multiply(multiplier, imagPart(power(x.getBase(), p)));
+		// A power too large to compute exactly comes back as the same EXP node, so it
+		// goes to the polar form below rather than recursing.
+		const raised = p.isInteger() ? power(x.getBase(), p) : undefined;
+		if (raised && !raised.isEXP()) {
+			retval = multiply(multiplier, imagPart(raised));
 		} else if (x.isE() && p.isComplex()) {
 			const pReal = realPart(p);
 			const pImaginary = imagPart(p);
@@ -176,10 +190,8 @@ export function imagPart(a: Expression) {
 				multiply(power(Expression.Variable(E), pReal), sin(pImaginary))
 			);
 		} else {
-			const [r, theta] = toPolarFormArray(x.getBase());
-			const rp = power(r, p);
-			const im = sin(multiply(p, theta));
-			retval = multiply(multiplier, multiply(rp, im));
+			const [rp, theta] = polarPower(x.getBase(), p);
+			retval = multiply(multiplier, multiply(rp, sin(theta)));
 		}
 	}
 	// realpart(...) and imagpart(...) are real-valued by definition. For other
@@ -213,12 +225,13 @@ export function imagPart(a: Expression) {
 				}
 			}
 
-			// A real product scales the components of its single complex factor.
+			// A real product scales the components of its single complex factor. A zero
+			// component stays zero even when the real factor is infinite.
 			if (complexFactorCount === 1 && complexFactor) {
-				retval = multiply(
-					multiplier,
-					multiply(realFactor, imagPart(complexFactor))
-				);
+				const component = imagPart(complexFactor);
+				retval = component.isZero()
+					? zero()
+					: multiply(multiplier, multiply(realFactor, component));
 			} else {
 				let productReal = one();
 				let productImaginary = zero();
@@ -240,7 +253,9 @@ export function imagPart(a: Expression) {
 					}
 				}
 
-				retval = multiply(multiplier, multiply(realFactor, productImaginary));
+				retval = productImaginary.isZero()
+					? zero()
+					: multiply(multiplier, multiply(realFactor, productImaginary));
 			}
 		} else {
 			retval = zero();
@@ -324,6 +339,21 @@ export function toPolarFormArray(x: Expression) {
 	}
 
 	return [r, theta];
+}
+
+/**
+ * Raises a complex number to a power in polar form.
+ *
+ * Returns [r^p, p*theta], where r and theta are the modulus and principal argument of z,
+ * so that z^p = r^p * (cos(p*theta) + i*sin(p*theta)).
+ *
+ * @param z - The complex base.
+ * @param p - The exponent.
+ * @returns The modulus and argument of z^p.
+ */
+export function polarPower(z: Expression, p: Expression): [Expression, Expression] {
+	const [r, theta] = toPolarFormArray(z);
+	return [power(r, p), multiply(p, theta)];
 }
 
 /**
@@ -424,7 +454,7 @@ export function rectForm(x: ExpressionInput): Expression {
  * Returns the principal argument of a complex expression.
  *
  * @remarks
- * Nerdamer follows the WolframAlpha convention arg(0) = 0,
+ * Nerdamer deliberately follows the WolframAlpha convention arg(0) = 0,
  * matching the zero-angle choice in toPolarFormArray(). In contrast,
  * SymPy returns nan for arg(0), and NIST DLMF §4.2 leaves the argument
  * of zero undefined because zero has no direction.

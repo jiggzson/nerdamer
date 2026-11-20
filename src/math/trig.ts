@@ -32,6 +32,7 @@ import { PI } from '../core/constants/symbolNames';
 import { message, UndefinedError } from '../core/errors';
 import { isEven } from '../core/functions/bigint/bigint';
 import { pureImaginaryCoefficient } from '../core/functions/complex';
+import { cosh as decimalCosh, sinh as decimalSinh, tanh as decimalTanh } from '../core/functions/decimal';
 import { Settings } from '../core/Settings';
 
 import { hypot } from './geometry';
@@ -441,10 +442,10 @@ export function tan(x: ExpressionInput): Expression {
 			const d = cos(dblRe).plus(cosh(dblIm));
 			retval = sin(dblRe).div(d).plus(sinh(dblIm).div(d).i());
 		} else {
-			retval = sin(x).div(cos(x));
-			if (retval.hasFunction(COS)) {
-				retval = Expression.toFunction(TAN, [x]);
-			}
+			// Keep tan(x) unless cos(x) simplified. Dividing by an unevaluated cos(x)
+			// gains nothing, and for a complex x it expands into realpart/imagpart parts.
+			const cosVal = cos(x);
+			retval = cosVal.isFunction(COS) ? Expression.toFunction(TAN, [x]) : sin(x).div(cosVal);
 		}
 	}
 
@@ -495,10 +496,8 @@ export function sec(x: ExpressionInput): Expression {
 		if (cosVal.isZero()) {
 			throw new UndefinedError(message('secUndefined'));
 		}
-		retval = cosVal.invert();
-		if (retval.hasFunction(COS)) {
-			retval = Expression.toFunction(SEC, [x]);
-		}
+		// Keep sec(x) unless cos(x) simplified.
+		retval = cosVal.isFunction(COS) ? Expression.toFunction(SEC, [x]) : cosVal.invert();
 	}
 
 	return retval;
@@ -548,10 +547,8 @@ export function csc(x: ExpressionInput): Expression {
 		if (sinVal.isZero()) {
 			throw new UndefinedError(message('cscUndefined'));
 		}
-		retval = sinVal.invert();
-		if (retval.hasFunction(SIN)) {
-			retval = Expression.toFunction(CSC, [x]);
-		}
+		// Keep csc(x) unless sin(x) simplified.
+		retval = sinVal.isFunction(SIN) ? Expression.toFunction(CSC, [x]) : sinVal.invert();
 	}
 
 	return retval;
@@ -601,10 +598,9 @@ export function cot(x: ExpressionInput): Expression {
 		if (sinVal.isZero()) {
 			throw new UndefinedError(message('cotUndefined'));
 		}
-		retval = cos(x).div(sinVal);
-		if (retval.hasFunction(COS)) {
-			retval = Expression.toFunction(COT, [x]);
-		}
+		// Keep cot(x) unless cos(x) simplified.
+		const cosVal = cos(x);
+		retval = cosVal.isFunction(COS) ? Expression.toFunction(COT, [x]) : cosVal.div(sinVal);
 	}
 
 	return retval;
@@ -1073,7 +1069,7 @@ export function cosh(x: ExpressionInput) {
 	if (x.isZero()) {
 		retval = one();
 	} else if (Settings.EVALUATE && x.isNUM()) {
-		retval = Expression.Number(x.getMultiplier().toDecimal().cosh());
+		retval = Expression.Number(decimalCosh(x.getMultiplier().toDecimal()));
 	} else if (Settings.EVALUATE && x.isComplex()) {
 		const re = x.realPart();
 		const im = x.imagPart();
@@ -1124,7 +1120,7 @@ export function sinh(x: ExpressionInput) {
 	if (x.isZero()) {
 		retval = zero();
 	} else if (Settings.EVALUATE && x.isNUM()) {
-		retval = Expression.Number(x.getMultiplier().toDecimal().sinh());
+		retval = Expression.Number(decimalSinh(x.getMultiplier().toDecimal()));
 	} else if (Settings.EVALUATE && x.isComplex()) {
 		const re = x.realPart();
 		const im = x.imagPart();
@@ -1176,7 +1172,7 @@ export function tanh(x: ExpressionInput) {
 	if (x.isZero()) {
 		retval = zero();
 	} else if (Settings.EVALUATE && x.isNUM()) {
-		retval = Expression.Number(x.getMultiplier().toDecimal().tanh());
+		retval = Expression.Number(decimalTanh(x.getMultiplier().toDecimal()));
 	} else if (Settings.EVALUATE && x.isComplex()) {
 		const re = x.realPart();
 		const im = x.imagPart();
@@ -1219,11 +1215,9 @@ export function sech(x: ExpressionInput) {
 		return zero();
 	}
 
-	let retval = one().div(cosh(x));
-
-	if (retval.hasFunction(COSH)) {
-		retval = Expression.toFunction(SECH, [x]);
-	}
+	// Keep sech(x) unless cosh(x) simplified.
+	const value = cosh(x);
+	const retval = value.isFunction(COSH) ? Expression.toFunction(SECH, [x]) : one().div(value);
 
 	return retval;
 }
@@ -1257,11 +1251,9 @@ export function csch(x: ExpressionInput) {
 		throw new UndefinedError(message('cschUndefined'));
 	}
 
-	let retval = one().div(sinh(x));
-
-	if (retval.hasFunction(SINH)) {
-		retval = Expression.toFunction(CSCH, [x]);
-	}
+	// Keep csch(x) unless sinh(x) simplified.
+	const value = sinh(x);
+	const retval = value.isFunction(SINH) ? Expression.toFunction(CSCH, [x]) : one().div(value);
 
 	return retval;
 }
@@ -1295,11 +1287,9 @@ export function coth(x: ExpressionInput) {
 		throw new UndefinedError(message('cothUndefined'));
 	}
 
-	let retval = one().div(tanh(x));
-
-	if (retval.hasFunction(TANH)) {
-		retval = Expression.toFunction(COTH, [x]);
-	}
+	// Keep coth(x) unless tanh(x) simplified.
+	const value = tanh(x);
+	const retval = value.isFunction(TANH) ? Expression.toFunction(COTH, [x]) : one().div(value);
 
 	return retval;
 }

@@ -74,12 +74,12 @@ describe('DecimalSet', () => {
 			'4',
 			'6',
 		]);
-		expect(set.filter(x => x.greaterThan(1)).toArray().map(x => x.toString())).toEqual([
+		expect(set.filter(x => x.gt(1)).toArray().map(x => x.toString())).toEqual([
 			'2',
 			'3',
 		]);
-		expect(set.every(x => x.greaterThan(0))).toBe(true);
-		expect(set.some(x => x.equals(2))).toBe(true);
+		expect(set.every(x => x.gt(0))).toBe(true);
+		expect(set.some(x => x.eq(2))).toBe(true);
 		expect(set.min()?.toString()).toEqual('1');
 		expect(set.max()?.toString()).toEqual('3');
 		expect(set.sum().toString()).toEqual('6');

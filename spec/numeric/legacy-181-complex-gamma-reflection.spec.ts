@@ -28,13 +28,13 @@ describe('legacy #181 complex gamma identities', () => {
 				const one = new Complex(1);
 				const pi = Decimal.acos(-1);
 				const gammaZ = gammaComplex(z);
-				const gammaNext = gammaComplex(z.add(one));
+				const gammaNext = gammaComplex(z.plus(one));
 				const gammaConjugate = gammaComplex(z.conjugate());
-				const gammaReflected = gammaComplex(one.sub(z));
+				const gammaReflected = gammaComplex(one.minus(z));
 				const piZ = z.scale(pi);
 				const sinPiZ = new Complex(
-					piZ.re.sin().mul(piZ.im.cosh()),
-					piZ.re.cos().mul(piZ.im.sinh())
+					piZ.re.sin().times(piZ.im.cosh()),
+					piZ.re.cos().times(piZ.im.sinh())
 				);
 
 				// Relative errors retain meaning when gamma becomes large near a pole.
@@ -46,7 +46,7 @@ describe('legacy #181 complex gamma identities', () => {
 				const tolerance = new Decimal(10).pow(-(precision - 5));
 				for (const [actual, expected] of comparisons) {
 					const scale = Decimal.max(1, actual.abs(), expected.abs());
-					const error = actual.sub(expected).abs().div(scale);
+					const error = actual.minus(expected).abs().div(scale);
 					expect(error.lte(tolerance)).toBe(true);
 				}
 				expect(Decimal.precision).toBe(precision);

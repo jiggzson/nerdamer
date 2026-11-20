@@ -2,7 +2,8 @@ import { Expression } from '../../core/classes/expression/Expression';
 import { half, one, zero } from '../../core/classes/expression/shortcuts';
 import { expressionToIntegerSparsePolynomial as toIntegerSparse } from '../../core/classes/polynomial/SparsePolynomialAdapter';
 import { Rational } from '../../core/classes/rational/Rational';
-import { ACOS, ACOT, ACSC, ASEC, ASIN, ATAN, CEIL, COS, COT, CSC, FACTORIAL, FLOOR, ROUND, SEC, SIN, TAN, TRUNC } from '../../core/constants/functionNames';
+import { ValuesSet } from '../../core/classes/valuesSet/ValuesSet';
+import { ACOS, ACOT, ACSC, ASEC, ASIN, ATAN, CEIL, COS, COT, CSC, ERF, ERFC, FACTORIAL, FLOOR, ROUND, SEC, SIN, TAN, TRUNC } from '../../core/constants/functionNames';
 import { WRAP } from '../../core/constants/parserSyntax';
 import { PolynomialError } from '../../core/errors';
 import { product, sum } from '../../math/utils';
@@ -16,6 +17,26 @@ import { cancelCommonFactors, rationalize, simplifyPerfectSquareRadical, simplif
 import { tryRewriteTrig } from './trigrewrite';
 import { simplifyTrigSum } from './trigsimp';
 import { hasFactorialRatio, hasIrrationalDenominator } from './utils';
+
+/**
+ * Simplifies an expression, or each member of a set such as the result of solve. A set keeps
+ * its type and solver details, and members that simplify to the same value are merged, as
+ * when the method is called on the set.
+ *
+ * @param x - Expression, parser text or set to simplify.
+ * @param modifiers - Internal recursion markers used to detect an unchanged image.
+ * @returns The simplified expression, or a copy of the set with each member simplified.
+ */
+export function simplify(x: Expression | string, modifiers?: { [name: string]: string }): Expression;
+export function simplify<T extends ValuesSet>(x: T): T;
+export function simplify(
+	x: Expression | ValuesSet | string,
+	modifiers: { [name: string]: string } = {}
+): Expression | ValuesSet {
+	return ValuesSet.isValuesSet(x)
+		? x.copy().each(e => (Expression.isExpression(e) ? simplifyExpression(e) : e))
+		: simplifyExpression(x, modifiers);
+}
 
 /**
  * Applies Nerdamer's finite symbolic simplification strategy to an expression.
@@ -38,7 +59,7 @@ import { hasFactorialRatio, hasIrrationalDenominator } from './utils';
  * @param modifiers - Internal recursion markers used to detect an unchanged image.
  * @returns The simplified expression, which may retain forms unsupported by the finite strategy set.
  */
-export function simplify(x: Expression | string, modifiers: { [name: string]: string } = {}) {
+function simplifyExpression(x: Expression | string, modifiers: { [name: string]: string } = {}) {
 	if (typeof x === 'string') {
 		x = Expression.create(x);
 	}
@@ -87,6 +108,8 @@ export function simplify(x: Expression | string, modifiers: { [name: string]: st
 		}
 	}
 
+	// Cancel log ratios term by term before the common denominator merges the terms.
+	x = simplifyLogRatio(x);
 	x = toCommonDenominator(x);
 
 	// Check polynomial numerators exactly before expanding large rational sums.
@@ -165,6 +188,22 @@ export function simplify(x: Expression | string, modifiers: { [name: string]: st
 			) {
 				retval = rationalize(retval);
 			} else if (retval.isSum()) {
+				// erfc(u) stays its own node so numeric values stay accurate. Rewrite it as
+				// 1 - erf(u) only when that shortens the sum, e.g. erf(x) + erfc(x) = 1.
+				if (retval.hasFunction(ERFC, true)) {
+					// Terms reach the callback with their multiplier and power, so keep both.
+					const rewritten = retval.forEveryElement(e =>
+						e.isFunction(ERFC)
+							? one()
+								.minus(Expression.toFunction(ERF, e.getArguments()))
+								.pow(e.getPower())
+								.times(Expression.fromRational(e.getMultiplier()))
+							: e
+					);
+					if (rewritten.text().length < retval.text().length) {
+						retval = rewritten;
+					}
+				}
 				retval = tryRewriteTrig(retval);
 				retval = simplifyTrigSum(retval);
 				// Combine known-positive numeric radicals before common-factor extraction.

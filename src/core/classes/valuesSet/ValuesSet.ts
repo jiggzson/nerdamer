@@ -73,6 +73,21 @@ export class ValuesSet extends MathematicalAggregate<ValuesSet> {
 		return this.elements;
 	}
 
+	protected membersEqual(a: ParserEntity, b: ParserEntity): boolean {
+		let retval = false;
+		try {
+			// Parser-entity equality is not guaranteed to be symmetric across different
+			// entity types. A set must not deduplicate values based on insertion direction,
+			// so require both entities to agree that they represent the same member.
+			retval = a.eq(b) && b.eq(a);
+		} catch (e) {
+			if (!(e instanceof UnexpectedDataType)) {
+				throw e;
+			}
+		}
+		return retval;
+	}
+
 	protected setValuesArray(values: ParserEntity[]): void {
 		this.clear();
 		for (const v of values) {
@@ -87,21 +102,6 @@ export class ValuesSet extends MathematicalAggregate<ValuesSet> {
 			}
 		}
 		return -1;
-	}
-
-	private membersEqual(a: ParserEntity, b: ParserEntity): boolean {
-		let retval = false;
-		try {
-			// Parser-entity equality is not guaranteed to be symmetric across different
-			// entity types. A set must not deduplicate values based on insertion direction,
-			// so require both entities to agree that they represent the same member.
-			retval = a.eq(b) && b.eq(a);
-		} catch (e) {
-			if (!(e instanceof UnexpectedDataType)) {
-				throw e;
-			}
-		}
-		return retval;
 	}
 
 	/**

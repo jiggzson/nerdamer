@@ -1,4 +1,6 @@
-import { abs as expressionAbs, log } from '../../../../math/index';
+import Decimal from 'decimal.js';
+
+import { abs as expressionAbs, log, numeric } from '../../../../math/index';
 import { cos, sin } from '../../../../math/trig';
 import { RATIONAL } from '../../../constants/entityTypes';
 import {
@@ -18,12 +20,19 @@ import {
 	COTH,
 } from '../../../constants/functionNames';
 import { PI } from '../../../constants/symbolNames';
-import { message, UndefinedError, ZeroToZeroPowerError } from '../../../errors';
+import {
+	DivisionByZeroError,
+	message,
+	UndefinedError,
+	UnsupportedOperationError,
+	ZeroToZeroPowerError,
+} from '../../../errors';
 import { isEven } from '../../../functions/bigint/bigint';
-import { abs } from '../../../functions/bigint/bigint';
+import { abs, intRootBig } from '../../../functions/bigint/bigint';
 import { primeFactorCounts } from '../../../functions/bigint/primeFactor';
 import { imagPart, realPart, simplifyImaginary } from '../../../functions/complex';
-import { toPolarFormArray } from '../../../functions/complex';
+import { polarPower, toPolarFormArray } from '../../../functions/complex';
+import { DEFAULT_SERIES_GUARD_DIGITS, piPower } from '../../../functions/decimal';
 import { Settings } from '../../../Settings';
 import { Expression } from '../../expression/Expression';
 import { minusOne, one, two, zero } from '../../expression/shortcuts';
@@ -63,6 +72,12 @@ export function power(a: Expression, b: Expression): Expression {
 		throw new ZeroToZeroPowerError(message('undefinedExpression', { expression: '0^0' }));
 	}
 
+	// 0^(-n) is 1/0^n, so a negative numeric exponent divides by zero. A symbolic
+	// exponent has an unknown sign and is left to the rules below.
+	if (a.isZero() && b.isNUM() && b.getMultiplier().isNegative()) {
+		throw new DivisionByZeroError(message('divisionByZero'));
+	}
+
 	if (Settings.DEFER_SIMPLIFICATION) {
 		retval = a.copy();
 		// Convert it to an EXP
@@ -84,6 +99,26 @@ export function power(a: Expression, b: Expression): Expression {
 		) {
 			retval = power(Expression.E(), multiply(b, log(a)));
 		}
+		// c^(±Inf + i*y) = c^(±Inf) * c^(i*y) for a real base c and finite y. Toward
+		// infinite size it is infinite in the direction c^(i*y), so e^(Inf+pi*i) = -Inf;
+		// toward zero size it is 0. A base whose size isn't established stays symbolic.
+		else if (
+			b.isSum() &&
+			b.isComplex() &&
+			!a.isComplex() &&
+			b.elementsArray().some(element => element.isInf())
+		) {
+			const real = b.realPart();
+			const imaginary = b.imagPart();
+			const above = a.gt(one());
+			const below = !above && a.gt(zero()) && a.lt(one());
+			if (real.isInf() && !imaginary.isInfinite() && (above || below)) {
+				retval =
+					above === real.isPosInf()
+						? power(a, imaginary.times(Expression.Img())).times(Expression.Inf())
+						: zero();
+			}
+		}
 		// Handle e^(i*pi)
 		else if (a.isE() && b.isComplex()) {
 			const p = b.copy();
@@ -94,7 +129,8 @@ export function power(a: Expression, b: Expression): Expression {
 					const sgn = Expression.Number(m.evenNumerator() ? '1' : '-1');
 					retval = multiply(Expression.fromRational(a.getMultiplier()), sgn);
 				} else if (m.denominator.toString() === '2') {
-					const sgn = Expression.Number(m.abs().mod('4').numerator === 1n ? '1' : '-1');
+					// e^(k*i*pi/2) = i^k, which is i when k is 1 modulo 4 and -i when it is 3.
+					const sgn = Expression.Number(m.abs().numerator % 4n === 1n ? '1' : '-1');
 					// Remember that this only occur for odd numerators
 					retval = multiply(
 						multiply(Expression.fromRational(a.getMultiplier()), Expression.Img()),
@@ -145,46 +181,82 @@ export function power(a: Expression, b: Expression): Expression {
 
 					retval = re.plus(im);
 				} else {
-					retval = Expression.fromRational(
-						base.getMultiplier().pow(exponent.getMultiplier())
-					);
+					const m = base.getMultiplier();
+					const p = exponent.getMultiplier();
+					// e and pi arrive here as rationals rounded to the working precision. An exact
+					// power would multiply that rounding error by the exponent, so compute them
+					// from the constants instead.
+					if (m.eqE()) {
+						retval = Expression.Number(Decimal.exp(p.toDecimal()));
+					} else if (m.eqPi()) {
+						retval = Expression.Number(piPower(p.toDecimal()));
+					} else {
+						// An exact power with more than MAX_NUMBER_DIGITS digits can't be represented
+						// (decimal digits are about 3.32 bits each)
+						if (p.isInteger()) {
+							const bits = BigInt(m.numerator.toString(2).length - 1) + BigInt(m.denominator.toString(2).length - 1);
+							if (bits * p.numerator > (BigInt(Settings.MAX_NUMBER_DIGITS) * 332n) / 100n) {
+								throw new UnsupportedOperationError(message('resultOutOfRange'));
+							}
+						}
+						retval = Expression.fromRational(m.pow(p));
+					}
 					// Flip it back if it's inverted.
 					if (inverted) {
 						retval = retval.invert();
 					}
 				}
 			}
-			// Complex numbers e.g. 6+i
-			else if (a.isComplex()) {
-				if (b.isComplex()) {
-					const [r, theta] = toPolarFormArray(a);
-					const re = realPart(b);
-					const im = imagPart(b);
-					const q = re.times(theta).plus(im.times(log(r)));
-					retval = power(r, re)
-						.times(Expression.E().pow(im.neg().times(theta)))
-						.times(cos(q).plus(Expression.Img().times(sin(q))));
-				} else {
-					// TODO: Move this to its own function - complexToTrig
-					const base = a.distributeMultiplier();
-					const [rp, tp] = toPolarFormArray(base);
-					const theta = tp.times(b);
-					const r = rp.pow(b);
-					retval = r.times(cos(theta)).plus(r.times(Expression.Img().times(sin(theta))));
+			// Complex results chain several rounded steps (log, exp, cos, sin), and when theta
+			// lands near a multiple of pi one component nearly cancels. Compute them with guard
+			// digits, then round the result back to the working precision.
+			else if (a.isComplex() || b.isComplex()) {
+				const precision = Rational.getPrecision();
+				// e and pi arrive as rationals rounded to the working precision, so note them
+				// before the precision changes and recompute them afterwards.
+				const eBase = a.isNUM() && a.getMultiplier().eqE();
+				const piBase = a.isNUM() && a.getMultiplier().eqPi();
+				Rational.set({ precision: precision + DEFAULT_SERIES_GUARD_DIGITS });
+				try {
+					if (eBase || piBase) {
+						a = Expression.fromRational(eBase ? Rational.E : Rational.PI);
+					}
+					// Complex numbers e.g. 6+i
+					if (a.isComplex()) {
+						if (b.isComplex()) {
+							const [r, theta] = toPolarFormArray(a);
+							const re = realPart(b);
+							const im = imagPart(b);
+							const q = re.times(theta).plus(im.times(log(r)));
+							retval = power(r, re)
+								.times(Expression.E().pow(im.neg().times(theta)))
+								.times(cos(q).plus(Expression.Img().times(sin(q))));
+						} else {
+							const [r, theta] = polarPower(a.distributeMultiplier(), b);
+							retval = r
+								.times(cos(theta))
+								.plus(r.times(Expression.Img().times(sin(theta))));
+						}
+					}
+					// Complex power e.g. e^(i+2)
+					// For the expression in the form c*n^(re+im*i) apply the formula
+					// c*n^re*cos(log(n^im))+c*n^re*sin(log(n^im))*i
+					else {
+						const n = a.pow(b.realPart());
+						const imaginary = b.imagPart();
+						const theta =
+							a.isE() ||
+							(a.isNUM() && a.getMultiplier().eqE() && !imaginary.isNUM())
+								? imaginary
+								: log(a.pow(imaginary));
+						retval = n
+							.times(cos(theta))
+							.plus(n.times(sin(theta)).times(Expression.Img()));
+					}
+				} finally {
+					Rational.set({ precision });
 				}
-			}
-			// Complex power e.g. e^(i+2)
-			// For the expression in the form c*n^(re+im*i) apply the formula
-			// c*n^re*cos(log(n^im))+c*n^re*sin(log(n^im))*i
-			else if (b.isComplex()) {
-				const n = a.pow(b.realPart());
-				const imaginary = b.imagPart();
-				const angle =
-					a.isE() ||
-					(a.isNUM() && a.getMultiplier().eq(Rational.E) && !imaginary.isNUM())
-						? imaginary
-						: log(a.pow(imaginary));
-				retval = n.times(cos(angle)).plus(n.times(sin(angle)).times(Expression.Img()));
+				retval = numeric(retval);
 			}
 		} else {
 			// Store check since it occurs on almost every check and definitely on the first.
@@ -205,27 +277,52 @@ export function power(a: Expression, b: Expression): Expression {
 				retval = a.copy();
 			} else if (a.isInf() || bIsInf) {
 				const aIsInf = a.isInf();
-				const bIsInf = b.isInf();
 
 				if (aIsInf && bIsInf) {
-					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^Infinity' }));
+					throw new UndefinedError(
+						message('undefinedExpression', { expression: 'Infinity^Infinity' })
+					);
 				}
 
-				if (a.isNUM()) {
-					const m = a.getMultiplier();
-					// n^Inf
-					if ((m.gt('1') && b.isPosInf()) || (a.isPosInf() && b.isPosInf())) {
-						// It's Infinity for positive Infinity but zero otherwise
-						retval = Expression.Inf();
-					} else if ((m.gt('1') && b.isNegInf()) || (m.eq('0') && b.isPosInf())) {
-						retval = Expression.Number('0');
-					} else {
+				if (bIsInf) {
+					// c^(±Inf) for a real base c. A base above one grows without bound toward
+					// +Inf and vanishes toward -Inf; a base between zero and one does the
+					// reverse. A base whose size isn't established, such as an unrestricted x,
+					// stays symbolic.
+					const real = !a.isComplex();
+					const above = real && a.gt(one());
+					const below = real && !above && a.gt(zero()) && a.lt(one());
+					if (above || below) {
+						retval = above === b.isPosInf() ? Expression.Inf() : zero();
+					} else if (a.isZero() && b.isPosInf()) {
+						retval = zero();
+					} else if (a.isNUM()) {
+						// 1^Inf, 0^-Inf and a negative base have no limit.
+						const m = a.getMultiplier();
 						throw new UndefinedError(
-							message('undefinedExpression', { expression: `${m.lt('0') ? `(${a})` : `${a}`}^Infinity` })
+							message('undefinedExpression', {
+								expression: `${m.lt('0') ? `(${a})` : `${a}`}^Infinity`,
+							})
 						);
 					}
 				} else if (b.isZero()) {
-					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^0' }));
+					throw new UndefinedError(
+						message('undefinedExpression', { expression: 'Infinity^0' })
+					);
+				} else if (b.isNUM()) {
+					// (±Inf)^p for a number p. A negative power vanishes. A positive power of +Inf
+					// is +Inf, and of -Inf is (-1)^p*Inf on the principal branch: ±Inf for an
+					// integer p, and infinite in the direction of (-1)^p otherwise, e.g. i*Inf.
+					const p = b.getMultiplier();
+					if (p.isNegative()) {
+						retval = zero();
+					} else if (a.isPosInf()) {
+						retval = Expression.Inf();
+					} else if (b.isInteger()) {
+						retval = p.numerator % 2n === 0n ? Expression.Inf() : Expression.NegInf();
+					} else {
+						retval = power(minusOne(), b).times(Expression.Inf());
+					}
 				}
 			}
 			// Integer powers can be distributed across products without changing branches.
@@ -307,15 +404,39 @@ export function power(a: Expression, b: Expression): Expression {
 					const root = p.denominator;
 					// First deal with the multiplier
 					const m = a.getMultiplier().abs();
-
-					const n = m.numerator ** pow;
-					const d = m.denominator ** pow;
+					// x^(pow/root) has log2(x) * pow / root bits. Check that before computing the power:
+					// for 2^(10^20) the power itself exhausts memory. The result is held to
+					// MAX_NUMBER_DIGITS digits like a decimal result (decimal digits are about 3.32 bits
+					// each). A b-bit x has b - 1 to b bits of log2, close enough unless x is small, as
+					// for 3^300000, so a small x uses its exact log2.
+					const maxBits = Settings.MAX_NUMBER_DIGITS * Math.log2(10) * Number(root);
+					const fits = [m.numerator, m.denominator].every(x => {
+						const bits =
+							x < 1n << 53n ? Math.log2(Number(x)) : x.toString(2).length - 1;
+						return bits * Number(pow) <= maxBits;
+					});
 
 					// Raise it to the power and then pull the roots. This will be wrapped in Expressions
-					// If the number is too large then this will hang. Provide a warning and exit
-					if (n <= Settings.MAX_FRAC_INT && d <= Settings.MAX_FRAC_INT) {
-						const num = nthPow(n, root);
-						const den = nthPow(d, root);
+					// If the number is too large it stays as a symbolic power
+					if (fits) {
+						// For a root, factor the base and scale the counts instead of factoring its
+						// power, which has pow times the digits and is far harder to factor.
+						const [num, den] = [m.numerator, m.denominator].map(x => {
+							let retval: Expression;
+							if (root === 1n) {
+								retval = nthPow(x ** pow, root);
+							} else {
+								const counts = primeFactorCounts(
+									x,
+									Settings.MAX_RADICAL_FACTOR_STEPS
+								);
+								for (const factor in counts) {
+									counts[factor] *= pow;
+								}
+								retval = nthPow(counts, root);
+							}
+							return retval;
+						});
 						const evenPow = isEven(pow);
 						// printE({ num: num, den: den, sign: b.sign() });
 						// Rebuild the coefficient
@@ -329,10 +450,11 @@ export function power(a: Expression, b: Expression): Expression {
 						// A negative sign is part of the principal argument for noninteger
 						// powers. Positive magnitude has already been extracted for symbolic
 						// bases, while numeric bases keep their exact magnitude in c.
+						// The power is not rationalized: (-a)^(-1/2) as (-a)^(1/2)/(-a) would no longer
+						// cancel against (-a)^(1/2).
 						if (root !== 1n && !a.isNUM() && a.getMultiplier().isNegative()) {
 							retval = Expression.toEXP(a.copy(), b);
 							retval = retval.times(c);
-							retval = rationalizeRadical(retval);
 						} else if (root !== 1n && root !== 2n && a.isNUM() && a.sign() === -1) {
 							retval = Expression.toEXP(minusOne(), b).times(c);
 						} else {
@@ -352,14 +474,14 @@ export function power(a: Expression, b: Expression): Expression {
 								// NOTE: This is one of the issues that arises with the schema being used with the library. Ideally, the power
 								// on any variable is a power and the multiplier is factored our and treated separately. We run into a problem
 								// with even roots which cannot factor out the multiplier. In this case we cast the entire thing to an EXP e.g. (-x)^(1/2)
-								if (a.sign() === -1 && !evenPow) {
+								if (a.sign() === -1 && !evenPow && b.isInteger()) {
+									// An odd integer power keeps the sign: (-u)^n = -(u^n). Raise the
+									// positive part, combining any inner power, as in (-x^2)^3 = -x^6.
+									// The coefficient has already been raised into c.
+									retval = power(retval, b).neg();
+								} else if (a.sign() === -1 && !evenPow) {
 									retval = retval.neg();
-									const bIsInteger = b.isInteger();
-									// Finalize the normalized variable. The coefficient has already been
-									// raised into c and must not be reintroduced here.
-									if (a.isVAR() && bIsInteger) {
-										retval = Expression.setPower(retval, b);
-									} else if (!(retval.isMinusOne() && bIsInteger)) {
+									if (!retval.isMinusOne()) {
 										retval = Expression.toEXP(retval, b);
 									}
 								} else {
@@ -371,7 +493,9 @@ export function power(a: Expression, b: Expression): Expression {
 									} else if (p.isNUM()) {
 										const innerMagnitude = innerPower.getMultiplier().abs();
 										const canCombine =
-											b.isInteger() || innerPower.isOne() || innerMagnitude.lt('1');
+											b.isInteger() ||
+											innerPower.isOne() ||
+											innerMagnitude.lt('1');
 
 										// An even integer power of a real expression is nonnegative. For a
 										// noninteger outer power, preserve that fact explicitly with abs().
@@ -389,9 +513,13 @@ export function power(a: Expression, b: Expression): Expression {
 													retval.getMultiplier()
 												);
 											} else {
-												// The abs is redundant for even powers.
+												// The abs is redundant for even integer powers. For a fraction such
+												// as 2/3, |a|^(2/3) isn't a^(2/3) when a is negative.
 												if (retval.isFunction(ABS)) {
-													if (isEven(p.getMultiplier().numerator)) {
+													if (
+														p.isInteger() &&
+														isEven(p.getMultiplier().numerator)
+													) {
 														retval = retval
 															.getArguments()[0]
 															.times(retval.getMultiplier());
@@ -418,33 +546,6 @@ export function power(a: Expression, b: Expression): Expression {
 						}
 					}
 				}
-			}
-			// Deal with all cases involving Infinity
-			// https://www.superprof.co.uk/resources/academic/maths/calculus/limits/properties-of-infinity.html
-			else if (a.isInf() || b.isInf()) {
-				const aIsInf = a.isInf();
-				const bIsInf = b.isInf();
-
-				if (aIsInf && bIsInf) {
-					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^Infinity' }));
-				}
-
-				if (a.isNUM()) {
-					const m = a.getMultiplier();
-					// n^Inf
-					if ((m.gt('1') && b.isPosInf()) || (a.isPosInf() && b.isPosInf())) {
-						// It's Infinity for positive Infinity but zero otherwise
-						retval = Expression.Inf();
-					} else if ((m.gt('1') && b.isNegInf()) || (m.eq('0') && b.isPosInf())) {
-						retval = Expression.Number('0');
-					} else {
-						throw new UndefinedError(
-							message('undefinedExpression', { expression: `${m.lt('0') ? `(${a})` : `${a}`}^Infinity` })
-						);
-					}
-				} else if (b.isZero()) {
-					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity^0' }));
-				}
 			} else if (
 				a.isEXP() &&
 				!b.isComplex() &&
@@ -466,18 +567,11 @@ export function power(a: Expression, b: Expression): Expression {
 
 					// An even integer power of a real expression is nonnegative, so it can
 					// be represented through abs() before applying a symbolic outer power.
-					if (
-						!m.isNegative() &&
-						p.isInteger() &&
-						p.isEven() &&
-						!base.isComplex()
-					) {
+					if (!m.isNegative() && p.isInteger() && p.isEven() && !base.isComplex()) {
 						retval = expressionAbs(base);
 						retval = Expression.toEXP(retval, pow);
 						if (!m.isOne()) {
-							retval = retval.times(
-								Expression.toEXP(Expression.fromRational(m), b)
-							);
+							retval = retval.times(Expression.toEXP(Expression.fromRational(m), b));
 						}
 					}
 					// A real inner power with magnitude below one stays inside the
@@ -486,10 +580,8 @@ export function power(a: Expression, b: Expression): Expression {
 					else if (!m.isNegative() && (p.isOne() || absPower.lt('1'))) {
 						retval = Expression.toEXP(base, pow);
 						if (!m.isOne()) {
-							retval = retval.times(
-								Expression.toEXP(Expression.fromRational(m), b)
-							);
-					}
+							retval = retval.times(Expression.toEXP(Expression.fromRational(m), b));
+						}
 					}
 				}
 			}
@@ -540,7 +632,10 @@ export function setPower(a: Expression, b: Expression) {
 		retval = Expression.fromRational(a.getMultiplier().pow(b.getMultiplier()));
 	} else if (a.isNUM()) {
 		retval = Expression.toEXP(a.getMultiplier(), b);
-	} else if (b.isNUM() && !a.isEXP()) {
+	} else if (b.isNUM() && !a.isEXP() && (b.isInteger() || !a.getMultiplier().isNegative())) {
+		// A negative multiplier only leaves for an integer power, since (-1)^n is exact; for
+		// a noninteger power it stays in the base below, as (-a*b)^(1/2) is not i*(a*b)^(1/2)
+		// on every branch.
 		retval = a.toUnitMultiplier();
 
 		// (2*x)^2 = 4*x^2 or 2^-2 = 1/4
@@ -670,11 +765,19 @@ export function nthPow(x: bigint | factorCountType, root: bigint) {
 		// Let's take 4320 as an example. The counts will be 2: 5n, 3: 3n, 5: 1n. The factor 2 has 2 perfect
 		// squares 3 has 1 and 5 has 0. We divide those out and raise the factor to that square. It then gets
 		// multiplied to the whole.
-		const factorCounts = typeof x === 'bigint' ? primeFactorCounts(x) : x;
+		// Factoring is bounded, since a large number with big prime factors could take hours.
+		// A part that resists stays whole, so check whether it is itself a perfect power.
+		const factorCounts =
+			typeof x === 'bigint' ? primeFactorCounts(x, Settings.MAX_RADICAL_FACTOR_STEPS) : x;
 
 		for (const factor in factorCounts) {
-			const count = factorCounts[factor];
-			const f = BigInt(factor);
+			let count = factorCounts[factor];
+			let f = BigInt(factor);
+			const base = intRootBig(f, root);
+			if (base > 1n && base ** root === f) {
+				f = base;
+				count *= root;
+			}
 			// Divide out the perfect square and add them to the whole
 			const e = count / root;
 			// Remove the wholes and keep the remainder

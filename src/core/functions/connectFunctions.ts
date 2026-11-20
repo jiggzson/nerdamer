@@ -135,12 +135,14 @@ export function connectFunctions(
 			]
 		: names;
 
-	for (const name of connectedNames) {
-		const value = source[name];
+	for (const sourceName of connectedNames) {
+		const value = source[sourceName];
 		if (typeof value !== 'function') {
 			throw new UnexpectedInputError(message('setJSFunctionExpectsFunction'));
 		}
 
+		// Connecting an alias, such as ceiling, connects the function it stands for.
+		const name = mathFunctionRegistry[sourceName]?.aliasOf ?? sourceName;
 		connectedNumericalFunctions[name] = numericalFunction(
 			source,
 			value as (...args: number[]) => unknown

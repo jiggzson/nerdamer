@@ -1,17 +1,28 @@
 import Decimal from 'decimal.js';
 
 import { Expression } from '../../core/classes/expression/Expression';
+import { compileDecimal } from '../../core/classes/parser/compileDecimal';
 import { Parser } from '../../core/classes/parser/Parser';
+import { toExpressions } from '../../core/common/functions/structuredEntityUtils';
 import { SYMBOLIC_ACCESSOR } from '../../core/constants/parserSyntax';
-import { message, UnsupportedOperationError, UnexpectedInputError } from '../../core/errors';
+import {
+	message,
+	UndefinedError,
+	UnsupportedOperationError,
+	UnexpectedInputError,
+} from '../../core/errors';
 import { scopedBlock } from '../../core/Settings';
 import { warn } from '../../core/warnings';
 
+import type { DecimalEvaluator } from '../../core/classes/parser/compileDecimal';
 import type { ParserValuesObject } from '../../core/classes/parser/types';
 import type { Scope } from '../../core/common/classes/Scope';
 
-const DEFAULT_LOWER_BOUND = -100;
-const DEFAULT_UPPER_BOUND = 100;
+// Keep externally overridden parser evaluation observable through this API.
+const standardParseRPN = Parser.parseRPN;
+
+const DEFAULT_LOWER_BOUND = -10;
+const DEFAULT_UPPER_BOUND = 10;
 const DEFAULT_DERIVATIVE_STEP = 1e-15;
 const DEFAULT_MAX_ITERATIONS = 200;
 const DEFAULT_STEP_SIZE = 0.1;
@@ -26,9 +37,9 @@ export type RootFindingMethod = 'Brent' | 'NewtonRaphson';
 
 /** Options for numerical root searches over a fixed interval with {@link FunctionSolver}. */
 export interface FunctionSolverOptions {
-	/** Upper endpoint of the search interval. Defaults to `100`. */
+	/** Upper endpoint of the search interval. Defaults to `10`. */
 	upperBound?: Decimal | number;
-	/** Lower endpoint of the search interval. Defaults to `-100`. */
+	/** Lower endpoint of the search interval. Defaults to `-10`. */
 	lowerBound?: Decimal | number;
 	/** Central-difference step used by Newton-Raphson. Defaults to `1e-15`. */
 	derivativeStep?: Decimal | number;
@@ -68,10 +79,11 @@ export interface Root {
  * @remarks
  * {@link roots} scans the configured interval from its center toward both
  * endpoints, including a shorter final cell on either side. It refines sign-changing
- * intervals with Brent's method or Newton-Raphson, verifies residuals, merges nearby
+ * intervals with Brent's method or Newton-Raphson, verifies Brent candidates
+ * using scaled residuals or guarded positional estimates, merges nearby
  * results, and returns roots
  * in ascending order. This is a heuristic search: an even-multiplicity root
- * can be missed unless a scan point lands sufficiently close to it, and
+ * can be missed unless a scan point evaluates to exactly zero, and
  * periodic functions are limited by both the interval and `maxRoots`.
  *
  * Calculations use the ambient `decimal.js` precision. An Expression supplied
@@ -88,8 +100,12 @@ export interface Root {
  * ```
  */
 export class FunctionSolver {
+	private decimalEvaluator?: DecimalEvaluator;
+	private evaluationFunc?: Expression;
 	private evaluationRpn?: Scope;
-	private evaluationSource?: string;
+	private evaluationSource = '';
+	private evaluationVariable?: string;
+	private fullEvaluation = false;
 	derivativeStep: Decimal;
 	func: Expression;
 	lowerBound: Decimal;
@@ -131,32 +147,26 @@ export class FunctionSolver {
 		const upper = this.upperBound;
 		const step = new Decimal(this.stepSize);
 		const length = upper.minus(lower);
-		const center = lower.plus(length.dividedBy(2));
+		const center = lower.plus(length.div(2));
 		let x = center;
 		let u = center;
 		const intervals: Decimal[][] = [];
 
 		const lowerDistance = center.minus(lower);
 		const upperDistance = upper.minus(center);
-		const maxInterval = lowerDistance.greaterThan(upperDistance)
-			? lowerDistance
-			: upperDistance;
+		const maxInterval = lowerDistance.gt(upperDistance) ? lowerDistance : upperDistance;
 
-		for (
-			let offset = new Decimal(0);
-			offset.lessThan(maxInterval);
-			offset = offset.plus(step)
-		) {
+		for (let offset = new Decimal(0); offset.lt(maxInterval); offset = offset.plus(step)) {
 			// Clip the last cell on each side instead of dropping a shorter remainder.
 			const y = Decimal.max(lower, x.minus(step));
 			const v = Decimal.min(upper, u.plus(step));
 
 			// Add the lower interval while its starting point is above the bound.
-			if (x.greaterThan(lower)) {
+			if (x.gt(lower)) {
 				intervals.push([x, y]);
 			}
 			// Add the upper interval while its starting point is below the bound.
-			if (u.lessThan(upper)) {
+			if (u.lt(upper)) {
 				intervals.push([u, v]);
 			}
 
@@ -182,21 +192,27 @@ export class FunctionSolver {
 	 *
 	 * @param a - First bracket endpoint.
 	 * @param b - Second bracket endpoint.
+	 * @param fa - Previously evaluated value at a, if available.
+	 * @param fb - Previously evaluated value at b, if available.
 	 * @returns Refinement metadata. Invalid brackets and exhausted iterations are
 	 * represented in the returned {@link Root}; they are not thrown.
 	 */
-	Brent(a: Decimal, b: Decimal): Root {
+	Brent(a: Decimal, b: Decimal, fa?: Decimal, fb?: Decimal): Root {
 		// Convert inputs to Decimal
 		let aVal = new Decimal(a);
 		let bVal = new Decimal(b);
 		const tol = this.tolerance;
+		// Positions are resolved relative to their size, at the working precision. The
+		// absolute floor only matters for roots at or very near zero.
+		const relTol = new Decimal(10).pow(1 - Decimal.precision);
+		const floor = tol.times(relTol);
 
-		let fa = this.evaluate(aVal);
-		let fb = this.evaluate(bVal);
+		fa = fa ?? this.evaluate(aVal);
+		fb = fb ?? this.evaluate(bVal);
 		const error = new Decimal(Infinity);
 
 		// Check if root is at endpoint
-		if (fa.abs().lessThan(tol)) {
+		if (fa.isZero()) {
 			return {
 				root: aVal,
 				iterations: 0,
@@ -205,7 +221,7 @@ export class FunctionSolver {
 				errorMsg: message('endPointIsRoot'),
 			};
 		}
-		if (fb.abs().lessThan(tol)) {
+		if (fb.isZero()) {
 			return {
 				root: bVal,
 				iterations: 0,
@@ -215,7 +231,7 @@ export class FunctionSolver {
 			};
 		}
 		// Ensure f(a) and f(b) have opposite signs
-		if (fa.times(fb).greaterThan(0)) {
+		if (fa.times(fb).gt(0)) {
 			return {
 				root: bVal,
 				iterations: 0,
@@ -226,59 +242,90 @@ export class FunctionSolver {
 		}
 
 		// Ensure |f(a)| >= |f(b)|
-		if (fa.abs().lessThan(fb.abs())) {
+		if (fa.abs().lt(fb.abs())) {
 			[aVal, bVal] = [bVal, aVal];
 			[fa, fb] = [fb, fa];
 		}
+		// Near a root |f| shrinks as the bracket narrows; near a pole it grows.
+		const startScale = fa.abs();
 
 		let c = aVal;
 		let fc = fa;
 		let mflag = true;
+		// Whether the last step was the minimum step towards a.
+		let minStepped = false;
 		let d = new Decimal(0);
 
 		for (let iter = 0; iter < this.maxIters; iter++) {
 			let s: Decimal;
 
 			// Use inverse quadratic interpolation if f(a), f(b), f(c) are distinct
-			if (!fa.equals(fc) && !fb.equals(fc)) {
+			if (!fa.eq(fc) && !fb.eq(fc)) {
 				s = aVal
 					.times(fb)
 					.times(fc)
-					.dividedBy(fa.minus(fb).times(fa.minus(fc)))
+					.div(fa.minus(fb).times(fa.minus(fc)))
 					.plus(
 						bVal
 							.times(fa)
 							.times(fc)
-							.dividedBy(fb.minus(fa).times(fb.minus(fc)))
+							.div(fb.minus(fa).times(fb.minus(fc)))
 					)
 					.plus(
 						c
 							.times(fa)
 							.times(fb)
-							.dividedBy(fc.minus(fa).times(fc.minus(fb)))
+							.div(fc.minus(fa).times(fc.minus(fb)))
 					);
 			} else {
 				// Use secant method
-				s = bVal.minus(fb.times(bVal.minus(aVal)).dividedBy(fb.minus(fa)));
+				s = bVal.minus(fb.times(bVal.minus(aVal)).div(fb.minus(fa)));
 			}
 
-			// Conditions for bisection
+			// The smallest step that still moves the bracket, on the convergence scale.
+			const step = floor.plus(relTol.times(bVal.abs()));
+			const minStep = step.div(2);
+			// Reject interpolation outside the allowed interval in either direction.
+			const interpolationBound = aVal.times(3).plus(bVal).div(4);
 			const condition1 =
-				s.lessThan(new Decimal(3).times(aVal).plus(bVal).dividedBy(4)) ||
-				s.greaterThan(bVal);
-			const condition2 =
-				mflag && s.minus(bVal).abs().greaterThanOrEqualTo(bVal.minus(c).abs().dividedBy(2));
-			const condition3 =
-				!mflag && s.minus(bVal).abs().greaterThanOrEqualTo(c.minus(d).abs().dividedBy(2));
-			const condition4 = mflag && bVal.minus(c).abs().lessThan(tol);
-			const condition5 = !mflag && c.minus(d).abs().lessThan(tol);
+				s.lt(Decimal.min(interpolationBound, bVal)) ||
+				s.gt(Decimal.max(interpolationBound, bVal));
+			const condition2 = mflag && s.minus(bVal).abs().gte(bVal.minus(c).abs().div(2));
+			const condition3 = !mflag && s.minus(bVal).abs().gte(c.minus(d).abs().div(2));
+			const condition4 = mflag && bVal.minus(c).abs().lt(step);
+			const condition5 = !mflag && c.minus(d).abs().lt(step);
 
-			if (condition1 || condition2 || condition3 || condition4 || condition5) {
-				// Use bisection
-				s = aVal.plus(bVal).dividedBy(2);
+			const tinyStep = !condition1 && s.minus(bVal).abs().lt(minStep);
+			if (tinyStep && !minStepped) {
+				// As in Brent's original method, once b has converged, step the minimum
+				// towards a instead of bisecting. The far end then moves too, and the
+				// width test succeeds. Bisecting here would close the bracket one halving
+				// at a time, because b no longer moves and conditions 4 and 5 keep firing.
+				s = aVal.gt(bVal) ? bVal.plus(minStep) : bVal.minus(minStep);
+				mflag = false;
+				minStepped = true;
+			} else if (
+				tinyStep ||
+				condition1 ||
+				condition2 ||
+				condition3 ||
+				condition4 ||
+				condition5
+			) {
+				// Use bisection. A second tiny step in a row means the minimum step didn't
+				// cross the root, so b hadn't converged: a flat function, such as x^2-1e-40
+				// near zero, interpolates next to b while the root is far away.
+				s = aVal.plus(bVal).div(2);
 				mflag = true;
+				minStepped = false;
 			} else {
 				mflag = false;
+				minStepped = false;
+			}
+
+			// A bisection or interpolation step can still land within minStep of b.
+			if (s.minus(bVal).abs().lt(minStep)) {
+				s = aVal.gt(bVal) ? bVal.plus(minStep) : bVal.minus(minStep);
 			}
 
 			const fs = this.evaluate(s);
@@ -287,7 +334,7 @@ export class FunctionSolver {
 			fc = fb;
 
 			// Update interval
-			if (fa.times(fs).lessThan(0)) {
+			if (fa.times(fs).lt(0)) {
 				bVal = s;
 				fb = fs;
 			} else {
@@ -296,20 +343,32 @@ export class FunctionSolver {
 			}
 
 			// Ensure |f(a)| >= |f(b)|
-			if (fa.abs().lessThan(fb.abs())) {
+			if (fa.abs().lt(fb.abs())) {
 				[aVal, bVal] = [bVal, aVal];
 				[fa, fb] = [fb, fa];
 			}
 
-			const conditionA = fb.abs().lessThan(tol);
-			const conditionB = bVal.minus(aVal).abs().lessThan(tol);
-			// Check convergence
-			if (conditionA || conditionB) {
+			// Converge on the bracket width, not the residual: a function with a
+			// small scale can have a tiny residual far from its root.
+			const width = bVal.minus(aVal).abs();
+			const scale = floor.plus(relTol.times(Decimal.max(aVal.abs(), bVal.abs())));
+			// Once the bracket is as narrow as the tolerance, a residual larger than both
+			// starting values means the sign change is a pole, not a root.
+			if (width.lte(tol) && fb.abs().gt(startScale)) {
+				return {
+					root: bVal,
+					iterations: iter,
+					converged: false,
+					error: width,
+					errorMsg: message('convergenceFailed', { iters: String(iter) }),
+				};
+			}
+			if (fb.isZero() || width.lte(scale)) {
 				return {
 					root: bVal,
 					iterations: iter,
 					converged: true,
-					error: conditionA ? fb.abs().minus(tol) : bVal.minus(aVal).abs(),
+					error: width,
 				};
 			}
 		}
@@ -332,7 +391,7 @@ export class FunctionSolver {
 		const fMinusH = this.evaluate(xMinusH);
 
 		// Central difference formula: (f(x+h) - f(x-h)) / (2h)
-		return fPlusH.minus(fMinusH).dividedBy(h.times(2));
+		return fPlusH.minus(fMinusH).div(h.times(2));
 	}
 
 	/**
@@ -342,10 +401,23 @@ export class FunctionSolver {
 	 * Expression.
 	 */
 	public evaluate(at: Decimal | number | string) {
-		// Preserve Expression.evaluate's special serialization and complex-power handling.
-		if (this.func.scientific !== undefined ||
-			this.func.hasFunction(SYMBOLIC_ACCESSOR, true) ||
-			this.func.isComplex()) {
+		// The text, the evaluation path and the compiled evaluator depend only on the
+		// expression and variable, so work them out once rather than at every point.
+		if (this.func !== this.evaluationFunc || this.variable !== this.evaluationVariable) {
+			this.evaluationFunc = this.func;
+			this.evaluationVariable = this.variable;
+			this.evaluationSource = this.func.text();
+			this.evaluationRpn = undefined;
+			// Preserve Expression.evaluate's special serialization and complex-power handling.
+			this.fullEvaluation =
+				this.func.scientific !== undefined ||
+				this.func.hasFunction(SYMBOLIC_ACCESSOR, true) ||
+				this.func.isComplex();
+			this.decimalEvaluator = this.fullEvaluation
+				? undefined
+				: compileDecimal(this.evaluationSource, this.variable);
+		}
+		if (this.fullEvaluation) {
 			const evaluated = this.func.evaluate({ [this.variable]: at });
 			if (!evaluated.isNUM()) {
 				throw new UnexpectedInputError(message('wrongInput', {
@@ -354,12 +426,25 @@ export class FunctionSolver {
 			}
 			return evaluated.getMultiplier().toDecimal();
 		}
-		const source = this.func.text();
+		if (this.decimalEvaluator && Parser.parseRPN === standardParseRPN) {
+			try {
+				return this.decimalEvaluator(new Decimal(at));
+			} catch (error) {
+				// A non-finite value means the point is outside the domain, such as a
+				// pole. Report it without dropping the compiled evaluator for the rest
+				// of the scan.
+				if (error instanceof UndefinedError) {
+					throw error;
+				}
+				// Unsupported domains and changed function registrations retain
+				// the ordinary parser's exact behavior.
+				this.decimalEvaluator = undefined;
+			}
+		}
 		let rpn = this.evaluationRpn;
-		if (rpn === undefined || source !== this.evaluationSource) {
-			rpn = Parser.toRPN(Parser.tokenize(source));
+		if (rpn === undefined) {
+			rpn = Parser.toRPN(Parser.tokenize(this.evaluationSource));
 			this.evaluationRpn = rpn;
-			this.evaluationSource = source;
 		}
 		const values: ParserValuesObject = {
 			[this.variable]: Expression.Number(new Decimal(at)),
@@ -408,14 +493,14 @@ export class FunctionSolver {
 			}
 
 			// Newton-Raphson update: x_new = x - f(x) / f'(x)
-			const xNew = x.minus(fx.dividedBy(fpx));
+			const xNew = x.minus(fx.div(fpx));
 
 			// Calculate error as the absolute difference between iterations
 			error = xNew.minus(x).abs();
 			iterations = i + 1;
 
 			// Check for convergence
-			if (error.lessThanOrEqualTo(tol)) {
+			if (error.lte(tol)) {
 				return {
 					root: xNew,
 					iterations,
@@ -445,27 +530,90 @@ export class FunctionSolver {
 	roots(): Expression[] {
 		const bVal = this.upperBound;
 		const tol = this.tolerance;
+		const relTol = new Decimal(10).pow(1 - Decimal.precision);
+		const duplicateFloor = this.method === NEWTON_RAPHSON_METHOD ? tol : tol.times(relTol);
 
 		const roots: Decimal[] = [];
 		let exit = false;
 		let exhaustedRefinements = 0;
 		const evaluationCache = new Map<string, Decimal>();
+		// Neighbouring cells share endpoints, so remember failed points as well.
+		const failedPoints = new Map<string, unknown>();
 
 		const evaluatePoint = (point: Decimal) => {
 			const key = point.toString();
+			if (failedPoints.has(key)) {
+				throw failedPoints.get(key);
+			}
 			let value = evaluationCache.get(key);
 			if (value === undefined) {
-				value = this.evaluate(point);
+				try {
+					value = this.evaluate(point);
+				} catch (error) {
+					failedPoints.set(key, error);
+					throw error;
+				}
 				evaluationCache.set(key, value);
 			}
 			return value;
 		};
 
-		const addRoot = (root: Decimal) => {
+		// A steep continuous crossing can have a large residual even when Brent's
+		// root coordinate is accurate. Estimate the coordinate error from the
+		// original chord, then sample both sides to guard against poles and jumps.
+		// Finite probes cannot establish continuity, so this is a conservative
+		// fallback after the ordinary bracket-scaled residual check has failed.
+		const verifyBracket = (
+			root: Decimal, residual: Decimal,
+			bracket: { a: Decimal; b: Decimal; fa: Decimal; fb: Decimal }
+		): boolean => {
+			const { a, b, fa, fb } = bracket;
+			const difference = fa.minus(fb).abs();
+			if (difference.isZero() || !residual.lt(Decimal.min(fa.abs(), fb.abs()))) {
+				return false;
+			}
+			const estimatedError = residual.times(a.minus(b).abs()).div(difference);
+			if (!estimatedError.lt(tol)) {
+				return false;
+			}
+
+			const distance = tol.times(10);
+			const left = root.minus(distance);
+			const right = root.plus(distance);
+			if (!left.lt(root) || !right.gt(root) ||
+				!left.gt(Decimal.min(a, b)) ||
+				!right.lt(Decimal.max(a, b))) {
+				return false;
+			}
+			const leftValue = evaluatePoint(left);
+			const rightValue = evaluatePoint(right);
+			return leftValue.isFinite() && rightValue.isFinite() &&
+				leftValue.times(rightValue).lt(0) &&
+				residual.lt(leftValue.abs()) &&
+				residual.lt(rightValue.abs());
+		};
+
+		const addRoot = (
+			root: Decimal,
+			scale = new Decimal('1'),
+			bracket?: { a: Decimal; b: Decimal; fa: Decimal; fb: Decimal }
+		) => {
 			// Shared subdivision endpoints must not produce duplicate roots or exceed the cap.
-			const duplicate = roots.some(existingRoot => root.minus(existingRoot).abs().lessThan(tol.times(10)));
-			if (!exit && !duplicate && evaluatePoint(root).abs().lessThan(tol)) {
-				roots.push(root);
+			// Compare on the scale the method converges on. Brent narrows a bracket to an
+			// absolute floor of tol*relTol, so tiny roots such as +-1e-20 stay distinct,
+			// while Newton stops on an absolute step of tol.
+			const duplicate = roots.some(existingRoot => {
+				const scale = duplicateFloor.plus(
+					relTol.times(Decimal.max(root.abs(), existingRoot.abs()))
+				);
+				return root.minus(existingRoot).abs().lt(scale.times(10));
+			});
+			if (!exit && !duplicate) {
+				const residual = evaluatePoint(root).abs();
+				if (residual.lt(tol.times(scale)) ||
+					(bracket !== undefined && verifyBracket(root, residual, bracket))) {
+					roots.push(root);
+				}
 			}
 			// Check if the maximum number of roots was reached. If so we're done
 			if (roots.length >= this.maxRoots) {
@@ -473,22 +621,51 @@ export class FunctionSolver {
 			}
 		};
 
+		// A pole on the scan grid would discard both cells that share it, along
+		// with any root right next to it. When only one endpoint is undefined,
+		// probe just inside the cell instead. The residual checks in addRoot
+		// still reject the pole itself.
+		const probeDistance = tol.times(1000);
+		const evaluateCell = (
+			a: Decimal,
+			b: Decimal
+		): [Decimal, Decimal, Decimal, Decimal] | undefined => {
+			let fa: Decimal | undefined;
+			let fb: Decimal | undefined;
+			try {
+				fa = evaluatePoint(a);
+			} catch {}
+			try {
+				fb = evaluatePoint(b);
+			} catch {}
+			if (fa === undefined && fb !== undefined) {
+				a = b.gt(a) ? a.plus(probeDistance) : a.minus(probeDistance);
+				fa = evaluatePoint(a);
+			} else if (fb === undefined && fa !== undefined) {
+				b = a.gt(b) ? b.plus(probeDistance) : b.minus(probeDistance);
+				fb = evaluatePoint(b);
+			}
+			return fa === undefined || fb === undefined ? undefined : [a, fa, b, fb];
+		};
+
 		const intervals = this.calculateIntervals();
 		for (const interval of intervals) {
 			if (exit) {
-				return roots.sort((a, b) => a.comparedTo(b)).map(x => Expression.create(x));
+				return toExpressions(roots.sort((a, b) => a.cmp(b)));
 			}
 			try {
-				const x1 = new Decimal(interval[0]);
-				const x2 = new Decimal(interval[1]);
-				const f1 = evaluatePoint(x1);
-				const f2 = evaluatePoint(x2);
-				// Check both subdivision points, including the terminal ends of clipped cells.
-				if (f1.abs().lessThan(tol)) {addRoot(x1);}
-				if (f2.abs().lessThan(tol)) {addRoot(x2);}
+				const cell = evaluateCell(new Decimal(interval[0]), new Decimal(interval[1]));
+				if (cell === undefined) {
+					continue;
+				}
+				const [x1, f1, x2, f2] = cell;
+				// Only zero-valued scan samples are roots without a sign-changing bracket.
+				// A small nonzero residual alone does not establish a root.
+				if (f1.isZero()) {addRoot(x1);}
+				if (f2.isZero()) {addRoot(x2);}
 
 				// Check for sign change
-				if (f1.times(f2).lessThan(0)) {
+				if (f1.times(f2).lt(0)) {
 					try {
 						let calculation: Root;
 						switch (this.method) {
@@ -499,16 +676,28 @@ export class FunctionSolver {
 								break;
 							}
 							case BRENT_METHOD: {
-								calculation = this.Brent(x1, x2);
+								calculation = this.Brent(x1, x2, f1, f2);
 								break;
 							}
 							default: {
-								calculation = this.Brent(x1, x2);
+								calculation = this.Brent(x1, x2, f1, f2);
 							}
 						}
 
-						if (calculation.converged) {addRoot(calculation.root);}
-						else if (calculation.iterations >= this.maxIters &&
+						if (calculation.converged) {
+							// Brent locates a root inside a sign-changing bracket. Its
+							// positional accuracy can be good even when a steep function
+							// has a large absolute residual. Compare against the initial
+							// bracket's function scale, while retaining a residual check
+							// that rejects poles and other discontinuities.
+							const scale = this.method === NEWTON_RAPHSON_METHOD
+								? new Decimal('1')
+								: Decimal.max(f1.abs(), f2.abs()).plus('1');
+							addRoot(calculation.root, scale,
+								this.method === NEWTON_RAPHSON_METHOD
+									? undefined
+									: { a: x1, b: x2, fa: f1, fb: f2 });
+						} else if (calculation.iterations >= this.maxIters &&
 							calculation.errorMsg !== message('differentSignsAtEndPointsRequired')) {
 							exhaustedRefinements++;
 						}
@@ -522,12 +711,12 @@ export class FunctionSolver {
 		try {
 			const lastPoint = bVal;
 			const fLast = evaluatePoint(lastPoint);
-			if (fLast.abs().lessThan(tol)) {addRoot(lastPoint);}
+			if (fLast.isZero()) {addRoot(lastPoint);}
 		} catch {}
 
 		if (exhaustedRefinements > 0) {
 			warn('solve.iterationLimit', message('rootIterationWarning', { count: String(exhaustedRefinements), iterations: String(this.maxIters) }));
 		}
-		return roots.sort((a, b) => a.comparedTo(b)).map(x => Expression.create(x));
+		return toExpressions(roots.sort((a, b) => a.cmp(b)));
 	}
 }

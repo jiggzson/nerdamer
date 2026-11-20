@@ -1,4 +1,4 @@
-import { mathFunctionRegistry, systemFunction } from '../../../dispatch';
+import { mathFunctionRegistry, registerAlias, systemFunction } from '../../../dispatch';
 
 import {
 	AND,
@@ -72,4 +72,7 @@ export function loadScriptingFunctions() {
 			usage: 'scripting',
 		}),
 	});
+
+	// The 1.x name.
+	registerAlias('IF', 'if', { deprecated: true });
 }

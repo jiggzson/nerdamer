@@ -192,6 +192,21 @@ describe('limit', () => {
 		});
 	});
 
+	describe('zero times infinity products', () => {
+		it('resolves log-like infinite factors by trying both L\'Hopital orientations', () => {
+			const cases: [string, number, 'left' | 'right'][] = [
+				['x*Ei(x)', 0, 'right'],
+				['x^2*Ei(x)', 0, 'right'],
+				['sin(x)*Ei(x)', 0, 'right'],
+				['(x-1)*Li(x)', 1, 'right'],
+				['(x-1)*Li(x)', 1, 'left'],
+			];
+			for (const [source, point, side] of cases) {
+				expect(limit(source, 'x', point, side).text()).toEqual('0');
+			}
+		});
+	});
+
 	describe('piecewise functions (abs, sign)', () => {
 		it('computes lim abs(x)/x as x->0+ = 1', () => {
 			expect(limit('abs(x)/x', 'x', 0, 'right').text()).toEqual(Expression.create(1).text());

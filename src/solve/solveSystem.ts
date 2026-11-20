@@ -36,8 +36,12 @@ interface PeriodicFamily {
 }
 
 function normalizeEquations(
-	equations: Vector | Array<ExpressionInput | Equation | string>
+	equations: Vector | Array<ExpressionInput | Equation | string> | ExpressionInput | Equation
 ): Expression[] {
+	// One equation may be given on its own, as in solveeqs(x=1).
+	if (!Vector.isVector(equations) && !Array.isArray(equations)) {
+		return [normalizeSolverExpression(equations)];
+	}
 	if (Vector.isVector(equations)) {
 		const result: Expression[] = [];
 		for (let i = 0; i < equations.count(); i++) {
@@ -396,7 +400,7 @@ function isSystemSolution(
  * underdetermined nonlinear system reaches numerical fallback.
  */
 export function solveSystem(
-	equations: Vector | Array<ExpressionInput | Equation | string>,
+	equations: Vector | Array<ExpressionInput | Equation | string> | ExpressionInput | Equation,
 	variables?: string[]
 ): Vector {
 	const expressions = normalizeEquations(equations);

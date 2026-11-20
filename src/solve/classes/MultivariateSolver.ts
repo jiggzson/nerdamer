@@ -378,11 +378,11 @@ export class MultivariateSolver {
 			let maxDiff = new Decimal(0);
 			for (let i = 0; i < root.length; i++) {
 				const diff = root[i].minus(prev[i]).abs();
-				if (diff.greaterThan(maxDiff)) {
+				if (diff.gt(maxDiff)) {
 					maxDiff = diff;
 				}
 			}
-			if (maxDiff.lessThan(this.dedupTol)) {
+			if (maxDiff.lt(this.dedupTol)) {
 				return true;
 			}
 		}
@@ -442,7 +442,7 @@ export class MultivariateSolver {
 			}
 			norm = norm.sqrt();
 
-			if (norm.lessThan(this.tolerance)) {
+			if (norm.lt(this.tolerance)) {
 				return x;
 			}
 
@@ -471,7 +471,7 @@ export class MultivariateSolver {
 			for (const fi of F) {
 				norm = norm.plus(fi.times(fi));
 			}
-			if (norm.sqrt().lessThan(this.tolerance)) {
+			if (norm.sqrt().lt(this.tolerance)) {
 				return x;
 			}
 		}

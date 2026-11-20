@@ -7,13 +7,11 @@ describe('public parser settings types', () => {
 	it('returns the value type associated with each setting key', () => {
 		const evaluate: boolean = Parser.get('EVALUATE');
 		const indexBase: number = Parser.get('INDEX_BASE');
-		const maxFracInt: bigint = Parser.get('MAX_FRAC_INT');
 		const language: Language = Parser.get('LANGUAGE');
 		const createdIndexBase: number = Parser.create().get('INDEX_BASE');
 
 		expect(typeof evaluate).toBe('boolean');
 		expect(typeof indexBase).toBe('number');
-		expect(typeof maxFracInt).toBe('bigint');
 		expect(typeof language).toBe('string');
 		expect(typeof createdIndexBase).toBe('number');
 	});
@@ -75,7 +73,6 @@ describe('public parser settings types', () => {
 	});
 
 	if (false) {
-		Parser.set({ MAX_FRAC_INT: 1000n });
 		// @ts-expect-error EVALUATE accepts Boolean values only.
 		Parser.set('EVALUATE', 1);
 		// @ts-expect-error INDEX_BASE accepts numeric values only.

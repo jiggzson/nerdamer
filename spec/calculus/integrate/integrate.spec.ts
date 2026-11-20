@@ -7,6 +7,12 @@ import { Pattern } from '../../../src/core/converters/Pattern';
 import { Expression } from '../../../src/core/classes/expression/Expression';
 import nerdamer from '../../../src/index';
 
+/** Wrapped-factor substitution of a product in x, integrating through the controller. */
+function wrapped(product: Expression): Expression | undefined {
+	const factors = product.elementsArray();
+	return tryIntegrateByWrappedFactorSubstitution(product, factors, 'x', integrate);
+}
+
 const text = (expr: string | number) => Expression.create(expr).text();
 
 describe('Integration table correctness', () => {
@@ -43,7 +49,7 @@ describe('Reciprocal logarithm regression', () => {
 	it('does not return a derivative-invalid antiderivative for 1/(x*log(x))', () => {
 		const integrand = Expression.create('1/(x*log(x))');
 		expect(tableOfIntegrals.lookup(new Pattern(integrand, ['x']), 0)).toBeUndefined();
-		expect(tryIntegrateByWrappedFactorSubstitution(integrand, integrand.elementsArray(), 'x')).toBeUndefined();
+		expect(wrapped(integrand)).toBeUndefined();
 		expect(matchProductSubstitution(integrand, 'x')).toBeUndefined();
 		const result = integrate(integrand, 'x');
 		const residual = diff(result, 'x').minus(integrand).simplify();
@@ -1382,6 +1388,9 @@ describe('Integration regressions', () => {
 
 		for (const [input, values] of cases) {
 			const antiderivative = nerdamer.integrate(input, 'x');
+			if (!Expression.isExpression(antiderivative)) {
+				throw new Error('Expected an Expression');
+			}
 			expect(antiderivative.isFunction('integrate')).toBe(false);
 			const residual = nerdamer.diff(antiderivative, 'x').minus(input).evaluate(values);
 			expect(residual.isNearlyZero()).toBe(true);
@@ -1624,7 +1633,7 @@ describe('PMInt algebraic quartic fallback', () => {
 describe('wrapped-factor substitution skips unrelated factors', () => {
 	it.each(['x*cos(x^2)', 'x*exp(x^2)'])('still integrates wrapped factors: %s', source => {
 		const value = Expression.create(source);
-		const result = tryIntegrateByWrappedFactorSubstitution(value, value.elementsArray(), 'x');
+		const result = wrapped(value);
 		expect(result).toBeDefined();
 		const derivative = diff(result!, 'x');
 		for (const x of [-2, -1, 0, 0.5, 1, 2]) {
@@ -1636,7 +1645,7 @@ describe('wrapped-factor substitution skips unrelated factors', () => {
 
 	it.each(['x*(x+1)', 'x*log(x)'])('rejects products without an eligible wrapped derivative: %s', source => {
 		const value = Expression.create(source);
-		expect(tryIntegrateByWrappedFactorSubstitution(value, value.elementsArray(), 'x')).toBeUndefined();
+		expect(wrapped(value)).toBeUndefined();
 	});
 });
 
@@ -1809,7 +1818,10 @@ describe('Hyperbolic substitution screening', () => {
 	it('skips derivative-pair searches across different arguments', () => {
 		const expr = Expression.create('cosh(2*x)*sinh(3*x)');
 		expect(matchProductSubstitution(expr, 'x')).toBeUndefined();
-		expect(integrate(expr, 'x').hasFunction('integrate', true)).toBe(true);
+		// Product-to-sum integrates it instead.
+		const antiderivative = integrate(expr, 'x');
+		expect(antiderivative.hasFunction('integrate', true)).toBe(false);
+		expect(diff(antiderivative, 'x').minus(expr).simplify().isZero()).toBe(true);
 	});
 
 	it('retains derivative pairs with a shared argument', () => {

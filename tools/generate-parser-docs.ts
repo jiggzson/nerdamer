@@ -10,7 +10,7 @@ import * as statisticsApi from '../src/api/statistics';
 import * as structuresApi from '../src/api/structures';
 import { registerNerdamerFunctions } from '../src/core/nerdamerFunctions';
 import { mathFunctionRegistry } from '../src/core/dispatch';
-import type { ParserRegistrationLevel, ParserUsage } from '../src/core/dispatch';
+import type { MathFunctionEntry, ParserRegistrationLevel, ParserUsage } from '../src/core/dispatch';
 
 registerNerdamerFunctions();
 
@@ -60,6 +60,8 @@ export interface ParserFunctionDocumentationEntry {
 	parameters?: ParserFunctionParameterDocumentation[];
 	examples?: ParserFunctionExampleDocumentation[];
 	canonicalName?: string;
+	/** Whether this name is a deprecated alias of `canonicalName`. */
+	deprecated?: boolean;
 	aliases?: string[];
 	directApi?: ParserFunctionDirectApi;
 }
@@ -95,39 +97,39 @@ const CATEGORY_MEMBERS: Record<ParserFunctionCategory, readonly string[]> = {
 		'cos', 'sin', 'tan', 'sec', 'csc', 'cot', 'acos', 'asin', 'atan', 'asec', 'acsc',
 		'acot', 'atan2', 'cosh', 'sinh', 'tanh', 'sech', 'csch', 'coth', 'acosh', 'asinh',
 		'atanh', 'asech', 'acsch', 'acoth',
+		'arccos', 'arcsin', 'arctan', 'arcsec', 'arccsc', 'arccot',
+		'arccosh', 'arcsinh', 'arctanh', 'arcsech', 'arccsch', 'arccoth',
 	],
 	Math: [
 		'abs', 'sqrt', 'nthroot', 'cbrt', 'subst', 'log', 'exp',
 		'delta', 'heaviside', 'hypot', 'fact', 'factorial', 'dfact', 'dfactorial', 'expand', 'round', 'significant', 'sign',
-		'floor', 'ceil', 'ceiling', 'trunc', 'mod', 'modinv', 'numeric', 'parens', 'count', 'size', 'contains',
+		'floor', 'ceil', 'ceiling', 'trunc', 'mod', 'modinv', 'powmod', 'binom', 'numeric', 'parens', 'count', 'size', 'vars', 'contains', 'is_in', 'append',
 		'max', 'min', 'radians', 'degrees', 'log10', 'step', 'rect', 'tri', 'continued_fraction', 'scientific',
 	],
 	Complex: ['imagpart', 'realpart', 'polarform', 'rectform', 'arg', 'phase', 'magnitude', 'csgn', 'conjugate'],
 	'Linear algebra': [
-		'matrix', 'imatrix', 'determinant', 'invert', 'transpose', 'augment', 'rref', 'nullspace', 'dot', 'cross', 'line',
+		'matrix', 'imatrix', 'determinant', 'invert', 'transpose', 'trace', 'rank', 'augment', 'rref', 'nullspace', 'dot', 'cross', 'line',
 	],
 	Polynomials: ['deg', 'content', 'coeffs', 'div', 'divide'],
-	Calculus: ['diff', 'integrate', 'limit', 'laplace', 'ilaplace', 'sum', 'product', 'defint', 'S', 'C'],
+	Calculus: ['diff', 'integrate', 'limit', 'laplace', 'ilaplace', 'ilt', 'sum', 'product', 'taylor', 'defint', 'S', 'C'],
 	Algebra: ['polyfactors', 'factor', 'pfactor', 'pfactord', 'simplify', 'partfrac', 'gcd', 'lcm', 'groebner', 'sqcomp'],
-	Solving: ['solve', 'solveeqs', 'realsolutions', 'roots'],
-	'Assumptions and sets': ['assume', 'forget', 'unassign'],
+	Solving: ['solve', 'solveeqs', 'solveEquations', 'realsolutions', 'roots'],
+	'Assumptions and sets': ['assume', 'forget', 'unassign', 'union', 'intersection', 'difference', 'intersects', 'issubset', 'is_subset'],
 	'Nerdamer Language': [
 		'evaluate', 'return', 'break', 'continue', 'and', 'or', 'not', 'xor', 'iferror', 'iserror',
-		'if', 'while', 'for', 'each', 'let', 'block',
+		'if', 'IF', 'while', 'for', 'each', 'let', 'block',
 	],
 	'Special functions': [
-		'isprime', 'fib', 'erf', 'erfc', 'gamma', 'sinc', 'Shi', 'Si', 'Chi', 'Ci', 'Ei', 'Li',
+		'isprime', 'nextprime', 'fib', 'erf', 'erfc', 'gamma', 'sinc', 'Shi', 'Si', 'Chi', 'Ci', 'Ei', 'Li',
 		'gamma_incomplete', 'gamma_incomplete_lower',
 	],
 	Statistics: ['mean', 'median', 'mode', 'smpvar', 'variance', 'smpstdev', 'stdev', 'zscore'],
 };
 
+// The registry records every alias (registerAlias). These groups document an alias the other
+// way round: factorial is the documented name, though factorial(x) is the call fact(x).
 const ALIAS_GROUPS = [
 	{ canonicalName: 'factorial', aliases: ['fact'] },
-	{ canonicalName: 'dfact', aliases: ['dfactorial'] },
-	{ canonicalName: 'ceil', aliases: ['ceiling'] },
-	{ canonicalName: 'arg', aliases: ['phase'] },
-	{ canonicalName: 'abs', aliases: ['magnitude'] },
 ] as const;
 
 const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
@@ -146,6 +148,7 @@ const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
 	coeffs: { package: 'nerdamer/algebra', name: 'coeffs' },
 	deg: { package: 'nerdamer/algebra', name: 'deg' },
 	diff: { package: 'nerdamer/calculus', name: 'diff' },
+	taylor: { package: 'nerdamer/calculus', name: 'taylor' },
 	integrate: { package: 'nerdamer/calculus', name: 'integrate' },
 	limit: { package: 'nerdamer/calculus', name: 'limit' },
 	laplace: { package: 'nerdamer/calculus', name: 'laplace' },
@@ -183,11 +186,67 @@ const DIRECT_API_BY_PARSER_NAME: Record<string, ParserFunctionDirectApi> = {
 	nullspace: { package: 'nerdamer/structures', name: 'nullspace' },
 	imatrix: { package: 'nerdamer/structures', name: 'imatrix' },
 	dot: { package: 'nerdamer/structures', name: 'dot' },
+	append: { package: 'nerdamer/structures', name: 'append' },
+	union: { package: 'nerdamer/structures', name: 'union' },
+	intersection: { package: 'nerdamer/structures', name: 'intersection' },
+	difference: { package: 'nerdamer/structures', name: 'difference' },
+	intersects: { package: 'nerdamer/structures', name: 'intersects' },
+	issubset: { package: 'nerdamer/structures', name: 'isSubset' },
 	cross: { package: 'nerdamer/structures', name: 'cross' },
 	assume: { package: 'nerdamer/assumptions', name: 'assume' },
 };
 
 const AUTHORED_DOCUMENTATION: Record<string, AuthoredParserFunctionDocumentation> = {
+	taylor: {
+		summary: 'Computes a finite exact Taylor polynomial when derivatives are available; otherwise retains the call symbolically.',
+		syntax: 'taylor(expression, variable, center, degree)',
+		parameters: [
+			{ name: 'expression', description: 'Expression to expand.' },
+			{ name: 'variable', description: 'Plain expansion variable.' },
+			{ name: 'center', description: 'Expansion center, independent of the expansion variable.' },
+			{ name: 'degree', description: 'Nonnegative integer maximum degree. Symbolic or high-cost requests remain unevaluated.' },
+		],
+		examples: [
+			{ input: "nerdamer('taylor(sin(x),x,0,5)').text()" },
+		],
+	},
+	binom: {
+		summary: 'Computes a binomial coefficient exactly for nonnegative integer n and integer k.',
+		syntax: 'binom(n, k)',
+		parameters: [
+			{ name: 'n', description: 'Nonnegative integer upper argument.' },
+			{ name: 'k', description: 'Integer lower argument. Values outside 0 through n return zero.' },
+		],
+		examples: [{ input: "nerdamer('binom(10,3)').text()", output: '120' }],
+	},
+	nextprime: {
+		summary: 'Returns the smallest prime strictly greater than an integer.',
+		syntax: 'nextprime(value)',
+		parameters: [{ name: 'value', description: 'Exact integer lower bound (exclusive).' }],
+		examples: [{ input: "nerdamer('nextprime(17)').text()", output: '19' }],
+	},
+	powmod: {
+		summary: 'Computes modular exponentiation exactly using BigInt arithmetic.',
+		syntax: 'powmod(base, exponent, modulus)',
+		parameters: [
+			{ name: 'base', description: 'Integer base.' },
+			{ name: 'exponent', description: 'Nonnegative integer exponent.' },
+			{ name: 'modulus', description: 'Positive integer modulus.' },
+		],
+		examples: [{ input: "nerdamer('powmod(3,1000,7)').text()", output: '4' }],
+	},
+	trace: {
+		summary: 'Returns the sum of the diagonal entries of a square matrix.',
+		syntax: 'trace(matrix)',
+		parameters: [{ name: 'matrix', description: 'Square Matrix.' }],
+		examples: [{ input: "nerdamer('trace(imatrix(3))').text()", output: '3' }],
+	},
+	rank: {
+		summary: 'Returns the number of linearly independent rows of a matrix.',
+		syntax: 'rank(matrix)',
+		parameters: [{ name: 'matrix', description: 'Matrix whose rank is requested.' }],
+		examples: [{ input: "nerdamer('rank(matrix([1,2],[2,4]))').text()", output: '1' }],
+	},
 	scientific: {
 		summary: 'Keeps an expression exact while requesting scientific notation with a fixed significant-digit count.',
 		syntax: 'scientific(value[, significantDigits])',
@@ -232,10 +291,11 @@ const AUTHORED_DOCUMENTATION: Record<string, AuthoredParserFunctionDocumentation
 	},
 	roots: {
 		summary: 'Returns legacy-style roots as a Vector, using the polynomial root solver for polynomial input.',
-		syntax: 'roots(expression[, variable])',
+		syntax: 'roots(expression[, variable[, method]])',
 		parameters: [
 			{ name: 'expression', description: 'Univariate polynomial or numeric constant whose roots should be returned.' },
 			{ name: 'variable', description: 'Optional polynomial variable.' },
+			{ name: 'method', description: 'Optional numerical polynomial algorithm: aberth (default) or jenkinstraub.' },
 		],
 		examples: [
 			{ input: "nerdamer('roots(x^2-1,x)').text()" },
@@ -359,14 +419,16 @@ const AUTHORED_DOCUMENTATION: Record<string, AuthoredParserFunctionDocumentation
 		],
 	},
 	solve: {
-		summary: 'Solves an expression or equation for a variable.',
-		syntax: 'solve(expressionOrEquation, variable)',
+		summary: 'Solves symbolically where possible; numerical fallback defaults to [-10,10] unless a supported form has inferred bounds.',
+		syntax: 'solve(expressionOrEquation, variable[, onInterval])',
 		parameters: [
 			{ name: 'expressionOrEquation', description: 'Expression or equation to solve.' },
 			{ name: 'variable', description: 'Variable to solve for.' },
+			{ name: 'onInterval', description: 'Optional Vector [lower,upper] of finite real numeric search bounds for the numerical function fallback only. Symbolic and polynomial solutions are not restricted.' },
 		],
 		examples: [
 			{ input: "nerdamer('solve(x^2-4,x)').text()" },
+			{ input: "nerdamer('solve(cos(x)-x,x,[0,2])').text()" },
 		],
 	},
 	matrix: {
@@ -430,6 +492,16 @@ const AUTHORED_DOCUMENTATION: Record<string, AuthoredParserFunctionDocumentation
 				input: "nerdamer('nullspace(matrix([1,2,3],[2,4,6]))').text()",
 				output: '[[-2, 1, 0], [-3, 0, 1]]',
 			},
+		],
+	},
+	vars: {
+		summary: 'Returns the distinct free variables of an expression as a Vector of symbolic expressions, sorted by name.',
+		syntax: 'vars(expression)',
+		parameters: [
+			{ name: 'expression', description: 'Expression from which to collect free symbolic variables.' },
+		],
+		examples: [
+			{ input: "nerdamer('vars(x+y)').text()", output: '[x, y]' },
 		],
 	},
 	size: {
@@ -512,9 +584,19 @@ function buildCategoryLookup(): Map<string, ParserFunctionCategory> {
 	return retval;
 }
 
-function buildAliasMetadata(registryNames: Set<string>) {
+function buildAliasMetadata(registryEntries: [string, MathFunctionEntry][]) {
+	const registryNames = new Set(registryEntries.map(([name]) => name));
 	const aliasToCanonical = new Map<string, string>();
 	const canonicalToAliases = new Map<string, string[]>();
+
+	// Aliases name their function in the registry itself, unless a group documents them.
+	const grouped = new Set<string>(ALIAS_GROUPS.flatMap(group => [group.canonicalName, ...group.aliases]));
+	for (const [name, entry] of registryEntries) {
+		if (entry.aliasOf && !grouped.has(name)) {
+			aliasToCanonical.set(name, entry.aliasOf);
+			canonicalToAliases.set(entry.aliasOf, [...(canonicalToAliases.get(entry.aliasOf) ?? []), name].sort(compareNames));
+		}
+	}
 
 	for (const group of ALIAS_GROUPS) {
 		if (!registryNames.has(group.canonicalName)) {
@@ -528,7 +610,7 @@ function buildAliasMetadata(registryNames: Set<string>) {
 			}
 			aliasToCanonical.set(alias, group.canonicalName);
 		}
-		canonicalToAliases.set(group.canonicalName, aliases);
+		canonicalToAliases.set(group.canonicalName, [...(canonicalToAliases.get(group.canonicalName) ?? []), ...aliases].sort(compareNames));
 	}
 
 	return { aliasToCanonical, canonicalToAliases };
@@ -576,7 +658,7 @@ export function buildParserFunctionDocumentation(): ParserFunctionDocumentationA
 		.filter(([, entry]) => entry.level === 'system')
 		.sort(([a], [b]) => compareNames(a, b));
 	const registryNames = new Set(registryEntries.map(([name]) => name));
-	const { aliasToCanonical, canonicalToAliases } = buildAliasMetadata(registryNames);
+	const { aliasToCanonical, canonicalToAliases } = buildAliasMetadata(registryEntries);
 
 	const uncategorized = registryEntries
 		.map(([name]) => name)
@@ -627,6 +709,9 @@ export function buildParserFunctionDocumentation(): ParserFunctionDocumentationA
 		}
 		if (canonicalName) {
 			retval.canonicalName = canonicalName;
+		}
+		if (entry.deprecated) {
+			retval.deprecated = true;
 		}
 		const aliases = canonicalToAliases.get(name);
 		if (aliases) {

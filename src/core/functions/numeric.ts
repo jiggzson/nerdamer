@@ -82,10 +82,23 @@ export function gammaLN(z: number): number {
  * @returns
  */
 export function gamma(z: number): number {
-	if (isInt(z) && z > 1) {
-		return factorial(z - 1);
+	let retval: number;
+	// Zero and the negative integers are poles, as in the symbolic gamma.
+	if (z <= 0 && isInt(z)) {
+		retval = NaN;
+	} else if (isInt(z) && z > 1) {
+		retval = factorial(z - 1);
 	}
-	return Math.exp(gammaLN(z));
+	// Use the reflection gamma(z) = pi / (sin(pi*z) * gamma(1-z)) directly. Taking
+	// exp(gammaLN(z)) here would lose the sign, since gamma is negative on half of
+	// the negative axis.
+	else if (z < 0.5) {
+		retval = Math.PI / (Math.sin(Math.PI * z) * gamma(1 - z));
+	} else {
+		retval = Math.exp(gammaLN(z));
+	}
+
+	return retval;
 }
 
 /**
@@ -126,10 +139,30 @@ export function erfc(x: number): number {
  * @returns
  */
 export function erf(x: number) {
+	const SERIES_CUTOFF = 0.5;
+	const SERIES_RELATIVE_TOLERANCE = 1e-17;
 	if (x === 0) {
 		return 0;
 	}
-	return 1 - erfc(x);
+
+	let retval: number;
+	// Near zero, 1 - erfc(x) cancels, so sum the Maclaurin series instead:
+	// erf(x) = 2/sqrt(pi) * sum((-1)^n * x^(2n+1) / (n! * (2n+1))).
+	if (Math.abs(x) < SERIES_CUTOFF) {
+		const xsq = x * x;
+		// The running term (-1)^n * x^(2n+1) / n!
+		let term = x;
+		let sum = x;
+		for (let n = 1; Math.abs(term) > Math.abs(sum) * SERIES_RELATIVE_TOLERANCE; n++) {
+			term *= -xsq / n;
+			sum += term / (2 * n + 1);
+		}
+		retval = (2 / Math.sqrt(Math.PI)) * sum;
+	} else {
+		retval = 1 - erfc(x);
+	}
+
+	return retval;
 }
 
 /**
@@ -308,14 +341,14 @@ export function product(...args: number[]) {
  * Gets the product given a number range start and finish
  *
  * @param start The start of the range
- * @param end The end of the range
+ * @param end The end of the range, included when a step lands on it
  * @param step The increment step
+ * @returns The product of start, start + step, ... up to end, or 1 for an empty range
  */
 export function productInRange(start: number, end: number, step = 1) {
-	let retval = start;
-	let n = start;
-	while (n < end) {
-		n += step;
+	let retval = 1;
+	// Stop before passing end: productInRange(1, 4, 2) is 1*3, not 1*3*5.
+	for (let n = start; n <= end; n += step) {
 		retval *= n;
 	}
 

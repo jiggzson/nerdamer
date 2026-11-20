@@ -93,6 +93,12 @@ export function coeffs(
 		return cObj;
 	}
 
+	// A power of a product, such as (x*y)^2, keeps its power outside the factors, and the
+	// factors below are read without it. Expanding distributes the power over the factors.
+	if (x.isProduct() && !x.getPower().eq(one())) {
+		x = expand(x);
+	}
+
 	// First sanitize the expression
 	if (x.isProduct()) {
 		let coefficient = one();

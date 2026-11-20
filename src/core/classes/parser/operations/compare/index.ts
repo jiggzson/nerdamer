@@ -1,15 +1,21 @@
+import Decimal from 'decimal.js';
+
 import { message, UnsupportedOperationError } from '../../../../errors';
+import { DEFAULT_SERIES_GUARD_DIGITS } from '../../../../functions/decimal';
 import { toCommonDenominator } from '../../../../functions/rationalNormalization';
 import { compareSymbolRelation, resolveAssumption, getSymbolRelations, hasAssumptions } from '../../../assumption/assume';
 import { normalizeRelation } from '../../../assumption/symbolRelation';
 import { Expression } from '../../../expression/Expression';
 import { one, zero } from '../../../expression/shortcuts';
+import { nodeCount } from '../../../expression/traversal';
+import { Rational } from '../../../rational/Rational';
 import { canonicalizeRadicals } from '../multiply';
 import { subtract } from '../subtract';
 
 import { compareRationalPower } from './rationalPower';
 
 import type { ExpressionInput } from '../../../../types';
+import type { ParserValuesObject } from '../../types';
 
 export { assume } from '../../../assumption/assume';
 
@@ -489,15 +495,62 @@ export function proveZeroRelation(
  * equality, this function returns `false`. Use the corresponding `Assumption` relation
  * directly when a caller needs to distinguish a disproved relation from an unknown one.
  */
+/**
+ * Orders a comparison with a real infinity, which the subtraction below can't do:
+ * `Inf-2` isn't a number and `Inf-Inf` is undefined. Gives the sign of `a - b` when
+ * either side is `±Inf` and the other is `±Inf` or a constant, otherwise undefined.
+ */
+function compareInfinity(a: Expression, b: Expression): Sign | undefined {
+	let retval: Sign | undefined;
+	if (a.isInf() || b.isInf()) {
+		const direction = (x: Expression): Sign => (x.getMultiplier().sign() < 0 ? -1 : 1);
+		if (a.isInf() && b.isInf()) {
+			retval = Math.sign(direction(a) - direction(b)) as Sign;
+		} else {
+			const other = a.isInf() ? b : a;
+			// A variable or another infinite term, such as x*Inf, could be anything.
+			if (other.variables().length === 0 && !other.isInfinite()) {
+				retval = a.isInf() ? direction(a) : (-direction(b) as Sign);
+			}
+		}
+	}
+	return retval;
+}
+
 export function equal(a: ExpressionInput, b: ExpressionInput): boolean {
 	a = Expression.create(a);
 	b = Expression.create(b);
 
+	const infinite = compareInfinity(a, b);
+	if (infinite !== undefined) {
+		return infinite === 0;
+	}
+
 	const sameVariable =
 		a.isPlainVariable() && b.isPlainVariable() && a.value === b.value;
+	const constant = a.variables().length === 0 && b.variables().length === 0;
 	let retval: boolean;
 
-	if (a.isComplex() && b.isComplex()) {
+	// Two values without variables that differ numerically, by far more than rounding
+	// allows, aren't equal. Assumptions only describe variables, so they can't change that,
+	// and the costly symbolic comparison below is skipped. Equality still needs the proof.
+	// Evaluating costs a few milliseconds, more than the symbolic comparison of small
+	// values, so only large ones such as Cardano roots are checked this way.
+	if (
+		constant &&
+		!(a.isNUM() && b.isNUM()) &&
+		nodeCount(a) + nodeCount(b) >= NUMERIC_CHECK_SIZE
+	) {
+		const first = numericParts(a);
+		const second = first && numericParts(b);
+		if (first && second && partsDistinct(first, second)) {
+			return false;
+		}
+	}
+
+	// Two complex numbers compare by their parts. Only expressions without variables can
+	// have numeric parts, and splitting a large expression is costly, so check that first.
+	if (constant && a.isComplex() && b.isComplex()) {
 		const realA = a.realPart();
 		const imaginaryA = a.imagPart();
 		const realB = b.realPart();
@@ -543,6 +596,71 @@ export function equal(a: ExpressionInput, b: ExpressionInput): boolean {
 	}
 
 	return retval;
+}
+
+/** The combined node count from which {@link equal} rules out equality numerically first. */
+const NUMERIC_CHECK_SIZE = 40;
+
+/** The guard digits of the two evaluations in {@link numericParts}. */
+const GUARD_DIGITS = [DEFAULT_SERIES_GUARD_DIGITS, DEFAULT_SERIES_GUARD_DIGITS + 20];
+
+/**
+ * Evaluates x with guard digits, by default at two precisions, giving its real and
+ * imaginary parts at each, or undefined when it doesn't evaluate to a number. A difference
+ * that cancellation produces changes with the precision, so comparing both tells it from
+ * a real one.
+ *
+ * @param values - Values to substitute, such as a family's integer index.
+ * @param guards - The guard digits of each evaluation. One precision is cheaper but
+ * doesn't detect cancellation.
+ */
+export function numericParts(
+	x: Expression,
+	values?: ParserValuesObject,
+	guards: number[] = GUARD_DIGITS
+): [Decimal, Decimal][] | undefined {
+	let retval: [Decimal, Decimal][] | undefined = [];
+	const precision = Rational.getPrecision();
+	try {
+		for (const digits of guards) {
+			Rational.set({ precision: precision + digits });
+			const evaluated = x.evaluate(values);
+			const re = evaluated.realPart();
+			const im = evaluated.imagPart();
+			if (!re.isNUM() || !im.isNUM()) {
+				retval = undefined;
+				break;
+			}
+			retval.push([re.getMultiplier().toDecimal(), im.getMultiplier().toDecimal()]);
+		}
+	} catch {
+		// Values that don't evaluate keep the symbolic comparison.
+		retval = undefined;
+	} finally {
+		Rational.set({ precision });
+	}
+	return retval;
+}
+
+/**
+ * Whether two values from {@link numericParts} certainly differ: at every precision they
+ * differ by far more than rounding allows, and by the same amount.
+ */
+export function partsDistinct(first: [Decimal, Decimal][], second: [Decimal, Decimal][]): boolean {
+	const margin = new Decimal(10).pow(10 - Decimal.precision);
+	const distances = first.map(([re1, im1], k) => {
+		const [re2, im2] = second[k];
+		const size = Decimal.max(re1.abs(), im1.abs(), re2.abs(), im2.abs(), 1);
+		const distance = re1.minus(re2).abs().plus(im1.minus(im2).abs());
+		return distance.gt(margin.times(size)) ? distance : undefined;
+	});
+	const last = distances[distances.length - 1];
+	return (
+		last !== undefined &&
+		distances.every(
+			distance => distance !== undefined && distance.minus(last).abs().lte(last.times(margin))
+		)
+	);
 }
 
 /**
@@ -655,9 +773,18 @@ function compareOrdered(
 	const strict = relation === 'gt' || relation === 'lt';
 	const sameVariable = left.isPlainVariable() && right.isPlainVariable()
 		&& left.value === right.value;
+	const infinite = compareInfinity(left, right);
 	let retval: boolean;
 
-	if (!strict && sameVariable) {
+	if (infinite !== undefined) {
+		const holds = {
+			gt: infinite === 1,
+			gte: infinite !== -1,
+			lt: infinite === -1,
+			lte: infinite !== 1,
+		};
+		retval = holds[relation];
+	} else if (!strict && sameVariable) {
 		retval = true;
 	} else {
 		const assumed = compareAssumptions(left, right, relation);

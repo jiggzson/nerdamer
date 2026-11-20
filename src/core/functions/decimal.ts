@@ -2,6 +2,7 @@ import Decimal from 'decimal.js';
 
 import { Complex } from '../classes/complex/Complex';
 import { message } from '../errors';
+import { precisionBlock } from '../Settings';
 
 import { factorial } from './bigint/bigint';
 
@@ -14,13 +15,17 @@ export const EULER_GAMMA: Decimal = new Decimal(
 	'0.5772156649015328606065120900824024310421593359399235988057672348848677267776646709369470632917467495'
 );
 
-const DEFAULT_SERIES_GUARD_DIGITS = 8;
+export const DEFAULT_SERIES_GUARD_DIGITS = 8;
 const MIN_PRECISION_SERIES_ITERATIONS = 1000;
 const SERIES_ITERATIONS_PER_PRECISION_DIGIT = 8;
 const DECIMAL_SINC_SERIES_CUTOFF = '1e-8';
 const OSCILLATORY_ASYMPTOTIC_CUTOFF = 1e9;
 const RATIONAL_APPROXIMATION_CUTOFF = 4;
 const ASYMPTOTIC_APPROXIMATION_CUTOFF = 8;
+/** erf/erfc switch from the power series to the erfc continued fraction at this |x|. */
+const ERFC_FRACTION_CUTOFF = 3;
+/** Digits 1 - erf(x) can lose below ERFC_FRACTION_CUTOFF: -log10(erfc(3)) ≈ 4.66. Recompute if the cutoff changes. */
+const ERFC_CANCELLATION_DIGITS = 5;
 const EXPONENTIAL_ASYMPTOTIC_CUTOFF = 40;
 const SERIES_MAX_ITERATIONS = 200;
 const ASYMPTOTIC_MAX_TERMS = 100;
@@ -32,8 +37,7 @@ function getSeriesError(guardDigits = DEFAULT_SERIES_GUARD_DIGITS): Decimal {
 
 function gammaSpouge(x: Decimal): Decimal {
 	const precision = Decimal.precision;
-	Decimal.set({ precision: Math.floor(precision * 1.45) });
-	try {
+	return precisionBlock(Math.floor(precision * 1.45), () => {
 		const n = precision;
 		const coeffs = calcCoeffs(n);
 		let accm = coeffs[0];
@@ -42,72 +46,87 @@ function gammaSpouge(x: Decimal): Decimal {
 		}
 		accm = accm.times(Decimal.exp(x.plus(n).neg())).times(Decimal.pow(x.plus(n), x.plus(0.5)));
 		return accm.div(x);
-	} finally {
-		Decimal.set({ precision });
-	}
+	});
 }
 
-export function erf(x: DecimalType) {
-	x = new Decimal(x);
-	const pi = Decimal.acos(-1);
-	const twoOverSqrtPi = new Decimal(2).div(pi.sqrt());
-	const error = getSeriesError();
-	const sgn = Decimal.sign(x);
-	x = x.abs();
-
-	if (x.isZero()) {
-		return new Decimal(0);
-	}
-
-	if (x.lt(2)) {
-		let sum = new Decimal(0);
-		let k = 0;
-		let dx = x;
-		const max = Math.max(MIN_PRECISION_SERIES_ITERATIONS, Decimal.precision * SERIES_ITERATIONS_PER_PRECISION_DIGIT);
-		while (dx.gte(error)) {
-			const num = new Decimal(-1).pow(k).times(x.pow(2 * k + 1));
-			const den = new Decimal(2 * k + 1).times(String(factorial(k)));
-			const result = sum.plus(num.div(den));
-			dx = result.minus(sum).abs();
-			sum = result;
-			k++;
-			if (k > max) {
+/**
+ * Evaluates erfc(x) for x >= ERFC_FRACTION_CUTOFF by the continued fraction
+ * erfc(x) = e^(-x^2)/sqrt(pi) * 1/(x + (1/2)/(x + 1/(x + (3/2)/(x + ...)))),
+ * using the modified Lentz algorithm. Unlike 1 - erf(x), it keeps full relative
+ * precision when the result is tiny.
+ */
+function erfcFraction(x: Decimal): Decimal {
+	const precision = Decimal.precision;
+	const retval = precisionBlock(precision + DEFAULT_SERIES_GUARD_DIGITS, () => {
+		const tolerance = getSeriesError();
+		const tiny = new Decimal(10).pow(-2 * Decimal.precision);
+		const maxIterations = Math.max(MIN_PRECISION_SERIES_ITERATIONS, precision * SERIES_ITERATIONS_PER_PRECISION_DIGIT);
+		let f = x;
+		let c = x;
+		let d = new Decimal(0);
+		for (let n = 1; n <= maxIterations; n++) {
+			const a = new Decimal(n).div(2);
+			d = x.plus(a.times(d));
+			if (d.isZero()) {
+				d = tiny;
+			}
+			c = x.plus(a.div(c));
+			if (c.isZero()) {
+				c = tiny;
+			}
+			d = new Decimal(1).div(d);
+			const delta = c.times(d);
+			f = f.times(delta);
+			if (delta.minus(1).abs().lt(tolerance)) {
+				break;
+			}
+			if (n === maxIterations) {
 				throw new Error(message('erfConvergenceFailed'));
 			}
 		}
-		let retval = Decimal.min(twoOverSqrtPi.times(sum), 1);
-		if (sgn === -1) {
-			retval = retval.neg();
-		}
-		return retval;
-	}
+		return x.times(x).neg().exp().div(Decimal.acos(-1).sqrt().times(f));
+	});
+	return retval.toSignificantDigits(precision);
+}
 
-	// Asymptotic expansion of erfc(x) for larger |x|:
-	// erfc(x) ~ exp(-x^2)/(sqrt(pi)*x) * (1 - 1/(2x^2) + 3/(4x^4) - 15/(8x^6) + ...)
-	const xx = x.mul(x);
-	const twoX2 = xx.mul(2);
-	let term = new Decimal(1);
-	let series = term;
-	let best = term.abs();
-	const max = Math.max(MIN_PRECISION_SERIES_ITERATIONS, Decimal.precision * SERIES_ITERATIONS_PER_PRECISION_DIGIT);
-	for (let n = 1; n < max; n++) {
-		term = term.mul(-(2 * n - 1)).div(twoX2);
-		const at = term.abs();
-		if (at.gt(best)) {
-			break;
-		}
-		best = at;
-		series = series.plus(term);
-		if (at.lt(error)) {
-			break;
-		}
+/**
+ * Computes the error function erf(x).
+ *
+ * Below ERFC_FRACTION_CUTOFF this is the power series shared with erfComplex. Above it,
+ * the series loses too many digits to cancellation, so erf(x) = 1 - erfc(x) is used.
+ */
+export function erf(x: DecimalType): Decimal {
+	const d: Decimal = new Decimal(x);
+	if (d.isZero()) {
+		return new Decimal(0);
 	}
-	const erfc = x.neg().mul(x).exp().div(pi.sqrt().mul(x)).times(series);
-	let retval = new Decimal(1).minus(erfc);
-	if (sgn === -1) {
-		retval = retval.neg();
+	if (d.isNeg()) {
+		return erf(d.neg()).neg();
 	}
-	return retval;
+	if (d.lt(ERFC_FRACTION_CUTOFF)) {
+		return erfComplex(new Complex(d)).re.toSignificantDigits(Decimal.precision);
+	}
+	return new Decimal(1).minus(erfcFraction(d));
+}
+
+/**
+ * Computes the complementary error function erfc(x) = 1 - erf(x), keeping full relative
+ * precision when the result is tiny.
+ */
+export function erfc(x: DecimalType): Decimal {
+	const d: Decimal = new Decimal(x);
+	if (d.isNeg()) {
+		return new Decimal(2).minus(erfc(d.neg()));
+	}
+	if (d.gte(ERFC_FRACTION_CUTOFF)) {
+		return erfcFraction(d);
+	}
+	// 1 - erf(x) cancels up to ERFC_CANCELLATION_DIGITS here, so compute erf with that many more.
+	const precision = Decimal.precision;
+	const retval = precisionBlock(precision + ERFC_CANCELLATION_DIGITS + DEFAULT_SERIES_GUARD_DIGITS, () => {
+		return new Decimal(1).minus(erf(d));
+	});
+	return retval.toSignificantDigits(precision);
 }
 
 /**
@@ -119,9 +138,7 @@ export function erfComplex(z: Complex): Complex {
 	const magnitudeSquared = z.absSquared();
 	// High powers in the alternating series can cancel substantially.
 	const guardDigits = Math.ceil(magnitudeSquared.toNumber() / Math.LN10) + 12;
-	Decimal.set({ precision: precision + guardDigits });
-	let retval = new Complex(0);
-	try {
+	const retval = precisionBlock(precision + guardDigits, () => {
 		const zSquared = z.times(z);
 		const scale = new Decimal(2).div(Decimal.acos(-1).sqrt());
 		const tolerance = new Decimal(10).pow(-(precision + guardDigits - 4));
@@ -131,22 +148,28 @@ export function erfComplex(z: Complex): Complex {
 		for (let n = 1; n <= maxIterations; n++) {
 			term = term.times(zSquared).scale(new Decimal(-1).div(n));
 			const delta = term.scale(new Decimal(1).div(2 * n + 1));
-			sum = sum.add(delta);
-			if (delta.abs().lte(tolerance.mul(Decimal.max(1, sum.abs())))) {
+			sum = sum.plus(delta);
+			if (delta.abs().lte(tolerance.times(Decimal.max(1, sum.abs())))) {
 				break;
 			}
 			if (n === maxIterations) {
 				throw new Error(message('erfConvergenceFailed'));
 			}
 		}
-		retval = sum.scale(scale);
-	} finally {
-		Decimal.set({ precision });
-	}
+		return sum.scale(scale);
+	});
 	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
 }
 
+// The Spouge coefficients depend only on n and the working precision, and computing
+// them is most of the cost of gamma, so keep the most recent set.
+let spougeCache: { key: string; coeffs: Decimal[] } | undefined;
+
 function calcCoeffs(n: number) {
+	const key = `${n}:${Decimal.precision}:${Decimal.rounding}`;
+	if (spougeCache?.key === key) {
+		return spougeCache.coeffs;
+	}
 	const c: Decimal[] = [];
 	let kFact = new Decimal(1);
 	// Get pi
@@ -160,6 +183,7 @@ function calcCoeffs(n: number) {
 		kFact = kFact.times(-k);
 	}
 
+	spougeCache = { key, coeffs: c };
 	return c;
 }
 // https://math.stackexchange.com/questions/2204020/definition-of-the-gamma-function-for-non-integer-negative-values
@@ -206,34 +230,47 @@ export function gamma(x: DecimalType) {
  */
 export function gammaComplex(z: Complex): Complex {
 	const precision = Decimal.precision;
-	Decimal.set({ precision: Math.floor(precision * 1.45) });
-	try {
+	return precisionBlock(Math.floor(precision * 1.45), () => {
 		const one = new Complex(1);
 		const pi = Decimal.acos(-1);
 		// Reflection avoids evaluating the approximation near negative poles.
 		if (z.re.lt('0.5')) {
 			const piZ = z.scale(pi);
 			const sinPiZ = new Complex(
-				piZ.re.sin().mul(piZ.im.cosh()),
-				piZ.re.cos().mul(piZ.im.sinh())
+				piZ.re.sin().times(piZ.im.cosh()),
+				piZ.re.cos().times(piZ.im.sinh())
 			);
-			return new Complex(pi).div(sinPiZ.times(gammaComplex(one.sub(z))));
+			return new Complex(pi).div(sinPiZ.times(gammaComplex(one.minus(z))));
 		}
 
 		const n = precision;
 		const coefficients = calcCoeffs(n);
 		let sum = new Complex(coefficients[0]);
 		for (let k = 1; k < n; k++) {
-			sum = sum.add(new Complex(coefficients[k]).div(z.add(new Complex(k))));
+			sum = sum.plus(new Complex(coefficients[k]).div(z.plus(new Complex(k))));
 		}
-		const shifted = z.add(new Complex(n));
-		return shifted.pow(z.add(new Complex(0.5)))
+		const shifted = z.plus(new Complex(n));
+		return shifted.pow(z.plus(new Complex(0.5)))
 			.times(shifted.neg().exp())
 			.times(sum)
 			.div(z);
-	} finally {
-		Decimal.set({ precision });
-	}
+	});
+}
+
+/**
+ * Computes pi^x at the configured precision.
+ *
+ * Raising a rounded pi to x multiplies its rounding error by |x|, so pi is computed with
+ * about log10|x| extra digits first (the digit count of |x|'s integer part, plus guard digits).
+ */
+export function piPower(x: DecimalType): Decimal {
+	const d: Decimal = new Decimal(x);
+	const precision = Decimal.precision;
+	const extraDigits = d.abs().trunc().toFixed().length + DEFAULT_SERIES_GUARD_DIGITS;
+	const retval = precisionBlock(precision + extraDigits, () => {
+		return Decimal.acos(-1).pow(d);
+	});
+	return retval.toSignificantDigits(precision);
 }
 
 export function sinc(x: DecimalType): Decimal {
@@ -243,13 +280,49 @@ export function sinc(x: DecimalType): Decimal {
 	}
 	const ax: Decimal = d.abs();
 	if (ax.lt(DECIMAL_SINC_SERIES_CUTOFF)) {
-		const x2: Decimal = d.mul(d);
+		const x2: Decimal = d.times(d);
 		return new Decimal(1)
 			.minus(x2.div(6))
-			.plus(x2.mul(x2).div(120))
-			.minus(x2.mul(x2).mul(x2).div(5040));
+			.plus(x2.times(x2).div(120))
+			.minus(x2.times(x2).times(x2).div(5040));
 	}
 	return d.sin().div(d);
+}
+
+/**
+ * The |x| above which e^(-2|x|) is below the working precision, so sinh, cosh and tanh
+ * follow from e^|x| alone. decimal.js's own sinh/cosh/tanh don't return for large |x|
+ * (from about 1e6), while its exp does.
+ */
+function hyperbolicCutoff(): Decimal {
+	return new Decimal(Decimal.precision + DEFAULT_SERIES_GUARD_DIGITS)
+		.times(Decimal.ln(10))
+		.div(2);
+}
+
+export function sinh(x: DecimalType): Decimal {
+	const d: Decimal = new Decimal(x);
+	if (d.abs().gt(hyperbolicCutoff())) {
+		const half: Decimal = d.abs().exp().div(2);
+		return d.isNeg() ? half.neg() : half;
+	}
+	return d.sinh();
+}
+
+export function cosh(x: DecimalType): Decimal {
+	const d: Decimal = new Decimal(x);
+	if (d.abs().gt(hyperbolicCutoff())) {
+		return d.abs().exp().div(2);
+	}
+	return d.cosh();
+}
+
+export function tanh(x: DecimalType): Decimal {
+	const d: Decimal = new Decimal(x);
+	if (d.abs().gt(hyperbolicCutoff())) {
+		return new Decimal(d.isNeg() ? -1 : 1);
+	}
+	return d.tanh();
 }
 
 export function Si(x: DecimalType): Decimal {
@@ -265,20 +338,20 @@ export function Si(x: DecimalType): Decimal {
 	function polevl(y: Decimal, coef: Decimal[]): Decimal {
 		let ans: Decimal = coef[0];
 		for (let i = 1; i < coef.length; i++) {
-			ans = ans.mul(y).plus(coef[i]);
+			ans = ans.times(y).plus(coef[i]);
 		}
 		return ans;
 	}
 	function p1evl(y: Decimal, coef: Decimal[]): Decimal {
 		let ans: Decimal = y.plus(coef[0]);
 		for (let i = 1; i < coef.length; i++) {
-			ans = ans.mul(y).plus(coef[i]);
+			ans = ans.times(y).plus(coef[i]);
 		}
 		return ans;
 	}
 	if (d.gt(OSCILLATORY_ASYMPTOTIC_CUTOFF)) {
 		const halfPi: Decimal = Decimal.acos(-1).div(2);
-		return sign.mul(halfPi.minus(d.cos().div(d)));
+		return sign.times(halfPi.minus(d.cos().div(d)));
 	}
 	if (d.lte(RATIONAL_APPROXIMATION_CUTOFF)) {
 		const SN: Decimal[] = [
@@ -297,13 +370,13 @@ export function Si(x: DecimalType): Decimal {
 			new Decimal('1.42085239326149893930e-2'),
 			new Decimal('9.99999999999999996984e-1'),
 		];
-		const z: Decimal = d.mul(d);
-		const s: Decimal = d.mul(polevl(z, SN)).div(polevl(z, SD));
-		return sign.mul(s);
+		const z: Decimal = d.times(d);
+		const s: Decimal = d.times(polevl(z, SN)).div(polevl(z, SD));
+		return sign.times(s);
 	}
 	const s: Decimal = d.sin();
 	const c: Decimal = d.cos();
-	const z: Decimal = new Decimal(1).div(d.mul(d));
+	const z: Decimal = new Decimal(1).div(d.times(d));
 	let f: Decimal;
 	let g: Decimal;
 	if (d.lt(ASYMPTOTIC_APPROXIMATION_CUTOFF)) {
@@ -344,8 +417,8 @@ export function Si(x: DecimalType): Decimal {
 			new Decimal('2.02659182086343991969e-6'),
 			new Decimal('7.82579218933534490868e-9'),
 		];
-		f = polevl(z, FN4).div(d.mul(p1evl(z, FD4)));
-		g = z.mul(polevl(z, GN4)).div(p1evl(z, GD4));
+		f = polevl(z, FN4).div(d.times(p1evl(z, FD4)));
+		g = z.times(polevl(z, GN4)).div(p1evl(z, GD4));
 	} else {
 		const FN8: Decimal[] = [
 			new Decimal('4.55880873470465315206e-1'),
@@ -390,11 +463,11 @@ export function Si(x: DecimalType): Decimal {
 			new Decimal('3.87830166023954706752e-12'),
 			new Decimal('3.14040098946363335242e-15'),
 		];
-		f = polevl(z, FN8).div(d.mul(p1evl(z, FD8)));
-		g = z.mul(polevl(z, GN8)).div(p1evl(z, GD8));
+		f = polevl(z, FN8).div(d.times(p1evl(z, FD8)));
+		g = z.times(polevl(z, GN8)).div(p1evl(z, GD8));
 	}
 	const halfPi: Decimal = Decimal.acos(-1).div(2);
-	return sign.mul(halfPi.minus(f.mul(c)).minus(g.mul(s)));
+	return sign.times(halfPi.minus(f.times(c)).minus(g.times(s)));
 }
 
 export function Shi(x: DecimalType): Decimal {
@@ -411,17 +484,17 @@ export function Shi(x: DecimalType): Decimal {
 		for (let iter = 0; iter < SERIES_MAX_ITERATIONS; iter++) {
 			const a: number = 2 * n + 1;
 			term = term
-				.mul(ax)
-				.mul(ax)
-				.mul(a)
-				.div(new Decimal(a + 2).mul(a + 2).mul(a + 1));
+				.times(ax)
+				.times(ax)
+				.times(a)
+				.div(new Decimal(a + 2).times(a + 2).times(a + 1));
 			sum = sum.plus(term);
 			n++;
 			if (term.abs().lt(getSeriesError())) {
 				break;
 			}
 		}
-		return sign.mul(sum);
+		return sign.times(sum);
 	}
 	function EiLocal(y: Decimal): Decimal {
 		if (y.isZero()) {
@@ -432,7 +505,7 @@ export function Shi(x: DecimalType): Decimal {
 			let sum: Decimal = new Decimal(1);
 			let best: Decimal = term.abs();
 			for (let n = 1; n < ASYMPTOTIC_MAX_TERMS; n++) {
-				term = term.mul(n).div(y);
+				term = term.times(n).div(y);
 				const at: Decimal = term.abs();
 				if (at.gt(best)) {
 					break;
@@ -443,15 +516,15 @@ export function Shi(x: DecimalType): Decimal {
 					break;
 				}
 			}
-			return y.exp().mul(sum).div(y);
+			return y.exp().times(sum).div(y);
 		}
 		let term: Decimal = y;
 		let sum: Decimal = term;
 		for (let k = 1; k < POWER_SERIES_MAX_TERMS; k++) {
 			term = term
-				.mul(y)
-				.mul(k)
-				.div(new Decimal(k + 1).mul(k + 1));
+				.times(y)
+				.times(k)
+				.div(new Decimal(k + 1).times(k + 1));
 			sum = sum.plus(term);
 			if (term.abs().lt(getSeriesError())) {
 				break;
@@ -473,14 +546,14 @@ export function Ci(x: DecimalType): Decimal {
 	function polevl(y: Decimal, coef: Decimal[]): Decimal {
 		let ans: Decimal = coef[0];
 		for (let i = 1; i < coef.length; i++) {
-			ans = ans.mul(y).plus(coef[i]);
+			ans = ans.times(y).plus(coef[i]);
 		}
 		return ans;
 	}
 	function p1evl(y: Decimal, coef: Decimal[]): Decimal {
 		let ans: Decimal = y.plus(coef[0]);
 		for (let i = 1; i < coef.length; i++) {
-			ans = ans.mul(y).plus(coef[i]);
+			ans = ans.times(y).plus(coef[i]);
 		}
 		return ans;
 	}
@@ -504,13 +577,13 @@ export function Ci(x: DecimalType): Decimal {
 			new Decimal('5.10028056236446052392e-2'),
 			new Decimal('4.00000000000000000080'),
 		];
-		const z: Decimal = d.mul(d);
-		const c0: Decimal = z.mul(polevl(z, CN)).div(polevl(z, CD));
+		const z: Decimal = d.times(d);
+		const c0: Decimal = z.times(polevl(z, CN)).div(polevl(z, CD));
 		return EULER_GAMMA.plus(d.ln()).plus(c0);
 	}
 	const s: Decimal = d.sin();
 	const c: Decimal = d.cos();
-	const z: Decimal = new Decimal(1).div(d.mul(d));
+	const z: Decimal = new Decimal(1).div(d.times(d));
 	let f: Decimal;
 	let g: Decimal;
 	if (d.lt(ASYMPTOTIC_APPROXIMATION_CUTOFF)) {
@@ -551,8 +624,8 @@ export function Ci(x: DecimalType): Decimal {
 			new Decimal('2.02659182086343991969e-6'),
 			new Decimal('7.82579218933534490868e-9'),
 		];
-		f = polevl(z, FN4).div(d.mul(p1evl(z, FD4)));
-		g = z.mul(polevl(z, GN4)).div(p1evl(z, GD4));
+		f = polevl(z, FN4).div(d.times(p1evl(z, FD4)));
+		g = z.times(polevl(z, GN4)).div(p1evl(z, GD4));
 	} else {
 		const FN8: Decimal[] = [
 			new Decimal('4.55880873470465315206e-1'),
@@ -597,10 +670,10 @@ export function Ci(x: DecimalType): Decimal {
 			new Decimal('3.87830166023954706752e-12'),
 			new Decimal('3.14040098946363335242e-15'),
 		];
-		f = polevl(z, FN8).div(d.mul(p1evl(z, FD8)));
-		g = z.mul(polevl(z, GN8)).div(p1evl(z, GD8));
+		f = polevl(z, FN8).div(d.times(p1evl(z, FD8)));
+		g = z.times(polevl(z, GN8)).div(p1evl(z, GD8));
 	}
-	return f.mul(s).minus(g.mul(c));
+	return f.times(s).minus(g.times(c));
 }
 
 export function Chi(x: DecimalType): Decimal {
@@ -611,14 +684,14 @@ export function Chi(x: DecimalType): Decimal {
 	}
 	if (ax.lt(ASYMPTOTIC_APPROXIMATION_CUTOFF)) {
 		let n: number = 1;
-		let term: Decimal = ax.mul(ax).div(4);
+		let term: Decimal = ax.times(ax).div(4);
 		let sum: Decimal = term;
 		for (let iter = 0; iter < SERIES_MAX_ITERATIONS; iter++) {
 			term = term
-				.mul(ax)
-				.mul(ax)
-				.mul(n)
-				.div(new Decimal(n + 1).mul(2 * n + 1).mul(2 * n + 2));
+				.times(ax)
+				.times(ax)
+				.times(n)
+				.div(new Decimal(n + 1).times(2 * n + 1).times(2 * n + 2));
 			sum = sum.plus(term);
 			n++;
 			if (term.abs().lt(getSeriesError())) {
@@ -636,7 +709,7 @@ export function Chi(x: DecimalType): Decimal {
 			let sum: Decimal = new Decimal(1);
 			let best: Decimal = term.abs();
 			for (let n = 1; n < ASYMPTOTIC_MAX_TERMS; n++) {
-				term = term.mul(n).div(y);
+				term = term.times(n).div(y);
 				const at: Decimal = term.abs();
 				if (at.gt(best)) {
 					break;
@@ -647,15 +720,15 @@ export function Chi(x: DecimalType): Decimal {
 					break;
 				}
 			}
-			return y.exp().mul(sum).div(y);
+			return y.exp().times(sum).div(y);
 		}
 		let term: Decimal = y;
 		let sum: Decimal = term;
 		for (let k = 1; k < POWER_SERIES_MAX_TERMS; k++) {
 			term = term
-				.mul(y)
-				.mul(k)
-				.div(new Decimal(k + 1).mul(k + 1));
+				.times(y)
+				.times(k)
+				.div(new Decimal(k + 1).times(k + 1));
 			sum = sum.plus(term);
 			if (term.abs().lt(getSeriesError())) {
 				break;
@@ -676,7 +749,7 @@ export function Ei(x: DecimalType): Decimal {
 		let sum: Decimal = new Decimal(1);
 		let best: Decimal = term.abs();
 		for (let n = 1; n < ASYMPTOTIC_MAX_TERMS; n++) {
-			term = term.mul(n).div(d);
+			term = term.times(n).div(d);
 			const at: Decimal = term.abs();
 			if (at.gt(best)) {
 				break;
@@ -687,15 +760,15 @@ export function Ei(x: DecimalType): Decimal {
 				break;
 			}
 		}
-		return d.exp().mul(sum).div(d);
+		return d.exp().times(sum).div(d);
 	}
 	let term: Decimal = d;
 	let sum: Decimal = term;
 	for (let k = 1; k < POWER_SERIES_MAX_TERMS; k++) {
 		term = term
-			.mul(d)
-			.mul(k)
-			.div(new Decimal(k + 1).mul(k + 1));
+			.times(d)
+			.times(k)
+			.div(new Decimal(k + 1).times(k + 1));
 		sum = sum.plus(term);
 		if (term.abs().lt(getSeriesError())) {
 			break;
@@ -710,9 +783,7 @@ export function Ei(x: DecimalType): Decimal {
  */
 export function SiComplex(z: Complex): Complex {
 	const precision = Decimal.precision;
-	Decimal.set({ precision: precision + 12 });
-	let retval = new Complex(0);
-	try {
+	const retval = precisionBlock(precision + 12, () => {
 		const z2 = z.times(z).neg();
 		let term = z;
 		let sum = z;
@@ -720,7 +791,7 @@ export function SiComplex(z: Complex): Complex {
 		for (let n = 1; n <= 500; n++) {
 			const k = 2 * n + 1;
 			term = term.times(z2).scale(new Decimal(k - 2).div((k - 1) * k * k));
-			sum = sum.add(term);
+			sum = sum.plus(term);
 			if (term.abs().lte(tolerance)) {
 				break;
 			}
@@ -728,10 +799,8 @@ export function SiComplex(z: Complex): Complex {
 				throw new Error(message('convergenceFailed', { iters: '500' }));
 			}
 		}
-		retval = sum;
-	} finally {
-		Decimal.set({ precision });
-	}
+		return sum;
+	});
 	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
 }
 
@@ -741,16 +810,16 @@ export function SiComplex(z: Complex): Complex {
  */
 export function CiComplex(z: Complex): Complex {
 	const precision = Decimal.precision;
-	Decimal.set({ precision: precision + 12 });
-	let retval = new Complex(0);
-	try {
+	const retval = precisionBlock(precision + 12, () => {
 		const z2 = z.times(z).neg();
 		let term = z2.scale(new Decimal(1).div(4));
 		let sum = term;
 		const tolerance = new Decimal(10).pow(-(precision + 8));
 		for (let n = 2; n <= 500; n++) {
-			term = term.times(z2).scale(new Decimal(2 * n - 2).div((2 * n - 1) * (2 * n) * (2 * n)));
-			sum = sum.add(term);
+			term = term
+				.times(z2)
+				.scale(new Decimal(2 * n - 2).div((2 * n - 1) * (2 * n) * (2 * n)));
+			sum = sum.plus(term);
 			if (term.abs().lte(tolerance)) {
 				break;
 			}
@@ -758,10 +827,8 @@ export function CiComplex(z: Complex): Complex {
 				throw new Error(message('convergenceFailed', { iters: '500' }));
 			}
 		}
-		retval = z.log().add(new Complex(EULER_GAMMA)).add(sum);
-	} finally {
-		Decimal.set({ precision });
-	}
+		return z.log().plus(new Complex(EULER_GAMMA)).plus(sum);
+	});
 	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
 }
 
@@ -771,15 +838,13 @@ export function CiComplex(z: Complex): Complex {
  */
 export function EiComplex(z: Complex): Complex {
 	const precision = Decimal.precision;
-	Decimal.set({ precision: precision + 12 });
-	let retval = new Complex(0);
-	try {
+	const retval = precisionBlock(precision + 12, () => {
 		let term = z;
 		let sum = z;
 		const tolerance = new Decimal(10).pow(-(precision + 8));
 		for (let n = 2; n <= 500; n++) {
 			term = term.times(z).scale(new Decimal(n - 1).div(n * n));
-			sum = sum.add(term);
+			sum = sum.plus(term);
 			if (term.abs().lte(tolerance)) {
 				break;
 			}
@@ -787,16 +852,17 @@ export function EiComplex(z: Complex): Complex {
 				throw new Error(message('convergenceFailed', { iters: '500' }));
 			}
 		}
-		retval = z.log().add(new Complex(EULER_GAMMA)).add(sum);
-	} finally {
-		Decimal.set({ precision });
-	}
+		return z.log().plus(new Complex(EULER_GAMMA)).plus(sum);
+	});
 	return new Complex(new Decimal(retval.re), new Decimal(retval.im));
 }
 
 export function Li(x: DecimalType): Decimal {
 	const d: Decimal = new Decimal(x);
-	if (d.lte(0)) {
+	if (d.isZero()) {
+		return new Decimal(0);
+	}
+	if (d.lt(0)) {
 		return new Decimal(NaN);
 	}
 	if (d.eq(1)) {
@@ -811,7 +877,7 @@ export function Li(x: DecimalType): Decimal {
 		let sum: Decimal = new Decimal(1);
 		let best: Decimal = term.abs();
 		for (let n = 1; n < ASYMPTOTIC_MAX_TERMS; n++) {
-			term = term.mul(n).div(y);
+			term = term.times(n).div(y);
 			const at: Decimal = term.abs();
 			if (at.gt(best)) {
 				break;
@@ -822,15 +888,15 @@ export function Li(x: DecimalType): Decimal {
 				break;
 			}
 		}
-		return y.exp().mul(sum).div(y);
+		return y.exp().times(sum).div(y);
 	}
 	let term: Decimal = y;
 	let sum: Decimal = term;
 	for (let k = 1; k < POWER_SERIES_MAX_TERMS; k++) {
 		term = term
-			.mul(y)
-			.mul(k)
-			.div(new Decimal(k + 1).mul(k + 1));
+			.times(y)
+			.times(k)
+			.div(new Decimal(k + 1).times(k + 1));
 		sum = sum.plus(term);
 		if (term.abs().lt(getSeriesError())) {
 			break;

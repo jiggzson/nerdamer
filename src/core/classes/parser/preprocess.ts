@@ -1,4 +1,4 @@
-import { message, ParserError } from '../../errors';
+import { message, ParserError, UnexpectedTokenError } from '../../errors';
 
 type FunctionMetadata = {
 	bracketlessStatement?: boolean;
@@ -206,8 +206,12 @@ function findBracketlessFunction(
 			const startsWithOperatorBoundary =
 				/[*/=<>:&|]/.test(firstArgumentCharacter) ||
 				((firstArgumentCharacter === '+' || firstArgumentCharacter === '-') && /\s/.test(nextCharacter));
+			// Nothing follows the name before the end of its list, as in `[sin ]` or the
+			// last statement of `x:1; sin ` with a trailing space, so it isn't a call.
+			const endsBeforeArgument =
+				isClosingBracket(firstArgumentCharacter) || firstArgumentCharacter === ',';
 
-			if (!startsWithOperatorBoundary) {
+			if (!startsWithOperatorBoundary && !endsBeforeArgument) {
 				retval = {
 					argumentStart: index,
 					consumeStatement: functions[name].bracketlessStatement === true,
@@ -292,11 +296,12 @@ function findArgumentEnd(
 
 /**
  * Converts bracketed or quoted recurring decimal digits into exact fractions.
+ * The leading zero is optional, as in ordinary decimals: `.[3]` is `0.[3]`.
  * The unquoted ellipsis notation is ambiguous and remains unsupported.
  */
 function normalizeRecurringDecimals(input: string): string {
-	return input.replace(
-		/(?<![a-z0-9_.])(\d+)\.(\d*)(?:'(\d+)'|\[(\d+)\])(?![a-z0-9_.'])/gi,
+	const normalized = input.replace(
+		/(?<![a-z0-9_.)\]])(\d*)\.(\d*)(?:'(\d+)'|\[(\d+)\])(?![a-z0-9_.'])/gi,
 		(_match, whole: string, nonRepeating: string, quoted: string | undefined, bracketed: string | undefined) => {
 			const repeating = quoted ?? bracketed!;
 			const prefix = whole + nonRepeating;
@@ -305,6 +310,15 @@ function normalizeRecurringDecimals(input: string): string {
 			return `(${numerator}/${denominator})`;
 		}
 	);
+	// A decimal point directly followed by [ or ' that wasn't converted above has
+	// malformed repeating digits, such as 0.[3x] or 0.[].
+	const malformed = normalized.match(/(?<![a-z0-9_.)\]])\d*\.\d*(?=[['])/i);
+	if (malformed) {
+		throw new UnexpectedTokenError(
+			message('malformedNumericLiteral', { literal: malformed[0], position: String(malformed.index) })
+		);
+	}
+	return normalized;
 }
 
 export function preprocess(input: string, functions: FunctionRegistry): string {

@@ -3,8 +3,10 @@ import { tableOfIntegrals } from '../../../src/calculus/integrate/integrationTab
 import { Pattern } from '../../../src/core/converters/Pattern';
 import { tryIntegrateByParts } from '../../../src/calculus/integrate/byParts';
 import { tryIntegrateByWrappedFactorSubstitution } from '../../../src/calculus/integrate/bySubstitution';
-import { tryIntegrateLogPower, tryRadicalSubstitution, tryIntegrateByWeierstrass } from '../../../src/calculus/integrate/algorithms/strategies';
-import { tryIntegrateRational, tryIntegratePowerQuotient } from '../../../src/calculus/integrate/algorithms/rationalIntegration';
+import { tryRadicalSubstitution } from '../../../src/calculus/integrate/algorithms/radicals';
+import { tryIntegrateByWeierstrass } from '../../../src/calculus/integrate/algorithms/weierstrass';
+import { tryIntegrateLogPower } from '../../../src/calculus/integrate/byParts';
+import { tryIntegrateRational } from '../../../src/calculus/integrate/algorithms/rationalIntegration';
 import { diff } from '../../../src/calculus/derivative/diff';
 import { Expression } from '../../../src/core/classes/expression/Expression';
 import { MAX_INTEGRATION_DEPTH } from '../../../src/calculus/integrate/utils';
@@ -86,7 +88,6 @@ describe('Integration controller regression coverage', () => {
 		['radical substitution', tryRadicalSubstitution, '1/sqrt(x)'],
 		['Weierstrass', tryIntegrateByWeierstrass, '1/(sin(x)+cos(x))'],
 		['rational decomposition', tryIntegrateRational, 'x/(x^2+1)'],
-		['power quotient', tryIntegratePowerQuotient, 'x/(x^2+1)'],
 	] as const)('does not invoke recursion at the strategy depth limit for %s', (_name, strategy, input) => {
 		const recurse = jest.fn(integrate);
 		expect(strategy(Expression.create(input), 'x', MAX_INTEGRATION_DEPTH, recurse)).toBeUndefined();

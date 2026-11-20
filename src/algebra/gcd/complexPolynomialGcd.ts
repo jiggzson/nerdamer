@@ -1,5 +1,6 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { Rational } from '../../core/classes/rational/Rational';
+import { DivisionByZeroError, message } from '../../core/errors';
 
 import { GaussianRational } from './GaussianRational';
 
@@ -42,18 +43,44 @@ function multiply(left: Coefficients, right: Coefficients): Coefficients {
  * Field division cancels each leading term, so a nonzero remainder
  * has degree strictly less than the divisor.
  */
-function divideRemainder(left: Coefficients, right: Coefficients): Coefficients {
+function dividePolynomials(
+	left: Coefficients,
+	right: Coefficients
+): { quotient: Coefficients; remainder: Coefficients } {
+	if (right.length === 0) {
+		throw new DivisionByZeroError(message('divisionByZero'));
+	}
 	let remainder = trim(left);
+	const quotient: Coefficients = Array.from(
+		{ length: Math.max(0, left.length - right.length + 1) },
+		() => GaussianRational.zero()
+	);
 	while (remainder.length >= right.length && remainder.length !== 0) {
 		const degree = remainder.length - right.length;
 		const coefficient = remainder[remainder.length - 1].div(right[right.length - 1]);
-		const subtract: Coefficients = Array.from({ length: degree + right.length }, () => GaussianRational.zero());
-		for (let index = 0; index < right.length; index++) {
-			subtract[degree + index] = right[index].times(coefficient);
+		quotient[degree] = quotient[degree].plus(coefficient);
+		const subtract: Coefficients = Array.from(
+			{ length: degree + right.length },
+			() => GaussianRational.zero()
+		);
+		for (let i = 0; i < right.length; i++) {
+			subtract[degree + i] = right[i].times(coefficient);
 		}
-		remainder = add(remainder, subtract.map(value => GaussianRational.zero().minus(value)));
+		remainder = add(
+			remainder,
+			subtract.map(value => GaussianRational.zero().minus(value))
+		);
 	}
-	return remainder;
+	return { quotient: trim(quotient), remainder };
+}
+
+function divideRemainder(left: Coefficients, right: Coefficients): Coefficients {
+	return dividePolynomials(left, right).remainder;
+}
+
+function divideExact(left: Coefficients, right: Coefficients): Coefficients | undefined {
+	const result = dividePolynomials(left, right);
+	return result.remainder.length === 0 ? result.quotient : undefined;
 }
 
 /**
@@ -84,6 +111,50 @@ function polynomialGcd(left: Coefficients, right: Coefficients): Coefficients {
 		a = a.map(coefficient => coefficient.div(lead));
 	}
 	return a;
+}
+
+/**
+ * Recovers square-free factors and exact multiplicities over Q(i)[x].
+ * Returns an empty array if the polynomial has no repeated factors.
+ * Unsupported exact divisions return undefined without approximating multiplicities.
+ */
+export function squareFreeGaussian(
+	coefficients: readonly GaussianRational[]
+): { factor: GaussianRational[]; multiplicity: number }[] | undefined {
+	const polynomial = trim([...coefficients]);
+	if (polynomial.length < 3 || polynomial.length > 65) {
+		return [];
+	}
+
+	const derivative = polynomial.slice(1).map((value, i) =>
+		value.times(GaussianRational.fromReal(Rational.create(BigInt(i + 1))))
+	);
+	let repeated = polynomialGcd(polynomial, derivative);
+	if (repeated.length <= 1) {
+		return [];
+	}
+
+	let remaining = divideExact(polynomial, repeated);
+	if (!remaining) {
+		return undefined;
+	}
+	const factors: { factor: GaussianRational[]; multiplicity: number }[] = [];
+	let multiplicity = 1;
+	while (remaining.length > 1) {
+		const shared = polynomialGcd(remaining, repeated);
+		const factor = divideExact(remaining, shared);
+		const next = divideExact(repeated, shared);
+		if (!factor || !next) {
+			return undefined;
+		}
+		if (factor.length > 1) {
+			factors.push({ factor, multiplicity });
+		}
+		remaining = shared;
+		repeated = next;
+		multiplicity++;
+	}
+	return factors;
 }
 
 /**

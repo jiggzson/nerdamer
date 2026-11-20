@@ -42,6 +42,7 @@ export class AssignmentError extends Error {}
 export const EnglishErrorMessages = {
 		// General
 		noInverse: 'Unable to calculate inverse!',
+		integerArgumentsRequired: '{{fn}} requires integer arguments!',
 		undefinedValue: 'The requested value is undefined!',
 		nullValue: 'Value expected but received null.',
 		univariateInputOnly: 'The input for this function must be univariate!',
@@ -54,6 +55,8 @@ export const EnglishErrorMessages = {
 		restrictedVariableName:
 			'Cannot assign the requested value to the reserved name "{{name}}"!',
 		noVariableInExpression: 'No variable found in expression!',
+		ambiguousVariable: 'More than one variable in {{expression}}! Specify which one.',
+		comparisonUnsupported: 'Cannot solve the comparison {{operator}} in {{function}}! Use = for an equation; inequalities are not supported yet.',
 		quadraticExpressionExpected: 'Expression must be quadratic!',
 		wrongInput: 'Wrong input! Expected {{expected}} but received {{received}}.',
 		unsupportedFunction: 'Unsupported function {{function}}',
@@ -85,6 +88,7 @@ export const EnglishErrorMessages = {
 		matrixStringKeyUnsupported: 'Matrix does not support string key access',
 		matrixTraceUnavailable: 'Unable to calculate trace for the matrix',
 		deprecatedDeleteWarning: "{{function}}(name, 'delete') is deprecated; the legacy deletion behavior remains supported.",
+		deprecatedFunctionWarning: '{{function}} is deprecated; use {{replacement}} instead.',
 		defintAccuracyWarning: 'Adaptive integration reached depth {{depth}} before meeting the requested tolerance; the result may be inaccurate.',
 		defintMaxEvals: 'defint: maxEvals exceeded ({{max}}).',
 		defintNonFiniteValue: 'defint: non-finite f(x) at x={{x}}',
@@ -101,6 +105,7 @@ export const EnglishErrorMessages = {
 		missingOpeningBracket: 'Missing opening bracket for "{{bracket}}":{{position}}',
 		missingClosingBracket: 'Missing closing bracket for "{{bracket}}":{{position}}',
 		prefixOperatorExpected: 'Prefix operator expected but {{operator}} encountered.',
+		missingOperand: 'Missing operand after {{operator}}.',
 		unsupportedParserEntity: 'Unsupported parser entity',
 		factorialNegativeUndefined: 'Factorial is undefined for negative integers.',
 		erfConvergenceFailed: 'erf not converging. Exiting!',
@@ -237,6 +242,8 @@ export const EnglishErrorMessages = {
 		atan2InfiniteArguments: "atan2 is undefined when both arguments are infinite!",
 		tanUndefined: 'tan is undefined for multiples of pi/2!',
 		loopIterationLimitExceeded: 'Loop exceeded the maximum of {{max}} iterations.',
+		inputLimitExceeded: '{{function}} input exceeds the limit of {{limit}}.',
+		resultOutOfRange: 'The result is outside the representable numeric range.',
 		letRequiresBindingsAndBody:
 			'let requires one or more name/value pairs followed by a body expression.',
 
@@ -246,6 +253,8 @@ export const EnglishErrorMessages = {
 		cothUndefined: 'coth is undefined for 0!',
 		cschUndefined: 'csch is undefined for 0!',
 		atanhUndefined: 'atanh is undefined for 1!',
+		gammaUndefined: 'gamma is undefined for zero and negative integers!',
+		doubleFactorialUndefined: 'dfactorial is undefined for negative even integers!',
 		cannotCreateArrayFromNaN: 'Cannot create array from NaN!',
 		expressionExpected: 'Expression expected!. Received {{type}}!',
 
@@ -259,17 +268,23 @@ export const EnglishErrorMessages = {
 		// Matrix
 		cannotCreateMatrix: 'Unable to create Matrix. Row dimensions do not match!',
 		squareMatrixRequired: 'The matrix must be square!',
+		identitySizeInvalid: 'imatrix needs a size of 0 or more! Received {{size}}.',
+		sampleTooSmall: '{{fn}} needs at least two values!',
+		matrixRequired: '{{fn}} requires a matrix! Received {{type}}. Write a matrix as matrix([1,2],[3,4]).',
 		rowsMustMatch: 'The rows of the matrices must match!',
 		singularMatrix: 'The provided matrix is singular!',
 		// Vector
 		mismatchedDimensions: 'The dimensions must match for the function "{{function}}"!',
 		incorrectCrossDimension: 'The cross product is only defined for vectors of dimension 3!',
 		vectorExpected: 'Expected Vector! Received {{type}}.',
+		setRequired: '{{fn}} requires sets! Received {{type}}. Write a set as {1,2,3}.',
 		// Polynomial
 		univariatePolynomialOnly: 'This function is only supported for univariate polynomials!',
 		unknownVariable: 'Unknown variable! "{{variable}}"',
 		// Solve
 		integrationDepthWarning: 'Integration recursion depth {{depth}} reached for {{expression}}.',
+		texPeriodicVariableWarning: 'TeX output shows the periodic parameter as {{parameter}} because {{name}} is already a variable in the expression.',
+		texPeriodicVariableUnavailable: 'TeX cannot show the periodic parameter: {{names}} are all variables in the expression. Set TEX_PERIODIC_VAR to another name.',
 		solvePartialResultWarning: 'The solver could not determine all solutions; the returned result may be incomplete.',
 		rootIterationWarning: '{{count}} root refinements exhausted the {{iterations}}-iteration limit; results may be incomplete.',
 		convergenceFailed: 'Failed to converge! {{iters}} iterations were tried.',

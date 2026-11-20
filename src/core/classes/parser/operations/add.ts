@@ -42,16 +42,27 @@ export function add(a: Expression, b: Expression): Expression {
 			retval = re.isZero() ? im : im.isZero() ? re : join(re, im); // Don't use add
 		} else if (a.isZero()) {
 			retval = b.copy();
-		} else if (a.value === b.value && a.type === b.type && a.getPower().eq(b.getPower())) {
-			// Infinity has no finite coefficient magnitude. Same-sign infinities remain
-			// canonical infinity, while opposite signs are undefined.
-			if (a.isInf()) {
+		} else if (
+			// Compare the types first: reading the value of a sum renders it.
+			a.type === b.type &&
+			a.value === b.value &&
+			a.getPower().eq(b.getPower())
+		) {
+			// Infinity has no finite coefficient magnitude, including an infinite product such
+			// as x*Inf. Like terms of the same sign stay one term with a unit coefficient, while
+			// opposite signs are Infinity-Infinity and undefined, as in x*Inf-2*x*Inf.
+			if (a.isInfinite()) {
 				const x = a.getMultiplier();
 				const y = b.getMultiplier();
 				if ((x.isNegative() && !y.isNegative()) || (y.isNegative() && !x.isNegative())) {
 					throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity-Infinity' }));
 				}
-				retval = a.isNegInf() ? Expression.NegInf() : Expression.Inf();
+				if (a.isInf()) {
+					retval = a.isNegInf() ? Expression.NegInf() : Expression.Inf();
+				} else {
+					retval = a.copy();
+					retval.multiplier = x.div(x.abs());
+				}
 			} else {
 				const multiplier = a.getMultiplier().plus(b.getMultiplier());
 
@@ -76,6 +87,15 @@ export function add(a: Expression, b: Expression): Expression {
 			if ((x.isNegative() && !y.isNegative()) || (y.isNegative() && !x.isNegative())) {
 				throw new UndefinedError(message('undefinedExpression', { expression: 'Infinity-Infinity' }));
 			}
+		}
+		// A real value without variables is finite, so adding it leaves infinity unchanged. A
+		// symbol could itself be infinite, so x+Inf stays as it is.
+		else if (
+			a.isInf() !== b.isInf() &&
+			(a.isInf() ? b : a).variables().length === 0 &&
+			!(a.isInf() ? b : a).isComplex()
+		) {
+			retval = (a.isInf() ? a : b).isNegInf() ? Expression.NegInf() : Expression.Inf();
 		}
 		// We can just flip because of commutativity. Add can figure out the rest.
 		// ******************** RECIPROCALS ******************** //
@@ -234,7 +254,7 @@ export function join(a: Expression, b: Expression, isGroup = false): Expression 
 			// Set the type
 			retval.type = expressionType;
 			// Update derived aggregate state after the element collection changes.
-			retval.updateValue(elements);
+			retval.updateValue();
 		}
 	}
 

@@ -162,6 +162,9 @@ describe('Differentiation regressions', () => {
 		// surviving mathematical constraints: the reported outer factor 3*(sqrt(x)+x)^2
 		// and the exact derivative value 135 at x=4.
 		const derivative = nerdamer.diff('(sqrt(x)+x)^3', 'x');
+		if (!Expression.isExpression(derivative)) {
+			throw new Error('Expected an Expression');
+		}
 		const expected = Expression.create('3*(sqrt(x)+x)^2*(1+1/(2*sqrt(x)))');
 
 		expect(derivative.minus(expected).simplify().isZero()).toBe(true);
@@ -171,10 +174,48 @@ describe('Differentiation regressions', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/610
 	it('applies the chain rule to a square root containing an exponential', () => {
 		const derivative = nerdamer.diff('sqrt(e^x+a)', 'x');
+		if (!Expression.isExpression(derivative)) {
+			throw new Error('Expected an Expression');
+		}
 		const expected = Expression.create('e^x/(2*sqrt(e^x+a))');
 
 		expect(derivative.minus(expected).simplify().isZero()).toBe(true);
 		const actualAtPoint = Number(derivative.evaluate({ x: 0, a: 3 }).text({ decimal: true }));
 		expect(actualAtPoint).toBeCloseTo(1 / 4, 12);
+	});
+
+	it('applies every requested order to power and exponential nodes', () => {
+		for (const source of ['2^x', 'e^(3*x)', '3^(2*x)', 'x^x', '5*2^x', 'e^(x^2)']) {
+			for (const order of [2, 3]) {
+				let repeated = Expression.create(source);
+				for (let i = 0; i < order; i++) {
+					repeated = diff(repeated, 'x');
+				}
+				const direct = diff(source, 'x', order);
+				expect(direct.minus(repeated).simplify().isZero()).toBe(true);
+			}
+		}
+
+		expect(diff('e^(3*x)', 'x', 2).eq(Expression.create('9*e^(3*x)'))).toBe(true);
+		expect(diff('2^x', 'x', 3).eq(Expression.create('2^x*log(2)^3'))).toBe(true);
+		expect(Parser.parse('diff(3^(2*x),x,2)').eq(Expression.create('4*3^(2*x)*log(3)^2'))).toBe(true);
+	});
+
+	it('returns the input for a zeroth derivative', () => {
+		for (const source of ['x^3', 'sin(x)', '2^x', '5', 'y']) {
+			expect(diff(source, 'x', 0).eq(Expression.create(source))).toBe(true);
+		}
+		expect(Parser.parse('diff(x^3,x,0)').text()).toEqual('x^3');
+	});
+
+	// Negative orders are reserved for antiderivatives, so they stay unevaluated for now.
+	it('leaves negative derivative orders unevaluated', () => {
+		for (const source of ['sin(x)', 'x^3', '5']) {
+			const result = diff(source, 'x', -1);
+			expect(result.isFunction('diff')).toBe(true);
+			expect(result.getArguments()[2].eq(Expression.create('-1'))).toBe(true);
+		}
+		const parsed = Parser.parse('diff(sin(x),x,-2)');
+		expect(Expression.isExpression(parsed) && parsed.isFunction('diff')).toBe(true);
 	});
 });

@@ -4,7 +4,7 @@ import { requireVariableName } from '../core/classes/expression/utils';
 import { Vector } from '../core/classes/vector/Vector';
 import { dataTypes } from '../core/constants/entityTypes';
 import { INTEGER_PARAM } from '../core/constants/symbolNames';
-import { mathFunctionRegistry, systemFunction } from '../core/dispatch';
+import { mathFunctionRegistry, registerAlias, systemFunction } from '../core/dispatch';
 import { message, UnexpectedDataType, UnexpectedInputError, UnsupportedOperationError } from '../core/errors';
 
 import { SolutionSet } from './classes/SolutionSet';
@@ -99,9 +99,31 @@ function realsolutions(
 
 export function loadSolveFunctions() {
 	Object.assign(mathFunctionRegistry, {
-		solve: systemFunction({ fn: solve, minArgs: 2, maxArgs: 2, equationArgs: [0], distElWise: false }),
-		roots: systemFunction({ fn: roots, minArgs: 1, maxArgs: 2, distElWise: false }),
-		solveeqs: systemFunction({ fn: solveSystem, minArgs: 1, maxArgs: 1, distElWise: false }),
+		solve: systemFunction({
+			fn: solve,
+			minArgs: 1,
+			maxArgs: 3,
+			equationArgs: [0],
+			distElWise: false,
+			deferArguments: true,
+			bound: { variable: 1, scope: [0] },
+			rejectsComparisons: true,
+		}),
+		roots: systemFunction({
+			fn: roots,
+			minArgs: 1,
+			maxArgs: 3,
+			distElWise: false,
+			rejectsComparisons: true,
+		}),
+		solveeqs: systemFunction({
+			fn: solveSystem,
+			minArgs: 1,
+			maxArgs: 1,
+			distElWise: false,
+			equationArgs: [0],
+			rejectsComparisons: true,
+		}),
 		realsolutions: systemFunction({
 			fn: realsolutions,
 			minArgs: 3,
@@ -109,4 +131,7 @@ export function loadSolveFunctions() {
 			distElWise: false,
 		}),
 	});
+
+	// The 1.x name.
+	registerAlias('solveEquations', 'solveeqs', { deprecated: true });
 }

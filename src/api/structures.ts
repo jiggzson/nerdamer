@@ -8,3 +8,4 @@ export { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
 export { cross, dot } from '../core/classes/vector/functions';
 export { Vector } from '../core/classes/vector/Vector';
 export type { StructuredEntityType } from '../core/types';
+export { append, difference, intersection, intersects, isSubset, union } from '../math/utils';

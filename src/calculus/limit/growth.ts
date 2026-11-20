@@ -1,7 +1,9 @@
 import { simplify } from '../../algebra/simplify/simplify';
-import { Expression } from '../../core/classes/expression/Expression';
 import { Polynomial } from '../../core/classes/polynomial/Polynomial';
+import { toExpressions } from '../../core/common/functions/structuredEntityUtils';
 import { ATAN, COS, LOG, SIN } from '../../core/constants/functionNames';
+
+import type { Expression } from '../../core/classes/expression/Expression';
 
 type InfinityGrowthClassification =
 	| { type: 'bounded' }
@@ -60,7 +62,7 @@ export function classifyInfinityGrowth(
 	// actually approaches 1 (not ∞). We return unknown in these cases to let the limit
 	// function handle it.
 	if (expr.isProduct()) {
-		const factors = expr.elementsArray().map(e => Expression.create(e));
+		const factors = toExpressions(expr.elementsArray());
 		let best: InfinityGrowthClassification = { type: 'bounded' };
 		let bestTier = 0;
 		let hasBoundedVariableFunction = false;
@@ -149,7 +151,7 @@ function getAdditiveTerms(expr: Expression): Expression[] {
 		return [distributed];
 	}
 
-	return distributed.elementsArray().map(e => Expression.create(e));
+	return toExpressions(distributed.elementsArray());
 }
 
 export function findDominantAtInfinity(

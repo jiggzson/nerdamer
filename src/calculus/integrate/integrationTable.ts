@@ -974,37 +974,19 @@ const specialFunctionTable: TableEntries = {
 };
 
 const knownIntegralsTable: TableEntries = {
-	// sqrt(a-b*x^2)
-	'a1*(-a2*x1^n1+a3)^n2': p => {
-		if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
-			return p.fromPattern(
-				'(a1*x1*(-a2*x1^2+a3)^(1/2))/2+(a1*a3*asin((a2^(1/2)*x1)/(a3^(1/2))))/(2*a2^(1/2))'
-			);
-		}
-	},
-
-	// diff(atanh(x)) and diff(asin(x))
+	// diff(atanh(x)). The square roots of a quadratic, as in sqrt(a-b*x^2) and its
+	// reciprocal, are left to tryIntegrateSqrtQuadratic, which takes asin or asinh only
+	// when the sign that form needs is known.
 	'a1/((-a2*x1^n1+a3)^n2)': p => {
 		if (p.get('n1').eq(two()) && p.get('n2').isOne()) {
 			return p.fromPattern('(a1/(a2^(1/2)*a3^(1/2)))*atanh((a2^(1/2)*x1)/(a3^(1/2)))');
-		} else if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
-			return p.fromPattern('(a1/a2^(1/2))*asin((a2^(1/2)*x1)/(a3^(1/2)))');
 		}
 	},
 
-	// diff(acos(x))
-	'-a1/((-a2*x1^n1+a3)^n2)': p => {
-		if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
-			return p.fromPattern('(a1/a2^(1/2))*acos((a2^(1/2)*x1)/(a3^(1/2)))');
-		}
-	},
-
-	// diff(atan(x)) and diff(asinh(x))
+	// diff(atan(x))
 	'a1/((a2*x1^n1+a3)^n2)': p => {
 		if (p.get('n1').eq(two()) && p.get('n2').isOne()) {
 			return p.fromPattern('(a1/(a2^(1/2)*a3^(1/2)))*atan((a2^(1/2)*x1)/(a3^(1/2)))');
-		} else if (p.get('n1').eq(two()) && p.get('n2').isHalf()) {
-			return p.fromPattern('(a1/a2^(1/2))*asinh((a2^(1/2)*x1)/(a3^(1/2)))');
 		}
 	},
 

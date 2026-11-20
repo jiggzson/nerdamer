@@ -17,9 +17,11 @@ import {
 	LI,
 } from '../constants/functionNames';
 import { WRAP } from '../constants/parserSyntax';
-import { INFINITY } from '../constants/symbolNames';
+import { INFINITY, INTEGER_PARAM } from '../constants/symbolNames';
 import { mathFunctionRegistry } from '../dispatch';
-import { message } from '../errors';
+import { message, UnexpectedInputError, UnsupportedOperationError } from '../errors';
+import { RESTRICTED, Settings } from '../Settings';
+import { warn } from '../warnings';
 
 import { BaseConverter } from './BaseConverter';
 
@@ -115,6 +117,12 @@ export class Converter extends BaseConverter {
 		Re: 'realpart',
 		Im: 'imagpart',
 	};
+
+	/**
+	 * How the current TeX conversion shows the periodic parameter _n: the name used, whether _n
+	 * was shown as it, and whether a variable of the input already has that name.
+	 */
+	private periodic?: { name: string; substituted: boolean; clash: boolean };
 
 	/**
 	 * Creates a converter with persistent output mode.
@@ -550,8 +558,9 @@ export class Converter extends BaseConverter {
 			limit: () => `\\lim_${this.inBraces(output[1] + ' \\to ' + output[2])} ${output[0]}`,
 			integrate: () =>
 				output.length === 2 ? `\\int ${output[0]}\\, d${output[1]}` : generic(),
+			// defint(f, x, a, b) is the integral of f from a to b with respect to x.
 			defint: () =>
-				`\\int_${this.inBraces(output[1])}^${this.inBraces(output[2])} ${output[0]}\\, d${output[3]}`,
+				`\\int_${this.inBraces(output[2])}^${this.inBraces(output[3])} ${output[0]}\\, d${output[1]}`,
 			diff: () => {
 				let retval: string;
 				if (output.length === 1) {
@@ -597,15 +606,30 @@ export class Converter extends BaseConverter {
 	}
 
 	private formatVariable(value: string): string {
-		return this.formatSubscripts(value)
-			.split('_')
-			.map((v: string, i: number) => {
-				if (this.mode === BaseConverter.modes.TeX && this.greek.includes(v)) {
-					v = `\\${v}`;
-				}
-				return i > 0 ? this.inBraces(v) : v;
-			})
-			.join('_');
+		let retval: string | undefined;
+		if (this.periodic) {
+			if (value === INTEGER_PARAM && this.periodic.name === INTEGER_PARAM) {
+				// The internal name itself, with its underscore escaped rather than read as a
+				// subscript of nothing.
+				retval = `\\${INTEGER_PARAM}`;
+			} else if (value === INTEGER_PARAM) {
+				this.periodic.substituted = true;
+				value = this.periodic.name;
+			} else if (value === this.periodic.name) {
+				this.periodic.clash = true;
+			}
+		}
+		if (retval === undefined) {
+			// Greek names are mapped on the plain parts first. formatSubscripts then braces each
+			// subscript once, so v_1 is v_{1} rather than v_{{1}}, and x_alpha is x_{\alpha}.
+			const parts = value
+				.split('_')
+				.map(v =>
+					this.mode === BaseConverter.modes.TeX && this.greek.includes(v) ? `\\${v}` : v
+				);
+			retval = this.formatSubscripts(parts.join('_'));
+		}
+		return retval;
 	}
 
 	private getFunctionName(name: string): string {
@@ -787,7 +811,7 @@ export class Converter extends BaseConverter {
 		// --- Definite integrals ---
 		s = s.replace(
 			/\\int\s*_\s*\{([^}]+)\}\s*\^\s*\{([^}]+)\}\s*(.+?)\\?,?\s*d(\w+)/g,
-			(_m, a, b, f, v) => `defint(${f},${a},${b},${v})`
+			(_m, a, b, f, v) => `defint(${f},${v},${a},${b})`
 		);
 
 		// --- Indefinite integrals ---
@@ -854,6 +878,38 @@ export class Converter extends BaseConverter {
 		// --- nth root: \sqrt[n]{x} → nthroot(x,n), \sqrt{x} → sqrt(x) ---
 		s = s.replace(/\\sqrt\s*\[([^\]]+)\]\s*\{([^}]+)\}/g, 'nthroot($2,$1)');
 		s = s.replace(/\\sqrt\s*\{([^}]+)\}/g, 'sqrt($1)');
+
+		// --- Subscripts: x_{12} → x_12, x_{\\alpha} → x_alpha, a_{b_{c}} → a_b_c ---
+		// The cleanup below turns braces into parentheses, which would make v_{1} the variable
+		// v_ times 1. A subscript of letters and digits joins the name, as in nerdamer's own
+		// x_1. Text and font wrappers such as \\mathrm{min} are unwrapped, and spaces are
+		// dropped since TeX ignores them in math mode. Innermost subscripts collapse first,
+		// so nested ones reduce in turn.
+		s = s.replace(
+			/_\s*\{\s*\\(?:mathrm|textrm|text|mathit|mathbf|operatorname)\s*\{([^{}]*)\}\s*\}/g,
+			'_{$1}'
+		);
+		let previous: string;
+		do {
+			previous = s;
+			s = s.replace(/_\s*\{([^{}]*)\}/g, (match: string, inner: string) => {
+				const name = inner.replace(/\s+/g, '');
+				return /^\\?[A-Za-z0-9]+(?:_[A-Za-z0-9]+)*$/.test(name)
+					? `_${name.replace(/^\\/, '')}`
+					: match;
+			});
+		} while (s !== previous);
+		// A formula or list subscript such as x_{n-1} has no nerdamer name, and the cleanup
+		// would turn it into a product. How it should map is open (issue #745).
+		const formula = s.match(/_\s*\{[^{}]*\}/);
+		if (formula) {
+			throw new UnsupportedOperationError(
+				message('wrongInput', {
+					expected: 'a subscript of letters and digits',
+					received: formula[0],
+				})
+			);
+		}
 
 		// --- Standard cleanup (same as original fromTeX) ---
 		s = s.replace(/\\,/g, '');
@@ -973,9 +1029,55 @@ export class Converter extends BaseConverter {
 		input: ParserEntity | string | number,
 		options?: OptionsObject
 	): string {
-		let retval: string;
+		let retval = '';
 
-		if (
+		// The outermost TeX conversion decides how the periodic parameter _n is shown, and nested
+		// conversions of the parts follow it. It is shown as the chosen name, or else as the first
+		// of k, nu, m, lambda, kappa and mu that is not already a variable of the input, since such
+		// a name would make two variables look alike. A name other than the chosen one comes with
+		// a warning, so the output never changes silently. With none free there is no faithful TeX,
+		// so that is an error.
+		if (this.mode === TeX && this.periodic === undefined) {
+			const name = Settings.TEX_PERIODIC_VAR;
+			const tokens = Parser.tokenize(name);
+			const token = tokens.length === 1 ? tokens[0] : undefined;
+			if (
+				!Token.isToken(token) ||
+				token.type !== Token.VARIABLE ||
+				(name !== INTEGER_PARAM && RESTRICTED.includes(name)) ||
+				name in mathFunctionRegistry
+			) {
+				throw new UnexpectedInputError(message('plainVariableExpected', { input: name }));
+			}
+			const names =
+				name === INTEGER_PARAM
+					? [name]
+					: [...new Set([name, 'k', 'nu', 'm', 'lambda', 'kappa', 'mu'])];
+			let shown: string | undefined;
+			try {
+				for (const candidate of names) {
+					this.periodic = { name: candidate, substituted: false, clash: false };
+					retval = this.convert(input, options);
+					if (!(this.periodic.substituted && this.periodic.clash)) {
+						shown = candidate;
+						break;
+					}
+				}
+			} finally {
+				this.periodic = undefined;
+			}
+			if (shown === undefined) {
+				throw new UnsupportedOperationError(
+					message('texPeriodicVariableUnavailable', { names: names.join(', ') })
+				);
+			}
+			if (shown !== name) {
+				warn(
+					'tex.periodicVariable',
+					message('texPeriodicVariableWarning', { parameter: shown, name })
+				);
+			}
+		} else if (
 			typeof input === 'string' &&
 			this.mode === TeX &&
 			options?.preserveSource === true &&

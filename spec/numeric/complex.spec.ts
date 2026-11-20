@@ -14,11 +14,11 @@ describe('Numeric Complex arithmetic', () => {
 		const left = new Complex(3, 4);
 		const right = new Complex(1, -2);
 
-		const sum = left.add(right);
+		const sum = left.plus(right);
 		expect(sum.re.eq(4)).toBe(true);
 		expect(sum.im.eq(2)).toBe(true);
 
-		const difference = left.sub(right);
+		const difference = left.minus(right);
 		expect(difference.re.eq(2)).toBe(true);
 		expect(difference.im.eq(6)).toBe(true);
 
@@ -158,10 +158,10 @@ describe('Complex number', () => {
 
 	it('should correctly evaluate numbers raised to imaginary numbers', () => {
 		expect(Parser.evaluate('2^(3/4+5i)').text()).toEqual(
-			'-1.594211697321635458-0.5356455813960013149*i'
+			'-1.594211697321635458-0.53564558139600131486*i'
 		);
 		expect(Parser.evaluate('7*e^(5i+2)').text()).toEqual(
-			'14.671970610731344836-49.598816820786193054*i'
+			'14.671970610731344831-49.598816820786193055*i'
 		);
 		expect(Parser.evaluate('e^((1/4)*i*pi)*sqrt(2)').text()).toEqual(
 			'0.99999999999999999998+i'
@@ -204,7 +204,7 @@ describe('Complex number', () => {
 		// We want to run with a higher precision to make sure we're not getting junk numbers
 		Parser.setPrecision(60);
 		expect(Parser.evaluate('(i+1)^(3/2)').text({ sort: true })).toEqual(
-			'0.643594252905582624735443437418209808924202742444007651156159+1.55377397403003730734415895306314694816458349941030783633267*i'
+			'0.643594252905582624735443437418209808924202742444007651156152+1.55377397403003730734415895306314694816458349941030783633267*i'
 		);
 		expect(Parser.evaluate('(-1)^(-1/5)').text({ sort: true })).toEqual(
 			'0.809016994374947424102293417182819058860154589902881431067725-0.587785252292473129168705954639072768597652437643145991072272*i'
@@ -224,10 +224,10 @@ describe('Complex number', () => {
 	it('should evaluate complex numbers raised to complex numbers', () => {
 		// We want to run with a higher precision to make sure we're not getting junk numbers
 		expect(Parser.evaluate('i^(5i+3)').text({ sort: true })).toEqual(
-			'-0.00038820320392676624713*i'
+			'-0.00038820320392676624723*i'
 		);
 		expect(Parser.evaluate('(2+3i)^(5i+3)').text({ sort: true })).toEqual(
-			'-0.34349061841848876589+0.022021533303860477046*i'
+			'-0.34349061841848876596+0.022021533303860477019*i'
 		);
 	});
 
@@ -236,10 +236,10 @@ describe('Complex number', () => {
 			'-0.25298221281347034656*i'
 		);
 		expect(Parser.evaluate('(256*i)^(1/8)').text({ decimal: true })).toEqual(
-			'1.9615705608064608982+0.3901806440322565357*i'
+			'1.9615705608064608983+0.3901806440322565357*i'
 		);
 		expect(Parser.evaluate('(i+2)^(2/3)').text({ decimal: true })).toEqual(
-			'1.6289371459221758753+0.52017450230454583956*i'
+			'1.6289371459221758752+0.52017450230454583955*i'
 		);
 	});
 
@@ -507,7 +507,7 @@ describe('Complex Trig', () => {
 
 	it('should calculate asech of complex numbers', () => {
 		expect(Parser.evaluate('asech(i+1)').text()).toEqual(
-			'0.53063753095251782596-1.1185178796437059371*i'
+			'0.53063753095251782602-1.1185178796437059372*i'
 		);
 		expect(Parser.evaluate('asech(5i+3)').text()).toEqual(
 			'0.14709131539545412323-1.4833957949709502506*i'
@@ -519,7 +519,7 @@ describe('Complex Trig', () => {
 
 	it('should calculate acsch of complex numbers', () => {
 		expect(Parser.evaluate('acsch(i+1)').text()).toEqual(
-			'0.53063753095251782596-0.45227844715119068208*i'
+			'0.53063753095251782602-0.45227844715119068205*i'
 		);
 		expect(Expression.create(Parser.evaluate('acsch(5i+3)').text())
 			.minus('0.089079517088094739588-0.1470061943705430493*i').isNearlyZero(2)).toBe(true);

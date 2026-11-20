@@ -37,7 +37,7 @@ export function integrateEquation(expr: ParserEntity, variable?: ParserEntity): 
 	if (Equation.isEquation(expr)) {
 		retval = expr.each(e => integrateEquation(e, variable));
 	} else {
-		retval = integrate(expr as Expression, variable as Expression);
+		retval = integrate(expr as Expression, variable as Expression | undefined);
 	}
 
 	return retval;

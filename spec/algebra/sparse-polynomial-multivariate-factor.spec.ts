@@ -25,7 +25,7 @@ function constant(variableCount: number, value: bigint): SparsePolynomial {
 	return SparsePolynomial.constant(variableCount, value);
 }
 
-describe('SparsePolynomial bivariate factor corpus', () => {
+describe('SparsePolynomial bivariate factor', () => {
 	function parsePolynomial(input: string): SparsePolynomial {
 		return polynomialToSparsePolynomial(
 			new Polynomial(Expression.create(input), ['x', 'y'], 'lex'),
@@ -345,7 +345,7 @@ describe('SparsePolynomial complete bivariate factorization', () => {
 	});
 });
 
-describe('SparsePolynomial trivariate factor corpus', () => {
+describe('SparsePolynomial trivariate factor', () => {
 	function parsePolynomial(input: string): SparsePolynomial {
 		return polynomialToSparsePolynomial(
 			new Polynomial(Expression.create(input), ['x', 'y', 'z'], 'lex'),

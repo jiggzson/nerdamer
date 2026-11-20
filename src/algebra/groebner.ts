@@ -1,10 +1,10 @@
 import { collectVariablesSet } from '../core/classes/expression/collect';
-import { Expression } from '../core/classes/expression/Expression';
 import {
 	expressionToIntegerSparsePolynomial,
 	sparsePolynomialToExpression,
 } from '../core/classes/polynomial/SparsePolynomialAdapter';
 import { Vector } from '../core/classes/vector/Vector';
+import { toExpressions } from '../core/common/functions/structuredEntityUtils';
 
 import { Groebner } from './algorithms/groebnerBase';
 
@@ -24,23 +24,36 @@ import type { ExpressionInput } from '../core/types';
  * sorted basis. Use the advanced Groebner APIs for another monomial order, resource
  * budgets, elimination, or ideal membership.
  *
- * @param expressionArray - Polynomial-like generators of the ideal.
- * @param vars - Variable order, from highest to lowest lexicographic priority.
+ * @param expressionArray - Polynomial-like generators of the ideal, or a single one.
+ * @param vars - Variable order, from highest to lowest lexicographic priority, as
+ * names or a vector of variables.
  * @returns A new vector containing expression representations of the basis.
  */
-export function groebner(expressionArray: ExpressionInput[] | Vector, vars?: string[]) {
-	const inputs = Vector.isVector(expressionArray) ? expressionArray.elements : expressionArray;
-	const expressions = inputs.map(e => Expression.create(e));
-	// Get the unified variable list across ALL generators
-	vars ??= collectVariablesSet(expressions);
+export function groebner(
+	expressionArray: ExpressionInput[] | Vector | ExpressionInput,
+	vars?: string[] | Vector | ExpressionInput
+) {
+	// One generator may be given on its own, as in groebner(x^2+y).
+	const inputs = Vector.isVector(expressionArray)
+		? expressionArray.elements
+		: Array.isArray(expressionArray)
+			? expressionArray
+			: [expressionArray];
+	const expressions = toExpressions(inputs);
+	// Get the unified variable list across ALL generators. In Notation the order
+	// arrives as a vector of variables, as in groebner([x^2+y, x*y-1], [x, y]).
+	const order =
+		vars === undefined
+			? collectVariablesSet(expressions)
+			: (Vector.isVector(vars) ? vars.elements : Array.isArray(vars) ? vars : [vars]).map(String);
 
 	// Convert each polynomial using the unified variable list so indices are consistent.
 	// Rational denominators are cleared exactly while converting into the sparse ring.
 	const polys = expressions.map(
-		e => expressionToIntegerSparsePolynomial(e, vars).polynomial
+		e => expressionToIntegerSparsePolynomial(e, order).polynomial
 	);
 
 	return new Vector(
-		Groebner(polys).map(polynomial => sparsePolynomialToExpression(polynomial, vars))
+		Groebner(polys).map(polynomial => sparsePolynomialToExpression(polynomial, order))
 	);
 }

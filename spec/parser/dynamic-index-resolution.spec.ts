@@ -145,6 +145,16 @@ describe('Dynamic indexed references', () => {
 		);
 	});
 
+	it.each([
+		['2[3]', '[6]'],
+		['2 [3]', '[6]'],
+		['(2)[3]', '[6]'],
+		['x[3]', '[3*x]'],
+		['x[1,2]', '[x, 2*x]'],
+	])('multiplies a value that is followed by a vector it cannot index: %s', (source, expected) => {
+		expect(Parser.parse(source).text()).toEqual(expected);
+	});
+
 	it('treats an unknown one-argument call as implicit multiplication', () => {
 		expect(Parser.parse('script_missing_function(2)').text()).toEqual(
 			'2*script_missing_function'

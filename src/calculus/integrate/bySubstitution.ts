@@ -3,15 +3,41 @@ import { simplify } from '../../algebra/simplify/simplify';
 import { Expression } from '../../core/classes/expression/Expression';
 import { one } from '../../core/classes/expression/shortcuts';
 import { Polynomial } from '../../core/classes/polynomial/Polynomial';
-import { INTEGRATE, TRIG, HYPERBOLIC_TRIG } from '../../core/constants/functionNames';
-import { Pattern } from '../../core/converters/Pattern';
+import {
+	HYPERBOLIC_TRIG,
+	INTEGRATE,
+	INVERSE_HYPERBOLIC_TRIG,
+	INVERSE_TRIG,
+	LOG,
+	TRIG,
+} from '../../core/constants/functionNames';
 import { getU, subst } from '../../core/functions/subst';
 import { diff } from '../derivative/diff';
 
-import { tableOfIntegrals } from './integrationTable';
 import { hasTranscendental, MAX_INTEGRATION_DEPTH } from './utils';
 
+import type { IntegrationCallback } from './algorithms/rationalIntegration';
+
 const MAX_POWER_SUBSTITUTION_ATTEMPTS = 8;
+
+/**
+ * The last step of a change of variable: integrates the transformed integrand in the new
+ * variable and maps the result back with `back`, the new variable in terms of x. A partial
+ * result is rejected, since an integral left in the new variable would no longer be one in
+ * x after the back-substitution.
+ */
+export function integrateSubstituted(
+	transformed: Expression,
+	variable: Expression,
+	back: Expression,
+	depth: number,
+	integrate: IntegrationCallback
+): Expression | undefined {
+	const result = integrate(transformed, variable.text(), depth);
+	return result.hasFunction(INTEGRATE, true)
+		? undefined
+		: simplify(subst(result, variable, back));
+}
 
 function rationalDegree(value: Expression, variable: string): number {
 	return new Polynomial(value.getNumerator(), [variable]).deg() -
@@ -67,8 +93,13 @@ function testProductSides(
 	}
 	// Quick structural bail-out: if `other` is purely algebraic (no transcendentals)
 	// but `fx` contains transcendentals, then other cannot be proportional to f'(x)
-	// since differentiating a transcendental always produces transcendentals.
-	if (!hasTranscendental(other, x) && hasTranscendental(fx, x)) {
+	// since differentiating a transcendental usually produces transcendentals. The
+	// exceptions are log and the inverse functions, as in asin(x)' = 1/sqrt(1-x^2).
+	if (
+		!hasTranscendental(other, x) &&
+		hasTranscendental(fx, x) &&
+		!fx.isFunction([LOG, ...INVERSE_TRIG, ...INVERSE_HYPERBOLIC_TRIG])
+	) {
 		return undefined;
 	}
 	// For rational f, deg(f') = deg(f)-1 when deg(f) is nonzero.
@@ -343,19 +374,20 @@ function getWrappedInnerCandidates(factor: Expression, x: string): Expression[] 
  * @param fx - Complete product integrand, used to select a fresh variable.
  * @param factors - Multiplicative factors to test.
  * @param x - Integration variable.
+ * @param recurse - The integration controller, which integrates the outer factor.
+ * @param depth - Current integration depth.
  * @returns The back-substituted antiderivative, or `undefined` when the outer
- * factor cannot be integrated. The optional callback keeps experimental
- * recursive integration in its controller; legacy callers retain table lookup.
+ * factor cannot be integrated.
  */
 export function tryIntegrateByWrappedFactorSubstitution(
 	fx: Expression,
 	factors: Expression[],
 	x: string,
-	recurse?: (integrand: Expression, variable: string, depth: number) => Expression,
+	recurse: (integrand: Expression, variable: string, depth: number) => Expression,
 	depth = 0
 ): Expression | undefined {
 	let total: Expression | undefined;
-	if (recurse && depth >= MAX_INTEGRATION_DEPTH) {
+	if (depth >= MAX_INTEGRATION_DEPTH) {
 		return undefined;
 	}
 
@@ -383,13 +415,10 @@ export function tryIntegrateByWrappedFactorSubstitution(
 				continue;
 			}
 
-			const outerIntegral = recurse ? recurse(factorInU, u.text(), depth) :
-				tableOfIntegrals.lookup(new Pattern(factorInU, [u.text()]), 0);
-			if (!outerIntegral || outerIntegral.hasFunction(INTEGRATE)) {
-				continue;
+			const outerIntegral = integrateSubstituted(factorInU, u, inner, depth, recurse);
+			if (outerIntegral) {
+				return outerIntegral.times(match.constant);
 			}
-
-			return simplify(subst(outerIntegral, u, inner).times(match.constant));
 		}
 	}
 

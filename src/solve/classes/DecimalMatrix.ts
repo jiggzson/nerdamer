@@ -43,13 +43,13 @@ export class DecimalMatrix {
 			let maxRow = col;
 			for (let row = col + 1; row < n; row++) {
 				const val = aug[row][col].abs();
-				if (val.greaterThan(maxAbs)) {
+				if (val.gt(maxAbs)) {
 					maxAbs = val;
 					maxRow = row;
 				}
 			}
 
-			if (maxAbs.lessThan(new Decimal('1e-30'))) {
+			if (maxAbs.lt(new Decimal('1e-30'))) {
 				return null; // Singular
 			}
 
@@ -75,7 +75,7 @@ export class DecimalMatrix {
 			for (let j = i + 1; j < n; j++) {
 				sum = sum.minus(aug[i][j].times(x[j]));
 			}
-			if (aug[i][i].abs().lessThan(new Decimal('1e-30'))) {
+			if (aug[i][i].abs().lt(new Decimal('1e-30'))) {
 				return null; // Singular
 			}
 			x[i] = sum.div(aug[i][i]);

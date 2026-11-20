@@ -348,7 +348,6 @@ describe('TeX regressions', () => {
 		const tex = nerdamer.convertToLaTeX(Expression.create('a_ij'));
 		expect(tex).toMatch(/^a_\{\{?ij\}?\}$/);
 	});
-
 	it('formats 1600 finite nested unary functions without TeX stack exhaustion', () => {
 		const depth = 1600;
 		let expression = Expression.Variable('x');

@@ -37,6 +37,7 @@ describe('parser function documentation', () => {
 			.sort();
 
 		expect(scriptingNames).toEqual([
+			'IF',
 			'and',
 			'block',
 			'break',
@@ -110,7 +111,9 @@ describe('parser function documentation', () => {
 			package: 'nerdamer/solve',
 			name: 'solveSystem',
 		});
-		expect(byName.has('solveEquations')).toBe(false);
+		// The 1.x name is only a deprecated alias of solveeqs.
+		expect(byName.get('solveEquations')).toMatchObject({ canonicalName: 'solveeqs', deprecated: true });
+		expect(byName.get('solveEquations')?.directApi).toBeUndefined();
 		expect(byName.has('solveequations')).toBe(false);
 	});
 

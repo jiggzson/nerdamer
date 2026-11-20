@@ -13,7 +13,7 @@ describe('legacy #181 numerical complex precision consistency', () => {
 		{
 			name: 'addition',
 			input: '(3+4*i)+(1-2*i)',
-			numeric: () => new Complex(3, 4).add(new Complex(1, -2)),
+			numeric: () => new Complex(3, 4).plus(new Complex(1, -2)),
 		},
 		{
 			name: 'multiplication',

@@ -124,7 +124,7 @@ describe('public results', () => {
 		expect(visited).toEqual(['x', 'y']);
 	});
 
-	it('lets public Matrices inspect cells and rejects invalid coordinates deliberately', () => {
+	it('lets public Matrices inspect cells and rejects invalid coordinates', () => {
 		const matrix = new Matrix([1, 2], [3, 4]);
 		const before = matrix.text();
 		const seen: string[] = [];

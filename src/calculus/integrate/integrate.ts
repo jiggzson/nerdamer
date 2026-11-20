@@ -1,24 +1,23 @@
+import { linearizeTrig } from '../../algebra/simplify/trigreduce';
 import { Expression } from '../../core/classes/expression/Expression';
 import { constantsFreeProduct } from '../../core/classes/expression/products';
 import { one, zero } from '../../core/classes/expression/shortcuts';
 import { requireVariableName } from '../../core/classes/expression/utils';
-import { COS, INTEGRATE, LOG, SIN } from '../../core/constants/functionNames';
+import { COS, COSH, INTEGRATE, LOG, SIN, SINH } from '../../core/constants/functionNames';
 import { Pattern } from '../../core/converters/Pattern';
-import { message } from '../../core/errors';
+import { message, UnexpectedInputError } from '../../core/errors';
 import { warn } from '../../core/warnings';
 import { log } from '../../math/index';
+import { diff } from '../derivative/diff';
 
 import {
-	integrateRationalFamily,
-	tryIntegratePowerQuotient,
-} from './algorithms/rationalIntegration';
-import {
+	reduceRadicalPolynomial,
 	tryRadicalSubstitution,
-	tryIntegrateByWeierstrass,
-	tryIntegrateLogPower,
 	tryIntegrateSqrtQuadratic,
-} from './algorithms/strategies';
-import { tryIntegrateByParts } from './byParts';
+} from './algorithms/radicals';
+import { integrateRationalFamily } from './algorithms/rationalIntegration';
+import { tryIntegrateByWeierstrass } from './algorithms/weierstrass';
+import { tryIntegrateByParts, tryIntegrateLogPower } from './byParts';
 import {
 	integrateDerivativeQuotient,
 	matchProductSubstitution,
@@ -37,7 +36,22 @@ type IntegrationWarningState = { depthLimitReached: boolean };
  * Experimental integration controller, independent of the public integrate() API.
  * Recursive table rules call back into this controller with a bounded depth.
  */
-export function integrate(input: ExpressionInput, dx: ExpressionInput, depth = 0): Expression {
+export function integrate(input: ExpressionInput, dx?: ExpressionInput, depth = 0): Expression {
+	// Without a variable, use the input's only one. With several or none, which one is meant
+	// would be a guess: integrate(5) could be 5*x or 5*t.
+	if (dx === undefined) {
+		const expr = Expression.create(input);
+		const names = expr.variables();
+		if (names.length === 0) {
+			throw new UnexpectedInputError(message('noVariableInExpression'));
+		}
+		if (names.length > 1) {
+			throw new UnexpectedInputError(
+				message('ambiguousVariable', { expression: expr.text() })
+			);
+		}
+		dx = Expression.Variable(names[0]);
+	}
 	const state: IntegrationWarningState = { depthLimitReached: false };
 	const result = performIntegration(input, dx, depth, state);
 	if (state.depthLimitReached && result.hasFunction(INTEGRATE, true)) {
@@ -80,8 +94,7 @@ function performIntegration(
 			if (!retval) {
 				// Reuse the derivative-closed coefficient matcher for trig/exp families.
 				const factors = expr.isProduct() ? expr.elementsArray() : [expr];
-				if (factors.some(factor => factor.isEXP() ||
-					(factor.isFunction() && (factor.name === SIN || factor.name === COS)))) {
+				if (factors.some(factor => factor.isEXP() || factor.isFunction([SIN, COS, SINH, COSH]))) {
 					retval = pmintPolynomial(expr, variable);
 				}
 				if (!retval && expr.isEXP()) {
@@ -103,7 +116,7 @@ function performIntegration(
 				retval = integrateDerivativeQuotient(expr, variable);
 			}
 			if (!retval) {
-				retval = tryRadicalSubstitution(expr, variable, depth + 1, integrateNext, true);
+				retval = tryRadicalSubstitution(expr, variable, depth + 1, integrateNext);
 			}
 			if (!retval) {
 				retval = tryIntegrateSqrtQuadratic(expr, variable);
@@ -125,6 +138,57 @@ function performIntegration(
 					}
 				}
 			}
+			if (!retval && (expr.isProduct() || expr.isFunction([SIN, COS, SINH, COSH]))) {
+				// Products and powers of sine and cosine, or of sinh and cosh, with linear
+				// arguments become a sum of terms with at most one of each kind, such as
+				// x*sin(x)^2 = x/2 - x*cos(2*x)/2, which the derivative-closed families integrate
+				// term by term. Other factors must be powers of the variable or exponentials of a
+				// linear argument, since the terms rarely integrate otherwise and rewriting would
+				// only cost time.
+				const factors =
+					expr.isProduct() && expr.getPower().isOne() ? expr.elementsArray() : [expr];
+				const isLinear = (argument: Expression) =>
+					!diff(argument, variable).hasVariable(variable);
+				const trig = factors.filter(factor => factor.isFunction([SIN, COS, SINH, COSH]));
+				const linear =
+					trig.every(
+						factor =>
+							factor.getPower().isInteger() &&
+							factor.getPower().gt(zero()) &&
+							isLinear(factor.getArguments()[0])
+					) &&
+					factors.every(
+						factor =>
+							trig.includes(factor) ||
+							!factor.hasVariable(variable) ||
+							(factor.isVAR() && factor.getPower().isNUM()) ||
+							(factor.isEXP() &&
+								!factor.getBase().hasVariable(variable) &&
+								isLinear(factor.getPower()))
+					);
+				// Only two factors of one kind combine: sin(x)*sinh(x) has no such identity.
+				const hyperbolic = trig.filter(factor => factor.isFunction([SINH, COSH])).length;
+				const reducible =
+					hyperbolic >= 2 ||
+					trig.length - hyperbolic >= 2 ||
+					trig.some(factor => factor.getPower().gt(one()));
+				if (linear && reducible) {
+					const linearized = linearizeTrig(expr);
+					if (linearized.text() !== expr.text()) {
+						const integrated = integrateNext(linearized, variable, depth + 1);
+						if (!integrated.hasFunction(INTEGRATE, true)) {
+							retval = integrated;
+						}
+					}
+				}
+			}
+			if (!retval) {
+				retval = reduceRadicalPolynomial(expr, variable, depth + 1, integrateNext);
+			}
+			if (!retval) {
+				// Radicals inside functions, such as e^sqrt(x), become polynomial arguments.
+				retval = tryRadicalSubstitution(expr, variable, depth + 1, integrateNext, true);
+			}
 			if (!retval) {
 				retval = tryIntegrateByParts(expr, variable, integrateNext, depth + 1);
 			}
@@ -140,10 +204,7 @@ function performIntegration(
 				retval = pmintRational(expr, variable);
 			}
 			if (!retval) {
-				retval = tryIntegratePowerQuotient(expr, variable, depth + 1, integrateNext);
-			}
-			if (!retval) {
-				retval = tryIntegrateByWeierstrass(expr, variable, depth + 1, integrateNext, true);
+				retval = tryIntegrateByWeierstrass(expr, variable, depth + 1, integrateNext);
 			}
 		}
 

@@ -7,7 +7,7 @@ import type { Dictionary } from '../../classes/dictionary/Dictionary';
 import type { Matrix } from '../../classes/matrix/Matrix';
 import type { ValuesSet } from '../../classes/valuesSet/ValuesSet';
 import type { Vector } from '../../classes/vector/Vector';
-import type { NerdamerInput, ParserEntity, ExpressionInput } from '../../types';
+import type { NerdamerInput, ParserEntity } from '../../types';
 
 /**
  * Checks to see if an obj is a set of values
@@ -47,10 +47,10 @@ export function toParserEntities(elements: NerdamerInput[]): ParserEntity[] {
 }
 
 /**
- * Converts all inputs to Expression
- * @param inputs
- * @returns
+ * Converts each input to an Expression with {@link Expression.create}.
+ * @param inputs - Values to convert, such as the elements of a vector.
+ * @returns The converted expressions, in the same order.
  */
-export function toExpressions(inputs: ExpressionInput[]) {
+export function toExpressions(inputs: NerdamerInput[]): Expression[] {
 	return inputs.map(e => Expression.create(e));
 }

@@ -8,12 +8,11 @@ import { simplify } from './algebra/simplify/simplify';
 import { completeSquare } from './api/algebra';
 import * as functionCategories from './api/constants';
 import { buildFunction } from './api/core';
-import { diff } from './calculus/derivative/diff';
 import { C, S } from './calculus/fresnel';
-import { integrate } from './calculus/integrate/integrate';
 import { ilaplace } from './calculus/laplace/ilaplace';
 import { laplace } from './calculus/laplace/laplace';
 import { limit } from './calculus/limit/limit';
+import { taylor } from './calculus/taylor';
 import { assume, getAssumptions } from './core/classes/assumption/assume';
 import { Assumption } from './core/classes/assumption/Assumption';
 import { Collection } from './core/classes/collection/Collection';
@@ -21,9 +20,11 @@ import { Dictionary } from './core/classes/dictionary/Dictionary';
 import { Equation } from './core/classes/equation/Equation';
 import { Expression } from './core/classes/expression/Expression';
 import { symbols } from './core/classes/expression/shortcuts';
+import { requireMatrix } from './core/classes/matrix/dispatch';
 import { determinant, invert, nullspace } from './core/classes/matrix/functions';
 import { Matrix } from './core/classes/matrix/Matrix';
 import { imatrix } from './core/classes/matrix/utils';
+import { callFunction } from './core/classes/parser/operations/functions';
 import { Parser } from './core/classes/parser/Parser';
 import { assign, unassign } from './core/classes/parser/scripting/scope';
 import {
@@ -38,6 +39,7 @@ import { Rational } from './core/classes/rational/Rational';
 import { ValuesSet } from './core/classes/valuesSet/ValuesSet';
 import { cross, dot } from './core/classes/vector/functions';
 import { Vector } from './core/classes/vector/Vector';
+import { toParserEntities } from './core/common/functions/structuredEntityUtils';
 import { dataTypes } from './core/constants/entityTypes';
 import { PARSER_CONSTANTS } from './core/constants/parserValues';
 import { Converter } from './core/converters/Converter';
@@ -57,7 +59,7 @@ import { expand } from './core/functions/expand/expand';
 import { setFunction as registerFunction } from './core/functions/setFunction';
 import { subst, uSub, uUnSub } from './core/functions/subst';
 import { registerNerdamerFunctions } from './core/nerdamerFunctions';
-import { clearWarnings, getWarnings, setConsoleWarnings, setWarningHandler, warn } from './core/warnings';
+import { alias, clearWarnings, getWarnings, setConsoleWarnings, setWarningHandler, warn } from './core/warnings';
 import { defint } from './math/defint/defint';
 import { hypot, line } from './math/geometry';
 import {
@@ -122,7 +124,19 @@ import {
 	acoth,
 } from './math/trig';
 import { trunc } from './math/trunc';
-import { continuedFraction, isprime } from './math/utils';
+import {
+	append,
+	binom,
+	continuedFraction,
+	difference,
+	intersection,
+	intersects,
+	isprime,
+	isSubset,
+	nextprime,
+	powmod,
+	union,
+} from './math/utils';
 import { SolutionSet } from './solve/classes/SolutionSet';
 import { roots, solve } from './solve/solve';
 import { solveSystem } from './solve/solveSystem';
@@ -168,6 +182,7 @@ export type {
 	USubstitutionResult,
 } from './core/functions/subst';
 export type { TextOptions };
+export type { NerdamerWarning, WarningHandler } from './core/warnings';
 
 registerNerdamerFunctions();
 
@@ -232,9 +247,6 @@ declare module './core/classes/expression/Expression' {
 
 		/** Legacy alias for TeX conversion. */
 		latex(options?: TeXOptions): string;
-
-		/** Legacy alias for {@link Expression.isInf}. */
-		isInfinity(): boolean;
 
 		/** Returns whether this expression's numeric multiplier is fractional. */
 		isFraction(): boolean;
@@ -310,11 +322,16 @@ type ApiEnumerable = {
 /**
  * Adds selected root functions as instance methods without changing the source classes.
  * Existing class methods win, so a class can keep a more specific implementation.
+ *
+ * The root functions named in `wholeMethods` receive equations, vectors and matrices whole
+ * rather than element by element, as diff and integrate count an omitted variable across all
+ * of the value.
  */
 function extendApi(
 	classes: ApiClass[],
 	methods: Record<string, ApiMethod>,
-	scalarMethods: Record<string, ApiMethod> = {}
+	scalarMethods: Record<string, ApiMethod> = {},
+	wholeMethods: readonly string[] = []
 ): void {
 	for (const cls of classes) {
 		const prototype = cls.prototype as Record<string, unknown>;
@@ -326,6 +343,7 @@ function extendApi(
 					input: NerdamerInput,
 					...args: NerdamerInput[]
 				) => ParserEntity;
+				const whole = wholeMethods.includes(methodName);
 
 				Object.defineProperty(prototype, methodName, {
 					configurable: true,
@@ -334,8 +352,16 @@ function extendApi(
 						const apply = (value: ParserEntity): ParserEntity => {
 							let retval: ParserEntity;
 
+							if (
+								whole &&
+								(Equation.isEquation(value) ||
+									Vector.isVector(value) ||
+									Matrix.isMatrix(value))
+							) {
+								retval = method(value, ...args);
+							}
 							// Equations are not enumerable, but transformations apply to both sides.
-							if (Equation.isEquation(value)) {
+							else if (Equation.isEquation(value)) {
 								retval = value.each(e => apply(e));
 							} else if (value.isEnumerable) {
 								// Structured values receive the operation element-wise on a copy.
@@ -483,11 +509,6 @@ Expression.prototype.latex = function (this: Expression, options?: TeXOptions): 
 	return latexConverter.convert(this, normalizeTeXOptions(options));
 };
 
-/** Legacy infinity check alias. */
-Expression.prototype.isInfinity = function (this: Expression): boolean {
-	return this.isInf();
-};
-
 /** Legacy fractional-multiplier check. */
 Expression.prototype.isFraction = function (this: Expression): boolean {
 	return !this.getMultiplier().isInteger();
@@ -522,6 +543,41 @@ Expression.prototype.equals = function (this: Expression, value: ExpressionInput
  * nerdamer.pretty('a*x+b*x^2+cos(x)', 'text'); // 'cos(x)+a*x+b*x^2'
  * ```
  */
+// Some root functions are library functions that take parsed values. Wrapped with
+// parseArguments, they parse string and number arguments first, as the rest of the API
+// does, so nerdamer.gamma(5) and nerdamer.trace('matrix([1,2],[3,4])') work.
+// Other arguments, such as parsed values and arrays, reach the function unchanged.
+// `name` is the name in error messages, and `target` the library function apiTarget
+// reports when `fn` wraps it.
+type Parseable<P extends unknown[]> = { [K in keyof P]: P[K] | string | number | bigint };
+const parsedTargets = new WeakMap<object, object>();
+const parseArgument = (arg: unknown): unknown =>
+	typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'bigint'
+		? Parser.parse(String(arg))
+		: arg;
+function parseArguments<A extends unknown[], R>(
+	name: string,
+	fn: (...args: A) => R,
+	target: object = fn
+): (...args: Parseable<A>) => R {
+	const wrapper = (...args: Parseable<A>) => {
+		// fn.length counts the parameters before the first optional one.
+		if (args.length < fn.length) {
+			throw new errors.ParserError(
+				errors.message('functionMinArgs', {
+					function: name,
+					min: String(fn.length),
+					actual: String(args.length),
+				})
+			);
+		}
+		// Strings and numbers are now parsed values, which is what fn takes.
+		return fn(...(args.map(parseArgument) as A));
+	};
+	parsedTargets.set(wrapper, target);
+	return wrapper;
+}
+
 nerdamer.pretty = function (e: ParserEntity | string, type: 'TeX' | 'text' = 'TeX') {
 	const converter = type === 'TeX' ? latexConverter : textConverter;
 	return converter.convert(e);
@@ -840,7 +896,7 @@ nerdamer.symbols = symbols;
  *
  * @example
  * ```ts
- * nerdamer.version(); // '2.0.0'
+ * nerdamer.version(); // '2.1.0'
  * ```
  */
 nerdamer.version = function () {
@@ -960,6 +1016,36 @@ nerdamer.cot = cot;
 nerdamer.asec = asec;
 nerdamer.acsc = acsc;
 nerdamer.acot = acot;
+const arcsec: (x: ExpressionInput) => Expression = asec;
+/**
+ * Alias for `nerdamer.asec`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arcsec(2).text(); // "(1/3)*pi"
+ * ```
+ */
+nerdamer.arcsec = arcsec;
+const arccsc: (x: ExpressionInput) => Expression = acsc;
+/**
+ * Alias for `nerdamer.acsc`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arccsc(2).text(); // "(1/6)*pi"
+ * ```
+ */
+nerdamer.arccsc = arccsc;
+const arccot: (x: ExpressionInput) => Expression = acot;
+/**
+ * Alias for `nerdamer.acot`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arccot(1).text(); // "(1/4)*pi"
+ * ```
+ */
+nerdamer.arccot = arccot;
 
 // Hyperbolic functions
 nerdamer.cosh = cosh;
@@ -968,12 +1054,72 @@ nerdamer.tanh = tanh;
 nerdamer.acosh = acosh;
 nerdamer.asinh = asinh;
 nerdamer.atanh = atanh;
+const arccosh: (x: ExpressionInput) => Expression = acosh;
+/**
+ * Alias for `nerdamer.acosh`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arccosh('x').text(); // "acosh(x)"
+ * ```
+ */
+nerdamer.arccosh = arccosh;
+const arcsinh: (x: ExpressionInput) => Expression = asinh;
+/**
+ * Alias for `nerdamer.asinh`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arcsinh('x').text(); // "asinh(x)"
+ * ```
+ */
+nerdamer.arcsinh = arcsinh;
+const arctanh: (x: ExpressionInput) => Expression = atanh;
+/**
+ * Alias for `nerdamer.atanh`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arctanh('x').text(); // "atanh(x)"
+ * ```
+ */
+nerdamer.arctanh = arctanh;
 nerdamer.sech = sech;
 nerdamer.csch = csch;
 nerdamer.coth = coth;
 nerdamer.asech = asech;
 nerdamer.acsch = acsch;
 nerdamer.acoth = acoth;
+const arcsech: (x: ExpressionInput) => Expression = asech;
+/**
+ * Alias for `nerdamer.asech`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arcsech('x').text(); // "asech(x)"
+ * ```
+ */
+nerdamer.arcsech = arcsech;
+const arccsch: (x: ExpressionInput) => Expression = acsch;
+/**
+ * Alias for `nerdamer.acsch`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arccsch('x').text(); // "acsch(x)"
+ * ```
+ */
+nerdamer.arccsch = arccsch;
+const arccoth: (x: ExpressionInput) => Expression = acoth;
+/**
+ * Alias for `nerdamer.acoth`.
+ *
+ * @example
+ * ```ts
+ * nerdamer.arccoth('x').text(); // "acoth(x)"
+ * ```
+ */
+nerdamer.arccoth = arccoth;
 
 // Elementary and numeric functions
 nerdamer.log = log;
@@ -1003,7 +1149,7 @@ const ceil: (x: ExpressionInput) => Expression = ceiling;
  */
 nerdamer.ceil = ceil;
 nerdamer.trunc = trunc;
-nerdamer.hypot = hypot;
+nerdamer.hypot = parseArguments('hypot', hypot);
 
 // Discrete and number-theoretic functions
 const fact: (x: Expression) => Expression = factorial;
@@ -1015,9 +1161,9 @@ const fact: (x: Expression) => Expression = factorial;
  * nerdamer.fact(5).text(); // "120"
  * ```
  */
-nerdamer.fact = fact;
-nerdamer.factorial = factorial;
-const dfact: (x: Expression) => Expression = doubleFactorial;
+nerdamer.fact = parseArguments('fact', fact);
+nerdamer.factorial = parseArguments('factorial', factorial);
+const dfact: (x: ExpressionInput) => Expression = doubleFactorial;
 /**
  * Computes the double factorial of an expression.
  *
@@ -1027,7 +1173,7 @@ const dfact: (x: Expression) => Expression = doubleFactorial;
  * ```
  */
 nerdamer.dfact = dfact;
-const dfactorial: (x: Expression) => Expression = doubleFactorial;
+const dfactorial: (x: ExpressionInput) => Expression = doubleFactorial;
 /**
  * Computes the double factorial of an expression.
  *
@@ -1047,26 +1193,29 @@ const fib: (x: ExpressionInput) => Expression = fibonacci;
  * ```
  */
 nerdamer.fib = fib;
-nerdamer.mod = mod;
-nerdamer.modInv = modInv;
+nerdamer.mod = parseArguments('mod', mod);
+nerdamer.modInv = parseArguments('modInv', modInv);
 nerdamer.isPrime = isprime;
+nerdamer.nextprime = nextprime;
+nerdamer.binom = binom;
+nerdamer.powmod = powmod;
 
 // Complex functions
-nerdamer.imagpart = imagPart;
-nerdamer.realpart = realPart;
-nerdamer.polarform = polarForm;
+nerdamer.imagpart = parseArguments('imagpart', imagPart);
+nerdamer.realpart = parseArguments('realpart', realPart);
+nerdamer.polarform = parseArguments('polarform', polarForm);
 nerdamer.rectform = rectForm;
 nerdamer.arg = arg;
 nerdamer.conjugate = conjugate;
 nerdamer.csgn = csgn;
 
 // Special functions
-nerdamer.gamma = gamma;
+nerdamer.gamma = parseArguments('gamma', gamma);
 nerdamer.gamma_incomplete = gammaIncomplete;
 nerdamer.gamma_incomplete_lower = gammaIncompleteLower;
-nerdamer.erf = erf;
-nerdamer.erfc = erfc;
-nerdamer.heaviside = heaviside;
+nerdamer.erf = parseArguments('erf', erf);
+nerdamer.erfc = parseArguments('erfc', erfc);
+nerdamer.heaviside = parseArguments('heaviside', heaviside);
 nerdamer.step = step;
 nerdamer.rect = rect;
 nerdamer.tri = tri;
@@ -1079,14 +1228,14 @@ const delta: (x: Expression) => Expression = dirac;
  * nerdamer.delta(5).text(); // "0"
  * ```
  */
-nerdamer.delta = delta;
-nerdamer.Ci = Ci;
-nerdamer.Chi = Chi;
-nerdamer.Si = Si;
-nerdamer.Shi = Shi;
-nerdamer.Li = Li;
-nerdamer.Ei = Ei;
-nerdamer.sinc = sinc;
+nerdamer.delta = parseArguments('delta', delta);
+nerdamer.Ci = parseArguments('Ci', Ci);
+nerdamer.Chi = parseArguments('Chi', Chi);
+nerdamer.Si = parseArguments('Si', Si);
+nerdamer.Shi = parseArguments('Shi', Shi);
+nerdamer.Li = parseArguments('Li', Li);
+nerdamer.Ei = parseArguments('Ei', Ei);
+nerdamer.sinc = parseArguments('sinc', sinc);
 
 // Statistics
 nerdamer.mean = mean;
@@ -1103,12 +1252,20 @@ nerdamer.parens = parens;
 nerdamer.continued_fraction = continuedFraction;
 nerdamer.scientific = scientific;
 nerdamer.contains = contains;
+nerdamer.append = parseArguments('append', append);
+nerdamer.union = parseArguments('union', union);
+nerdamer.intersection = parseArguments('intersection', intersection);
+nerdamer.difference = parseArguments('difference', difference);
+nerdamer.intersects = parseArguments('intersects', intersects);
+nerdamer.issubset = parseArguments('issubset', isSubset);
+/** @deprecated Use {@link nerdamer.issubset}. */
+nerdamer.is_subset = alias(nerdamer.issubset, 'is_subset', 'issubset');
 nerdamer.subst = subst;
 nerdamer.uSub = uSub;
 nerdamer.uUnSub = uUnSub;
 
 // Algebra
-nerdamer.expand = expand;
+nerdamer.expand = parseArguments('expand', expand);
 nerdamer.factor = factor;
 nerdamer.pfactor = pfactor;
 nerdamer.pfactord = pfactord;
@@ -1130,15 +1287,62 @@ nerdamer.divide = polynomialDivide;
 nerdamer.simplify = simplify;
 nerdamer.groebner = groebner;
 
+/**
+ * The parser's diff for an expression, equation, vector or matrix. An omitted variable follows
+ * the parser's rule: the input's only variable, counted across all of it, is used, and several
+ * are an error. An order needs a variable, as it does in parser syntax.
+ */
+function diffInput(x: Expression, variable?: ExpressionInput, n?: Expression | number): Expression;
+function diffInput(
+	x: NerdamerInput,
+	variable?: ExpressionInput,
+	n?: Expression | number
+): ParserEntity;
+function diffInput(
+	x: NerdamerInput,
+	variable?: ExpressionInput,
+	n?: Expression | number
+): ParserEntity {
+	const args = [typeof x === 'string' ? Parser.parse(x) : toParserEntities([x])[0]];
+	if (variable !== undefined) {
+		args.push(Expression.create(variable));
+	} else if (n !== undefined) {
+		throw new errors.UnexpectedInputError(
+			errors.message('plainVariableExpected', { input: 'undefined' })
+		);
+	}
+	if (n !== undefined) {
+		args.push(Expression.create(n));
+	}
+	return callFunction('diff', args);
+}
+
+/**
+ * The parser's integrate for an expression, equation, vector or matrix, with the same rule as
+ * {@link diffInput} for an omitted variable.
+ */
+function integrateInput(x: Expression, variable?: ExpressionInput): Expression;
+function integrateInput(x: NerdamerInput, variable?: ExpressionInput): ParserEntity;
+function integrateInput(x: NerdamerInput, variable?: ExpressionInput): ParserEntity {
+	const args = [typeof x === 'string' ? Parser.parse(x) : toParserEntities([x])[0]];
+	if (variable !== undefined) {
+		args.push(Expression.create(variable));
+	}
+	return callFunction('integrate', args);
+}
+
 // Solvers
 nerdamer.solve = solve;
 nerdamer.roots = roots;
 nerdamer.solveSystem = solveSystem;
 nerdamer.solveeqs = solveSystem;
+/** @deprecated The 1.x name for {@link nerdamer.solveeqs}. */
+nerdamer.solveEquations = alias(solveSystem, 'solveEquations', 'solveeqs');
 
 // Calculus
-nerdamer.diff = diff;
-nerdamer.integrate = integrate;
+nerdamer.diff = diffInput;
+nerdamer.taylor = taylor;
+nerdamer.integrate = integrateInput;
 nerdamer.laplace = laplace;
 nerdamer.ilaplace = ilaplace;
 const ilt: (
@@ -1163,16 +1367,18 @@ nerdamer.S = S;
 nerdamer.C = C;
 
 // Matrix operations
-nerdamer.matrix = matrix;
-nerdamer.imatrix = imatrix;
-nerdamer.determinant = determinant;
-nerdamer.invert = invert;
-nerdamer.nullspace = nullspace;
+nerdamer.matrix = parseArguments('matrix', matrix);
+nerdamer.imatrix = parseArguments('imatrix', imatrix);
+nerdamer.determinant = parseArguments('determinant', requireMatrix('determinant', determinant), determinant);
+nerdamer.invert = parseArguments('invert', requireMatrix('invert', invert), invert);
+nerdamer.nullspace = parseArguments('nullspace', requireMatrix('nullspace', nullspace), nullspace);
+nerdamer.trace = parseArguments('trace', requireMatrix('trace', (M: Matrix) => M.trace()));
+nerdamer.rank = parseArguments('rank', requireMatrix('rank', (M: Matrix) => Expression.Number(M.rank())));
 
 // Vector operations
-nerdamer.dot = dot;
-nerdamer.cross = cross;
-nerdamer.line = line;
+nerdamer.dot = parseArguments('dot', dot);
+nerdamer.cross = parseArguments('cross', cross);
+nerdamer.line = parseArguments('line', line);
 
 // Polynomial operations
 nerdamer.deg = deg;
@@ -1202,6 +1408,58 @@ nerdamer.getAssumptions = getAssumptions;
 // Complete the full-package instance API
 // -----------------------------------------------------------------------------
 //
+// JS functions whose parser function is element-wise distribute over vectors, matrices and
+// sets exactly as the parser does: a call with one of them as an argument goes through
+// callFunction, as nerdamer('factor(...)') would. Other calls reach the function unchanged.
+// That covers deferred functions such as limit and sum too, and numeric, which handles
+// structures itself; deferred functions get their arguments as the parser gives them.
+// Aliases such as dfact and dfactorial, or arccos and acos, share one wrapper.
+type ApiFunction = (...args: unknown[]) => unknown;
+const apiTargets = new WeakMap<ApiFunction, ApiFunction>();
+const isStructure = (value: unknown) =>
+	Vector.isVector(value) || Matrix.isMatrix(value) || ValuesSet.isValuesSet(value);
+const isEntity = (value: unknown): value is ParserEntity =>
+	typeof value === 'object' && value !== null && 'dataType' in value;
+const api = nerdamer as unknown as Record<string, unknown>;
+const wrappers = new Map<unknown, ApiFunction>();
+for (const key of Object.keys(api)) {
+	const fn = api[key];
+	const name = key in mathFunctionRegistry ? key : key.toLowerCase();
+	const entry = mathFunctionRegistry[name];
+	const distributes = entry && (entry.distElWise || (entry.deferArguments && !entry.bound));
+	if (typeof fn === 'function' && distributes && !wrappers.has(fn)) {
+		const target = fn as ApiFunction;
+		const parses = parsedTargets.has(target);
+		const wrapper: ApiFunction = (...rawArgs) => {
+			const args = parses ? rawArgs.map(parseArgument) : rawArgs;
+			let retval: unknown;
+			if (args.some(isStructure)) {
+				const entities = args
+					.filter(arg => arg !== undefined)
+					.map(arg => (isEntity(arg) ? arg : Parser.parse(String(arg))));
+				retval = callFunction(name, entry.deferArguments ? entities.map(arg => () => arg) : entities);
+			} else {
+				retval = target(...args);
+			}
+			return retval;
+		};
+		apiTargets.set(wrapper, (parsedTargets.get(target) as ApiFunction | undefined) ?? target);
+		wrappers.set(fn, wrapper);
+	}
+}
+for (const key of Object.keys(api)) {
+	api[key] = wrappers.get(api[key]) ?? api[key];
+}
+
+/**
+ * The function a root API function delegates to: the library function itself for the
+ * functions wrapped above to distribute over vectors, matrices and sets or to parse their
+ * arguments, and `fn` for every other function. For example, apiTarget(nerdamer.factor) is the algebra package's factor.
+ */
+export function apiTarget<T>(fn: T): T {
+	return (apiTargets.get(fn as ApiFunction) ?? parsedTargets.get(fn as object) ?? fn) as T;
+}
+
 // Root functions are exposed as chainable instance methods only after the complete
 // Nerdamer API has been assembled above. Native class methods are left untouched.
 
@@ -1222,7 +1480,8 @@ nerdamer.updateAPI = function () {
 	extendApi(
 		[Expression, Matrix, Vector, Collection, Dictionary, ValuesSet, Equation],
 		methods,
-		scalarMethods
+		scalarMethods,
+		['diff', 'integrate']
 	);
 	return nerdamer;
 };

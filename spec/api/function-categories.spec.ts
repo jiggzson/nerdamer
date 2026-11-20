@@ -50,7 +50,7 @@ describe('public mathematical function categories', () => {
 
 	it('classifies divisibility, modular arithmetic and integer prime factors', () => {
 		expect(NUMBER_THEORY).toEqual([
-		'isprime', 'gcd', 'lcm', 'mod', 'modinv', 'pfactor', 'pfactord',
+		'isprime', 'nextprime', 'gcd', 'lcm', 'mod', 'modinv', 'powmod', 'pfactor', 'pfactord',
 	]);
 		expect(NUMBER_THEORY).not.toContain('factor');
 		expect(NUMBER_THEORY).not.toContain('fib');

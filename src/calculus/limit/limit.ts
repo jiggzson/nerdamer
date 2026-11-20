@@ -1,7 +1,9 @@
 import { simplify } from '../../algebra/simplify/simplify';
 import { Expression } from '../../core/classes/expression/Expression';
 import { minusTwo, one, two, zero } from '../../core/classes/expression/shortcuts';
+import { nodeCount } from '../../core/classes/expression/traversal';
 import { Polynomial } from '../../core/classes/polynomial/Polynomial';
+import { toExpressions } from '../../core/common/functions/structuredEntityUtils';
 import { ABS, ATAN, COS, LIMIT, LOG, SGN, SIN, SQRT } from '../../core/constants/functionNames';
 import { Pattern } from '../../core/converters/Pattern';
 import { exp } from '../../math/index';
@@ -290,7 +292,7 @@ function isInfinityDifference(expr: Expression, x: Expression, val: Expression):
 		return false;
 	}
 
-	const terms = expr.elementsArray().map(e => Expression.create(e));
+	const terms = toExpressions(expr.elementsArray());
 	let hasPos = false;
 	let hasNeg = false;
 
@@ -325,7 +327,7 @@ function tryRewriteIndeterminate(
 	// Check if the whole expression (with denominator 1) is a product containing
 	// a zero-approaching and an infinity-approaching factor.
 	if (expr.getDenominator().isOne() && expr.isProduct()) {
-		const factors = expr.elementsArray().map(e => Expression.create(e));
+		const factors = toExpressions(expr.elementsArray());
 
 		// Find the first zero factor and first inf factor
 		let zeroIdx = -1;
@@ -376,7 +378,7 @@ function tryRewriteIndeterminate(
 		}
 
 		// Manual fallback: combine to common denominator
-		const terms = expr.elementsArray().map(e => Expression.create(e));
+		const terms = toExpressions(expr.elementsArray());
 		if (terms.length === 2) {
 			const [a, b] = terms;
 			const aNum = a.getNumerator();
@@ -797,7 +799,7 @@ function tryComposition(
 	// --- Sums: limit(a + b + ...) = limit(a) + limit(b) + ... ---
 	// when no indeterminate ∞ - ∞ forms arise.
 	if (expr.isSum()) {
-		const terms = expr.elementsArray().map(e => Expression.create(e));
+		const terms = toExpressions(expr.elementsArray());
 
 		// Only decompose if there are multiple terms that depend on x
 		if (terms.length < 2) {
@@ -862,7 +864,7 @@ function tryComposition(
 	// --- Products: limit(a · b · ...) = limit(a) · limit(b) · ... ---
 	// when no indeterminate 0 · ∞ forms arise.
 	if (expr.isProduct()) {
-		const factors = expr.elementsArray(true).map(e => Expression.create(e));
+		const factors = toExpressions(expr.elementsArray(true));
 
 		if (factors.length < 2) {
 			return undefined;
@@ -897,6 +899,10 @@ function tryComposition(
 		// 0 · ∞ is indeterminate — apply L'Hôpital directly.
 		// For f·g where f→0 and g→∞, rewrite as f/(1/g), both→0.
 		// L'Hôpital gives f'/(1/g)' = f'/(-g'/g²) = -f'·g²/g'.
+		// The other orientation, g/(1/f) with both→∞, gives -g'·f²/f'.
+		// Log-like factors such as log(x) or Ei(x) only resolve in the
+		// numerator; in the denominator each round adds another power.
+		// The growing form is the larger one, so try the smaller form first.
 		// Compute this directly since Expression arithmetic recombines
 		// f/(1/g) back into f·g, defeating the rewrite.
 		if (hasZero && hasInf) {
@@ -920,10 +926,23 @@ function tryComposition(
 				try {
 					const fPrime = diff(f, x);
 					const gPrime = diff(g, x);
+					const candidates: Expression[] = [];
 
 					if (!gPrime.isZero()) {
 						// L'Hôpital on f/(1/g): result = -f'·g²/g'
-						let lhopitalExpr = simplify(fPrime.times(g.pow(two())).div(gPrime).neg());
+						candidates.push(fPrime.times(g.pow(two())).div(gPrime).neg());
+					}
+					if (!fPrime.isZero()) {
+						// L'Hôpital on g/(1/f): result = -g'·f²/f'
+						candidates.push(gPrime.times(f.pow(two())).div(fPrime).neg());
+					}
+
+					const simplified = candidates
+						.map(candidate => simplify(candidate))
+						.sort((a, b) => nodeCount(a) - nodeCount(b));
+
+					for (const candidate of simplified) {
+						let lhopitalExpr = candidate;
 
 						// Multiply back any remaining factors
 						for (let i = 0; i < factors.length; i++) {
@@ -932,7 +951,10 @@ function tryComposition(
 							}
 						}
 
-						return limit(lhopitalExpr, x, val, dir, depth + 1);
+						const result = limit(lhopitalExpr, x, val, dir, depth + 1);
+						if (!result.isFunction(LIMIT)) {
+							return result;
+						}
 					}
 				} catch {
 					return undefined;

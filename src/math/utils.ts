@@ -6,9 +6,24 @@ export { product, stripPower, sum } from '../core/classes/expression/utils';
 import { Matrix } from '../core/classes/matrix/Matrix';
 import { ValuesSet } from '../core/classes/valuesSet/ValuesSet';
 import { Vector } from '../core/classes/vector/Vector';
-import { COUNT, ISPRIME, SIZE } from '../core/constants/functionNames';
-import { message, UnexpectedInputError } from '../core/errors';
-import { isPrimeBig } from '../core/functions/bigint/primeFactor';
+import { dataTypes } from '../core/constants/entityTypes';
+import {
+	APPEND,
+	BINOM,
+	COUNT,
+	DIFFERENCE,
+	INTERSECTION,
+	INTERSECTS,
+	ISPRIME,
+	ISSUBSET,
+	NEXT_PRIME,
+	POWMOD,
+	SIZE,
+	UNION,
+} from '../core/constants/functionNames';
+import { message, UnexpectedDataType, UnexpectedInputError } from '../core/errors';
+import { binom as binomBig, powMod as powModBig } from '../core/functions/bigint/bigint';
+import { isPrimeBig, nextPrimeBig } from '../core/functions/bigint/primeFactor';
 
 import type { ExpressionInput, ParserEntity } from '../core/types';
 
@@ -207,6 +222,125 @@ export function count(x: ParserEntity) {
 	return Expression.toFunction(COUNT, [x]);
 }
 
+/**
+ * Returns a new vector with `value` added as its last element. The vector itself isn't changed.
+ * A symbolic first argument keeps the call, so it can be evaluated once the vector is known.
+ *
+ * @param x - The vector to add to.
+ * @param value - The element to add. A vector is added as one element.
+ * @returns The longer vector.
+ * @throws {@link core!UnexpectedDataType} When `x` is a set, matrix or other non-vector value.
+ *
+ * @example
+ * ```ts
+ * append(Vector.create([1, 2]), Expression.create(3)).text(); // [1, 2, 3]
+ * ```
+ */
+export function append(x: ParserEntity, value: ParserEntity): ParserEntity {
+	let retval: ParserEntity;
+	if (Vector.isVector(x)) {
+		const extended = x.copy();
+		extended.elements.push(value.copy());
+		retval = extended;
+	} else if (Expression.isExpression(x) && !x.isNUM() && Expression.isExpression(value)) {
+		// A call can only keep expressions as arguments.
+		retval = Expression.toFunction(APPEND, [x, value]);
+	} else {
+		throw new UnexpectedDataType(
+			message('vectorExpected', { type: dataTypes[x.dataType] ?? 'undefined' })
+		);
+	}
+	return retval;
+}
+
+/**
+ * Applies one of the ValuesSet operations to sets. Symbolic arguments keep the call.
+ *
+ * @throws {@link core!UnexpectedDataType} When an argument isn't a set, unless all are symbolic.
+ */
+function combineSets(
+	name: string,
+	sets: ParserEntity[],
+	combine: (sets: ValuesSet[]) => ParserEntity
+): ParserEntity {
+	// A call can only keep expressions as arguments, so it stays symbolic only when every
+	// argument is a symbolic expression.
+	const symbolic = sets.every(x => Expression.isExpression(x) && !x.isNUM());
+	let retval: ParserEntity;
+	if (symbolic) {
+		retval = Expression.toFunction(name, sets);
+	} else {
+		const other = sets.find(x => !ValuesSet.isValuesSet(x));
+		if (other) {
+			throw new UnexpectedDataType(
+				message('setRequired', { fn: name, type: dataTypes[other.dataType] ?? 'undefined' })
+			);
+		}
+		retval = combine(sets as ValuesSet[]);
+	}
+	return retval;
+}
+
+/**
+ * Returns the set of values in any of the given sets.
+ *
+ * @example
+ * ```ts
+ * nerdamer('union({1,2},{2,3})').text(); // {1, 2, 3}
+ * ```
+ */
+export function union(...sets: ParserEntity[]): ParserEntity {
+	return combineSets(UNION, sets, x => x.reduce((a, b) => a.union(b)));
+}
+
+/**
+ * Returns the set of values in every one of the given sets.
+ *
+ * @example
+ * ```ts
+ * nerdamer('intersection({1,2},{2,3})').text(); // {2}
+ * ```
+ */
+export function intersection(...sets: ParserEntity[]): ParserEntity {
+	return combineSets(INTERSECTION, sets, x => x.reduce((a, b) => a.intersection(b)));
+}
+
+/**
+ * Returns the set of values in the first set but not in the second.
+ *
+ * @example
+ * ```ts
+ * nerdamer('difference({1,2},{2,3})').text(); // {1}
+ * ```
+ */
+export function difference(a: ParserEntity, b: ParserEntity): ParserEntity {
+	return combineSets(DIFFERENCE, [a, b], ([x, y]) => x.difference(y));
+}
+
+/**
+ * Returns 1 when the two sets have a value in common and 0 when they don't.
+ *
+ * @example
+ * ```ts
+ * nerdamer('intersects({1,2},{2,3})').text(); // 1
+ * ```
+ */
+export function intersects(a: ParserEntity, b: ParserEntity): ParserEntity {
+	return combineSets(INTERSECTS, [a, b], ([x, y]) => Expression.Number(Number(!x.isDisjointFrom(y))));
+}
+
+/**
+ * Returns 1 when every value of the first set is in the second and 0 otherwise.
+ *
+ * @example
+ * ```ts
+ * nerdamer('issubset({1},{1,2})').text(); // 1
+ * ```
+ */
+export function isSubset(a: ParserEntity, b: ParserEntity): ParserEntity {
+	return combineSets(ISSUBSET, [a, b], ([x, y]) => Expression.Number(Number(x.isSubsetOf(y))));
+}
+
 /** Returns the dimensions of a structured parser value. */
 export function size(x: ParserEntity): ParserEntity {
 	if (
@@ -241,4 +375,58 @@ export function isprime(x: ExpressionInput): Expression {
 	}
 
 	return retval;
+}
+
+
+/** Returns the first prime strictly greater than an exact integer. */
+export function nextprime(x: ExpressionInput): Expression {
+	const input = Expression.create(x);
+	if (input.isInteger()) {
+		return Expression.Number(nextPrimeBig(input.getMultiplier().numerator + 1n));
+	}
+	return Expression.toFunction(NEXT_PRIME, [input]);
+}
+
+/**
+ * Computes an exact binomial coefficient for nonnegative integer n and integer k.
+ * Non-integer or unresolved arguments remain symbolic.
+ */
+export function binom(n: ExpressionInput, k: ExpressionInput): Expression {
+	const upper = Expression.create(n);
+	const lower = Expression.create(k);
+	if (upper.isInteger() && lower.isInteger()) {
+		const value = upper.getMultiplier().numerator;
+		if (value < 0n) {
+			throw new UnexpectedInputError(message('wrongInput', {
+				expected: 'a nonnegative integer n',
+				received: upper.text(),
+			}));
+		}
+		return Expression.Number(binomBig(value, lower.getMultiplier().numerator));
+	}
+	return Expression.toFunction(BINOM, [upper, lower]);
+}
+
+/**
+ * Computes base^exponent modulo a positive integer without materializing the power.
+ * Uses exact BigInt arithmetic; unresolved arguments remain symbolic.
+ */
+export function powmod(base: ExpressionInput, exponent: ExpressionInput, modulus: ExpressionInput): Expression {
+	const a = Expression.create(base);
+	const b = Expression.create(exponent);
+	const m = Expression.create(modulus);
+	if (a.isInteger() && b.isInteger() && m.isInteger()) {
+		if (b.lt(zero()) || m.lte(zero())) {
+			throw new UnexpectedInputError(message('wrongInput', {
+				expected: 'a nonnegative exponent and positive modulus',
+				received: [b.text(), m.text()].join(', '),
+			}));
+		}
+		return Expression.Number(powModBig(
+			a.getMultiplier().numerator,
+			b.getMultiplier().numerator,
+			m.getMultiplier().numerator
+		));
+	}
+	return Expression.toFunction(POWMOD, [a, b, m]);
 }

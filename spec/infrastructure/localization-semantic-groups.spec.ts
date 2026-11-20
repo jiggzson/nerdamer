@@ -13,9 +13,9 @@ describe('semantic localization consolidation', () => {
 	const languages: Language[] = ['eng', 'spa', 'fra', 'deu', 'por', 'ita', 'nld'];
 	afterEach(() => { Settings.LANGUAGE = originalLanguage; });
 
-	it('keeps all seven catalogs aligned at 219 keys', () => {
+	it('keeps all seven catalogs aligned at 234 keys', () => {
 		const expected = Object.keys(EnglishErrorMessages).sort();
-		expect(expected).toHaveLength(219);
+		expect(expected).toHaveLength(234);
 		for (const language of languages) {
 			const catalog = ErrorMessages[language];
 			expect(catalog).toBeDefined();

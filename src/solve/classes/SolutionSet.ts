@@ -1,18 +1,21 @@
 import Decimal from 'decimal.js';
 
 import { Expression } from '../../core/classes/expression/Expression';
+import { numericParts, partsDistinct } from '../../core/classes/parser/operations/compare';
 import { ValuesSet } from '../../core/classes/valuesSet/ValuesSet';
 import { isNerdamerNativeType } from '../../core/common/common';
+import { toExpressions } from '../../core/common/functions/structuredEntityUtils';
 import { SOLUTIONS_SET } from '../../core/constants/entityTypes';
 import { ALL_SYMBOL, INTEGER_PARAM } from '../../core/constants/symbolNames';
 import { DivisionByZeroError, message, UndefinedError, UnexpectedDataType, UnsupportedOperationError } from '../../core/errors';
+import { DEFAULT_SERIES_GUARD_DIGITS } from '../../core/functions/decimal';
 import { warn } from '../../core/warnings';
 
 import type { ParserValuesObject } from '../../core/classes/parser/types';
 import type { ExpressionInput, ParserEntity } from '../../core/types';
 import type { Root } from './FunctionSolver';
 
-type GenerationOptions =
+export type GenerationOptions =
 	| { indices: readonly [ExpressionInput, ExpressionInput]; interval?: never }
 	| { interval: readonly [ExpressionInput, ExpressionInput]; indices?: never };
 
@@ -66,8 +69,20 @@ const MAX_GENERATED_MEMBERS = 1000;
  */
 export class SolutionSet extends ValuesSet {
 	private excluded = new ValuesSet();
+	/**
+	 * Numerical values of members, computed once per text. Keyed by text rather than by
+	 * object, because the set stores a copy of each member it accepts.
+	 */
+	private numericValues = new Map<string, [Decimal, Decimal][] | undefined>();
 	private roots: Root[] = [];
 	override dataType: typeof SOLUTIONS_SET = SOLUTIONS_SET;
+	/**
+	 * Whether every solution came through exact steps for the equation it was solved from,
+	 * so substituting it back can't reject it.
+	 *
+	 * @internal
+	 */
+	exact = false;
 	partial = false;
 	/** Solver provenance for the currently accepted descriptors. */
 	solutionsType: SolutionsType = undefined;
@@ -85,6 +100,25 @@ export class SolutionSet extends ValuesSet {
 	/** Tests whether a value is specifically a solver `SolutionSet`. */
 	static isSolutionSet(obj: unknown): obj is SolutionSet {
 		return isNerdamerNativeType(obj, SOLUTIONS_SET);
+	}
+
+	/**
+	 * Two variable-free values that differ numerically, by far more than rounding allows,
+	 * can't be the same member. Assumptions only describe variables, so they can't change
+	 * that, and the costly symbolic test is skipped. The same holds for two families that
+	 * differ at `_n = 0`, since `_n` is the solver's own integer index, not a user variable.
+	 * Anything else keeps the exact test.
+	 */
+	protected override membersEqual(a: ParserEntity, b: ParserEntity): boolean {
+		let retval: boolean | undefined;
+		if (Expression.isExpression(a) && Expression.isExpression(b)) {
+			const first = this.numericValue(a);
+			const second = this.numericValue(b);
+			if (first && second && partsDistinct(first, second)) {
+				retval = false;
+			}
+		}
+		return retval ?? super.membersEqual(a, b);
 	}
 
 	/** Validates the requested range and normalizes bounds for generation. */
@@ -135,7 +169,7 @@ export class SolutionSet extends ValuesSet {
 				received: String(interval),
 			}));
 		}
-		const [lower, upper] = interval.map(value => Expression.create(value));
+		const [lower, upper] = toExpressions(interval);
 		const numeric = [lower.evaluate(), upper.evaluate()];
 		if (numeric.some(value => !value.isNUM())) {
 			throw new UnsupportedOperationError(message('unsupportedOperation'));
@@ -275,6 +309,30 @@ export class SolutionSet extends ValuesSet {
 	}
 
 	/**
+	 * Evaluates a variable-free value with {@link numericParts}, or returns undefined when
+	 * it has variables or doesn't evaluate to a number. A family is evaluated at `_n = 0`,
+	 * since two families that differ there can't be the same member.
+	 */
+	private numericValue(x: Expression): [Decimal, Decimal][] | undefined {
+		const key = x.text();
+		if (!this.numericValues.has(key)) {
+			let value: [Decimal, Decimal][] | undefined;
+			const variables = x.variables();
+			const family = variables.length === 1 && variables[0] === INTEGER_PARAM;
+			if (variables.length === 0 || family) {
+				// One precision, as this check has always used: a second costs as much again
+				// for members such as acos of a complex value, and is evaluated for every
+				// member the set admits.
+				value = numericParts(x, family ? { [INTEGER_PARAM]: 0 } : undefined, [
+					DEFAULT_SERIES_GUARD_DIGITS,
+				]);
+			}
+			this.numericValues.set(key, value);
+		}
+		return this.numericValues.get(key);
+	}
+
+	/**
 	 * Verifies and admits one candidate, reporting whether it belongs to this result after
 	 * verification. Keeping this decision inside the same path used by {@link addSolution}
 	 * avoids mistaking a pre-existing equal descriptor for a newly verified source candidate.
@@ -286,8 +344,13 @@ export class SolutionSet extends ValuesSet {
 	): boolean {
 		let retval = false;
 		try {
+			// A periodic family can't be closed numerically while it still contains the
+			// integer parameter, so check its representative at n = 0 instead.
+			const representative = solution.hasVariable(INTEGER_PARAM)
+				? solution.evaluate({ [INTEGER_PARAM]: 0 })
+				: solution.evaluate();
 			const evaluated = forFunction
-				.evaluate({ [variable]: solution.evaluate() })
+				.evaluate({ [variable]: representative })
 				.expand();
 			const isClosed = evaluated.variables().length === 0;
 			// Preserve parameterized candidates that cannot yet be verified, but
@@ -657,9 +720,24 @@ export class SolutionSet extends ValuesSet {
 	}
 
 	/**
-	 * Materializes finite indexed solutions, selecting either integer indices or
-	 * actual real solution values. Both ranges are inclusive. Returns an independent
-	 * result; hitting the generation budget marks it partial and emits a warning.
+	 * Lists members of a family of solutions as a new, finite solution set. Pass
+	 * exactly one option. `indices: [start, end]` gives the members for each
+	 * integer `_n` from `start` to `end`; these bounds are values of `_n`, not of
+	 * the solutions. `interval: [lower, upper]` gives the real solutions from
+	 * `lower` to `upper`.
+	 *
+	 * Both bounds are inclusive. At most 1,000 members are generated; beyond that,
+	 * the result is marked partial and a `solve.generationLimit` warning is
+	 * recorded. This solution set isn't changed.
+	 *
+	 * @param options - `{ indices: [start, end] }` or `{ interval: [lower, upper] }`.
+	 * @returns A new solution set with the listed members.
+	 * @example
+	 * ```ts
+	 * const solutions = nerdamer.solve('sin(x)', 'x'); // {_n*pi}
+	 * solutions.generate({ indices: [-2, 2] }).text(); // {-2*pi, -pi, 0, pi, 2*pi}
+	 * solutions.generate({ interval: ['-pi', 'pi'] }).text(); // {-pi, 0, pi}
+	 * ```
 	 */
 	generate(options: GenerationOptions): SolutionSet {
 		const bounds = this.checkBounds(options);

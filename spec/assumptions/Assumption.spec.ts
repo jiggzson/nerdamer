@@ -49,18 +49,18 @@ describe('Assumption', () => {
 		it('parses basic constraints without brackets', () => {
 			const p1 = Assumption.parse('x>=0');
 			expect(p1.symbol).toBe('x');
-			expect(p1.assumption.start.value.equals(new Decimal(0))).toBe(true);
+			expect(p1.assumption.start.value.eq(new Decimal(0))).toBe(true);
 			expect(p1.assumption.start.inclusive).toBe(true);
 
 			const p2 = Assumption.parse('y<9');
 			expect(p2.symbol).toBe('y');
-			expect(p2.assumption.end.value.equals(new Decimal(9))).toBe(true);
+			expect(p2.assumption.end.value.eq(new Decimal(9))).toBe(true);
 			expect(p2.assumption.end.inclusive).toBe(false);
 
 			const p3 = Assumption.parse('z=3');
 			expect(p3.symbol).toBe('z');
-			expect(p3.assumption.start.value.equals(new Decimal(3))).toBe(true);
-			expect(p3.assumption.end.value.equals(new Decimal(3))).toBe(true);
+			expect(p3.assumption.start.value.eq(new Decimal(3))).toBe(true);
+			expect(p3.assumption.end.value.eq(new Decimal(3))).toBe(true);
 			expect(p3.assumption.isSingleton).toBe(true);
 		});
 

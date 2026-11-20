@@ -1,56 +1,9 @@
+import { collect } from './collect';
 import { one, zero } from './shortcuts';
 
 import type { Expression } from './Expression';
-import type { conditionType, actionType } from './utils';
 
-function collect(x: Expression, condition: conditionType, action: actionType, values?: string[]) {
-	values ??= [];
-
-	if (condition(x, values)) {
-		action(x, values);
-	}
-	// Apply it to function arguments
-	if (x.args) {
-		for (const e of x.args) {
-			collect(e, condition, action, values);
-		}
-	}
-	// Search the sub-elements
-	if (x.elements) {
-		for (const e in x.elements) {
-			collect(x.elements[e], condition, action, values);
-		}
-	}
-	// Search the power
-	if (x.isEXP()) {
-		// Check target value. It's difficult to know if it's a variable so the best way is to parse and check.
-		// The unfortunate consequence is that we create a reliance on Parser.parse but target is a very tricky
-		// issue to solve. Consider (x+1)^x. A link to the previous type can be created but then if it gets
-		// raised again (x+1)^x^x then we have two links in which case we're not searching the chain.
-		// Is it better to rely on parse? Or a reference to target class and introduce a `searchChain` method for instance.
-		collect(x.getBase(), condition, action, values);
-		// Check the power
-		collect(x.getPower(), condition, action, values);
-	}
-
-	return values;
-}
 /**
- * Collects all variables from a set of expressions, sorted alphabetically.
- * @param exprs The array of expression from which the variables will be collect
- * @returns
- */
-
-export function collectVariablesSet(exprs: Expression[]): string[] {
-	const varSet = new Set<string>();
-	for (const expr of exprs) {
-		const v = expr.variables();
-		for (const name of v) {
-			varSet.add(name);
-		}
-	}
-	return Array.from(varSet).sort();
-} /**
  * Collects all the variables in an expression
  *
  * @param x
@@ -226,4 +179,43 @@ export function forEveryElement(x: Expression, fn: (e: Expression) => Expression
 	}
 
 	return retval.pow(p).times(m);
+}
+
+/**
+ * Counts the nodes in an expression tree as a structural size measure.
+ *
+ * @remarks
+ * Each node counts once, together with its function arguments, its sum or product
+ * elements, the base of an exponential (`EXP`) node, and any power other than one.
+ * Numeric values count as one node regardless of their digits, and multipliers are not
+ * counted, so `(1/39916800)*x` and `x` have the same size, as do `x^2` and `x^12`.
+ * Unlike printed length, the result doesn't depend on number formatting.
+ *
+ * @param x - Expression to measure.
+ * @returns The number of nodes, at least one.
+ *
+ * @example
+ * ```ts
+ * nodeCount(Expression.create('x'));       // 1
+ * nodeCount(Expression.create('x^2'));     // 2
+ * nodeCount(Expression.create('sin(x)'));  // 2
+ * ```
+ */
+export function nodeCount(x: Expression): number {
+	let retval = 1;
+
+	for (const arg of x.args ?? []) {
+		retval += nodeCount(arg);
+	}
+	for (const element of Object.values(x.elements ?? {})) {
+		retval += nodeCount(element);
+	}
+	if (x.isEXP() && x.base) {
+		retval += nodeCount(x.base);
+	}
+	if (x.power && !x.power.isOne()) {
+		retval += nodeCount(x.power);
+	}
+
+	return retval;
 }

@@ -138,16 +138,17 @@ describe('aggregate key caching', () => {
 			expression.updateValue();
 			const afterUpdate = getValueCalls;
 
+			// The update only marks the key stale; it is rebuilt when next read.
 			const rebuilt = expression.keyValue();
 			expect(rebuilt).not.toBe(first);
-			expect(afterUpdate).toBeGreaterThan(afterFirst);
+			expect(afterUpdate).toBe(afterFirst);
 			expect(getValueCalls).toBeGreaterThan(afterUpdate);
 		} finally {
 			Expression.getValue = originalGetValue;
 		}
 	});
 
-	it('reuses the aggregate key generated during arithmetic rebuild', () => {
+	it('builds the key of an arithmetic result once, when first read', () => {
 		const expression = Expression.create('x').plus(Expression.create('y'));
 		const originalGetValue = Expression.getValue;
 		let getValueCalls = 0;
@@ -161,7 +162,9 @@ describe('aggregate key caching', () => {
 			};
 
 			expect(expression.keyValue()).toBe('x+y');
-			expect(getValueCalls).toBe(0);
+			expect(getValueCalls).toBe(1);
+			expect(expression.keyValue()).toBe('x+y');
+			expect(getValueCalls).toBe(1);
 		} finally {
 			Expression.getValue = originalGetValue;
 		}

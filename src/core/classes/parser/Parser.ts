@@ -2,7 +2,7 @@ import { remove } from '../../../utils/array';
 import { Scope } from '../../common/classes/Scope';
 import { ASSERTIVE_FUNCTIONS } from '../../common/common';
 import { getOperators } from '../../common/functions/functions';
-import { isEnumerable } from '../../common/functions/structuredEntityUtils';
+import { isEnumerable, toExpressions } from '../../common/functions/structuredEntityUtils';
 import {
 	MATRIX,
 	VECTOR,
@@ -12,7 +12,7 @@ import { PARSER_CONSTANTS } from '../../constants/parserValues';
 import { INFINITY } from '../../constants/symbolNames';
 import { convertTeXScope } from '../../converters/texScope';
 import { mathFunctionRegistry } from '../../dispatch';
-import { ParserError, NullError, message } from '../../errors';
+import { ParserError, NullError, UnsupportedOperationError, message } from '../../errors';
 import { RESTRICTED, scopedBlock, Settings } from '../../Settings';
 import { Collection } from '../collection/Collection';
 import { Dictionary } from '../dictionary/Dictionary';
@@ -26,7 +26,7 @@ import { Vector } from '../vector/Vector';
 import { NullSignal } from './controlFlowSignals';
 import { _, callFunction, route } from './operations/functions';
 import { preprocess } from './preprocess';
-import { tokenize as tokenizeSyntax, toRPN as convertToRPN } from './syntax';
+import { findComparison, tokenize as tokenizeSyntax, toRPN as convertToRPN } from './syntax';
 import { refreshOperatorSymbols, Token } from './Token';
 import { IndexedReference } from './wrappers/IndexedReference';
 import { KeyValuePair } from './wrappers/KeyValuePair';
@@ -213,13 +213,9 @@ class ExpressionParser {
 			const symbolicIndices: Expression[] = [];
 
 			if (Vector.isVector(indexExpr)) {
-				for (let j = 0; j < indexExpr.elements.length; j++) {
-					symbolicIndices.push(Expression.create(indexExpr.elements[j]));
-				}
+				symbolicIndices.push(...toExpressions(indexExpr.elements));
 			} else if (Collection.isCollection(indexExpr)) {
-				for (const el of indexExpr.getElements()) {
-					symbolicIndices.push(Expression.create(el));
-				}
+				symbolicIndices.push(...toExpressions(indexExpr.getElements()));
 			} else {
 				symbolicIndices.push(Expression.create(indexExpr));
 			}
@@ -621,6 +617,17 @@ class ExpressionParser {
 				return this.resolveSymbolicAccess(symbolicTarget, resolvedTarget, symbolicIndices);
 			}
 
+			// A comparison evaluates to 0 or 1 before the function runs, so solve(x<1,x) would solve
+			// 0 and return every value. Functions that would misread it reject it here.
+			const comparison = mathFunctionRegistry[token.value]?.rejectsComparisons
+				? findComparison(argsScope)
+				: undefined;
+			if (comparison !== undefined) {
+				throw new UnsupportedOperationError(
+					message('comparisonUnsupported', { function: token.value, operator: comparison })
+				);
+			}
+
 			if (mathFunctionRegistry[token.value]?.deferArguments) {
 				const argumentScopes: Scope[] = [];
 
@@ -679,7 +686,13 @@ class ExpressionParser {
 
 		const handleOperator = (token: Token, index: number): ParserStackValue | undefined => {
 			const operator = token.resolvedOperator ?? this.operators[token.value];
-			let b = output.pop()!;
+			const missingOperand = () =>
+				new ParserError(message('missingOperand', { operator: token.value }));
+			// The syntax stage rejects incomplete input; this guards anything it misses.
+			let b = output.pop();
+			if (b === undefined) {
+				throw missingOperand();
+			}
 
 			if (operator.action === 'comma') {
 				addToOutput(b);
@@ -692,7 +705,10 @@ class ExpressionParser {
 				return fn(b);
 			}
 
-			let a = output.pop()!;
+			let a = output.pop();
+			if (a === undefined) {
+				throw missingOperand();
+			}
 			const previousRPN = rpn[index - 1];
 			const possibleFunction = rpn[index - 2];
 
@@ -850,8 +866,8 @@ class ExpressionParser {
 
 				const parsed = parseScope(token, values, assertive);
 				if (Settings.ALLOW_IMPLICIT_MULTIPLICATION) {
-					const mulFn = _['multiply'] as Operation;
-					addToOutput(mulFn(resolveStackValue(output.pop()!), parsed));
+					// The same path as the * operator, so vectors and matrices on either side work.
+					addToOutput(route(resolveStackValue(output.pop()!), parsed, 'times'));
 				} else {
 					addToOutput(parsed);
 				}
@@ -908,7 +924,11 @@ class ExpressionParser {
 		};
 
 		const handlePrefix = (token: Token): ParserEntity => {
-			const value = resolveStackValue(output.pop()!);
+			const operand = output.pop();
+			if (operand === undefined) {
+				throw new ParserError(message('missingOperand', { operator: token.value }));
+			}
+			const value = resolveStackValue(operand);
 			const prefixAction = `${operators[token.value].action}Prefix`;
 			const fn = _[prefixAction] as PreFixFunction;
 			return fn(value);

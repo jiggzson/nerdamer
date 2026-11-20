@@ -15,6 +15,7 @@ import {
 	Rational,
 	validateScientificSignificantDigits,
 } from '../core/classes/rational/Rational';
+import { toExpressions } from '../core/common/functions/structuredEntityUtils';
 import {
 	DICTIONARY,
 	SET,
@@ -43,12 +44,19 @@ import {
 	FIB,
 } from '../core/constants/functionNames';
 import { WRAP } from '../core/constants/parserSyntax';
-import { message, MathError, UndefinedError, UnexpectedInputError } from '../core/errors';
+import {
+	message,
+	MathError,
+	UndefinedError,
+	UnexpectedInputError,
+	UnsupportedOperationError,
+} from '../core/errors';
 import {
 	abs as bigintAbs,
 	factorial as fact,
 	fibonacci as fib,
 	isEven,
+	productInRange,
 	sign as bigintSign,
 } from '../core/functions/bigint/bigint';
 import { primeFactorCounts } from '../core/functions/bigint/primeFactor';
@@ -76,8 +84,7 @@ const DEFAULT_SCIENTIFIC_SIGNIFICANT_DIGITS = 10;
  * Nested square roots are automatically simplified (e.g. `sqrt(sqrt(x))` becomes `x^(1/4)`).
  *
  * @param x - The expression to take the square root of.
- * @returns The square root of `x`.
- * @throws {@link core!UndefinedError} If `x` is `-∞`.
+ * @returns The square root of `x`. On the principal branch `sqrt(-∞)` is `i*∞`.
  *
  * @example
  * ```ts
@@ -96,10 +103,7 @@ export function sqrt(x: ExpressionInput): Expression {
 
 	let retval;
 	if (x.isPosInf() || x.isNegInf()) {
-		if (x.isNegInf()) {
-			throw new UndefinedError(message('undefinedValue'));
-		}
-		retval = Expression.Inf();
+		retval = x.isNegInf() ? Expression.Img().times(Expression.Inf()) : Expression.Inf();
 	} else if (x.isOne()) {
 		retval = one();
 	} else if (x.isZero()) {
@@ -209,7 +213,9 @@ export function cbrt(x: ExpressionInput): Expression {
 	// For real constants, this uses the *real* cube root (so negative reals stay real).
 	// For complex constants, it returns the principal cube root.
 
-	if (Settings.EVALUATE && x.isConstant()) {
+	// isConstant() excludes i, so check complex values separately. They must still be
+	// free of variables to evaluate.
+	if (Settings.EVALUATE && (x.isConstant() || (x.isComplex() && x.variables().length === 0))) {
 		const xe = x.isNUM() || x.isComplex() ? x : x.evaluate();
 
 		if (xe.isNUM()) {
@@ -219,18 +225,9 @@ export function cbrt(x: ExpressionInput): Expression {
 			return Expression.create(r);
 		}
 
+		// The principal cube root, through the complex power at the working precision.
 		if (xe.isComplex()) {
-			const re = xe.realPart();
-			const im = xe.imagPart();
-			const a = Number(re.getMultiplier().toDecimal());
-			const b = Number(im.getMultiplier().toDecimal());
-			const mag = Math.hypot(a, b);
-			const ang = Math.atan2(b, a);
-			const mag13 = Math.cbrt(mag);
-			const ang13 = ang / 3;
-			const rr = mag13 * Math.cos(ang13);
-			const ii = mag13 * Math.sin(ang13);
-			return Expression.create(rr).plus(Expression.create(ii).times(Expression.Img()));
+			return power(xe, third());
 		}
 	}
 
@@ -284,7 +281,13 @@ export function fibonacci(x: ExpressionInput): Expression {
 
 	let retval: Expression;
 	if (x.isNUM() && x.isInteger()) {
-		retval = Expression.Number(fib(x.getMultiplier().numerator));
+		const n = x.getMultiplier().numerator;
+		if (bigintAbs(n) > BigInt(Settings.MAX_FIB_INPUT)) {
+			throw new UnsupportedOperationError(
+				message('inputLimitExceeded', { function: FIB, limit: String(Settings.MAX_FIB_INPUT) })
+			);
+		}
+		retval = Expression.Number(fib(n));
 	} else {
 		retval = Expression.toFunction(FIB, [Expression.create(x)]);
 	}
@@ -321,7 +324,13 @@ export function factorial(x: Expression): Expression {
 		return Expression.Inf();
 	}
 	if (x.isInteger()) {
-		retval = Expression.Number(fact(x.getMultiplier().numerator));
+		const n = x.getMultiplier().numerator;
+		if (n > BigInt(Settings.MAX_FACTORIAL_INPUT)) {
+			throw new UnsupportedOperationError(
+				message('inputLimitExceeded', { function: FACTORIAL, limit: String(Settings.MAX_FACTORIAL_INPUT) })
+			);
+		}
+		retval = Expression.Number(fact(n));
 	} else if (Settings.EVALUATE) {
 		retval = gamma(x.plus(one()));
 	} else {
@@ -360,20 +369,26 @@ export function factorial(x: Expression): Expression {
  * - Even: `n!! = 2 · 4 · 6 · … · n`
  * - Odd:  `n!! = 1 · 3 · 5 · … · n`
  *
+ * Negative odd integers follow `n!! = (n+2)!!/(n+2)`, so `(-1)!! = 1`, `(-3)!! = -1`
+ * and `(-5)!! = 1/3`. Negative even integers are poles of that continuation.
+ *
  * For non-integer arguments when `Settings.EVALUATE` is `true`, a generalised
  * formula using the {@link gamma} function is applied.
  *
  * @param x - The expression to compute the double factorial of.
  * @returns The double factorial of `x`.
- * @throws {@link core!UndefinedError} If `x` is `-∞`.
+ * @throws {@link core!UndefinedError} If `x` is `-∞` or a negative even integer.
  *
  * @example
  * ```ts
- * doubleFactorial(Expression.create(6)).text()   // "48"
- * doubleFactorial(Expression.create(7)).text()   // "105"
+ * doubleFactorial(6).text()    // "48"
+ * doubleFactorial(7).text()    // "105"
+ * doubleFactorial(-3).text()   // "-1"
  * ```
  */
-export function doubleFactorial(x: Expression) {
+export function doubleFactorial(x: ExpressionInput) {
+	x = Expression.create(x);
+
 	let retval;
 	if (x.isPosInf() || x.isNegInf()) {
 		if (x.isNegInf()) {
@@ -381,36 +396,35 @@ export function doubleFactorial(x: Expression) {
 		}
 		return Expression.Inf();
 	}
-	if (Settings.EVALUATE) {
-		if (x.isInteger()) {
-			const even = x.isEven();
-			const xn = Number(x.getMultiplier().toDecimal());
-			// If x = even then n = x/2 else n = (x-1)/2
-			const n = even ? xn / 2 : (xn + 1) / 2;
-			let r = one();
-
-			for (let i = 1; i <= n; i++) {
-				let q = two().times(i);
-				if (!even) {
-					q = q.minus(one());
-				}
-				r = r.times(q);
-			}
-
-			retval = r;
-		} else {
-			const pi = Expression.Pi(true);
-			const a = two().pow(
-				x
-					.times(two())
-					.plus(one())
-					.minus(cos(pi.times(x)))
-					.div(four())
+	if (x.isNUM() && x.isInteger()) {
+		const n = x.getMultiplier().numerator;
+		if (bigintAbs(n) > BigInt(Settings.MAX_DFACT_INPUT)) {
+			throw new UnsupportedOperationError(
+				message('inputLimitExceeded', { function: DOUBLE_FACTORIAL, limit: String(Settings.MAX_DFACT_INPUT) })
 			);
-			const b = pi.pow(cos(pi.times(x)).minus(one()).div(four()));
-			const c = gamma(x.div(two()).plus(one()));
-			retval = a.times(b).times(c);
 		}
+		if (n < 0n && n % 2n === 0n) {
+			throw new UndefinedError(message('doubleFactorialUndefined'));
+		}
+
+		// Positive: multiply down by twos. Negative odd: divide by -1, -3, ... down to n+2.
+		const last = Number(n);
+		const numerator = productInRange(isEven(n) ? 2 : 3, last, 2);
+		const denominator = productInRange(last + 2, -1, 2);
+
+		retval = Expression.Number(numerator).div(Expression.Number(denominator));
+	} else if (Settings.EVALUATE) {
+		const pi = Expression.Pi(true);
+		const a = two().pow(
+			x
+				.times(two())
+				.plus(one())
+				.minus(cos(pi.times(x)))
+				.div(four())
+		);
+		const b = pi.pow(cos(pi.times(x)).minus(one()).div(four()));
+		const c = gamma(x.div(two()).plus(one()));
+		retval = a.times(b).times(c);
 	} else {
 		retval = Expression.toFunction(DOUBLE_FACTORIAL, [Expression.create(x)]);
 	}
@@ -949,7 +963,8 @@ export function abs(x: ExpressionInput) {
 		wrap = false;
 	}
 
-	if (!retval.isConstant() && wrap) {
+	// An infinite modulus, as for abs(i*Inf), is already nonnegative.
+	if (!retval.isConstant() && !retval.isInf() && wrap) {
 		retval = Expression.toFunction(ABS, [retval]);
 	}
 
@@ -972,6 +987,10 @@ export function abs(x: ExpressionInput) {
  * ```
  */
 export function modInv(a: Expression, p: Expression) {
+	// The Euclidean algorithm below only ends for integers.
+	if (!a.isInteger() || !p.isInteger()) {
+		throw new MathError(message('integerArgumentsRequired', { fn: 'modInv' }));
+	}
 	let t = zero();
 	let tp = one(); // newT
 	let r = p;
@@ -1110,15 +1129,15 @@ export function mod(x: Expression, y: Expression): Expression {
  * keeps product, quotient, and power rewrites from crossing principal complex
  * branches when a symbolic sign is unknown.
  *
- * For known negative real inputs, returns `log(|x|) + iπ`. Complex inputs use the
- * principal branch: `log(z) = log|z| + i·arg(z)`.
+ * For known negative real inputs, returns `log(|x|) + iπ`, so `log(-∞)` is `∞ + iπ`.
+ * Complex inputs use the principal branch: `log(z) = log|z| + i·arg(z)`. `log(0)` is
+ * `-∞`, the limit from the right, so with a base `b` it becomes `-∞/log(b)`.
  *
  * @param x - The expression to take the logarithm of.
  * @param base - Optional logarithm base. Defaults to `e` (natural log).
  * @param expandPrimes - When `true`, decomposes integer arguments into prime factors
  *   (e.g. `log(8)` becomes `3·log(2)`). Defaults to `false`.
  * @returns The logarithm of `x`.
- * @throws {@link core!UndefinedError} If `x` is `-∞`.
  *
  * @example
  * ```ts
@@ -1186,10 +1205,12 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 	}
 
 	if (x.isPosInf() || x.isNegInf()) {
-		if (x.isNegInf()) {
-			throw new UndefinedError(message('undefinedValue'));
-		}
-		retval = Expression.Inf();
+		// The principal branch, like any negative real: log|x| + i*pi.
+		retval = x.isNegInf()
+			? Expression.Inf().plus(Expression.Pi().times(Expression.Img()))
+			: Expression.Inf();
+	} else if (x.isZero()) {
+		retval = Expression.NegInf();
 	} else if (x.isOne()) {
 		retval = zero();
 	} else if (exactBaseLog) {
@@ -1208,7 +1229,9 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 			retval = Expression.toFunction(Expression.LOG, [Expression.create(x)]);
 		}
 	} else if (!x.isComplex() && x.lt(zero())) {
-		retval = Expression.Pi().times(Expression.Img()).plus(log(x.abs()));
+		// x is known to be negative, so -x is its magnitude. abs leaves a sum such as -1-pi
+		// unchanged, which recursed without end.
+		retval = Expression.Pi().times(Expression.Img()).plus(log(x.neg()));
 	}
 	// Keep symbolic complex logarithms exact; numerical arguments use the
 	// same principal logarithm as other Decimal-backed complex calculations.
@@ -1221,9 +1244,13 @@ export function log(x: ExpressionInput, base?: ExpressionInput, expandPrimes = f
 				im.getMultiplier().toDecimal()
 			).log();
 			retval = Expression.Number(value.re).plus(Expression.Number(value.im).i());
-		} else {
+		} else if (re.isPolynomialLike(re.variables()) && im.isPolynomialLike(im.variables())) {
+			// log|z| + i*atan2(im, re) needs real parts. Symbols count as real here, but a radical
+			// of them need not be: sqrt(1-x^2) is imaginary for x > 1, so such parts keep log(z).
 			const mag = sqrt(re.sq().plus(im.sq()));
 			retval = log(mag).plus(atan2(im, re).i());
+		} else {
+			retval = Expression.toFunction(Expression.LOG, [Expression.create(x)]);
 		}
 	}
 	// Don't collapse
@@ -1360,10 +1387,11 @@ function aggregator(
 	assumedCondition: (a: Expression, b: Expression) => boolean
 ) {
 	let retval: Expression | undefined = undefined;
-	const inputs = args.map(e => Expression.create(e));
+	const inputs = toExpressions(args);
 	let canCompare = true;
 	const expressions = inputs.map(e => {
-		const value = resolveNumericValue(e);
+		// ±Inf isn't a number, but it is ordered against numbers.
+		const value = e.isInf() ? e : resolveNumericValue(e);
 		if (value === undefined) {
 			canCompare = false;
 		}

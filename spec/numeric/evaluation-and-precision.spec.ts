@@ -62,7 +62,7 @@ describe('Numeric parsing', () => {
 	it('parses exact integers beyond the JavaScript numeric range', () => {
 		const scientific = `1${'0'.repeat(400)}`;
 
-		expect(nerdamer('10^400').text()).toEqual('10^400');
+		expect(nerdamer('10^400').text()).toEqual(scientific);
 		expect(nerdamer('1e400').text()).toEqual(scientific);
 	});
 
@@ -80,6 +80,11 @@ describe('Numeric parsing', () => {
 		['0.0[9]', '1/10'],
 		['-0.[6]', '-2/3'],
 		['2*0.[3]', '2/3'],
+		['.[3]', '1/3'],
+		[".'3'", '1/3'],
+		['-.[6]', '-2/3'],
+		['.1[6]', '1/6'],
+		['2*.[3]', '2/3'],
 	])('parses the recurring literal %s exactly', (source, expected) => {
 		expect(nerdamer(source).text()).toEqual(expected);
 	});
@@ -87,6 +92,10 @@ describe('Numeric parsing', () => {
 	it('keeps ordinary decimal and vector syntax unchanged', () => {
 		expect(nerdamer('1.25').text()).toBe('1.25');
 		expect(nerdamer('[1,2]').text()).toContain('1');
+	});
+
+	it.each(['.', 'x+.', '.*2'])('reports a lone decimal point in %s as a malformed number', source => {
+		expect(() => nerdamer(source)).toThrow('Malformed numeric literal');
 	});
 
 	it.each([

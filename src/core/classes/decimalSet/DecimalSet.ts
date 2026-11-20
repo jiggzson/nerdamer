@@ -69,20 +69,20 @@ export class DecimalSet {
 
 		if (stepDec.isPositive()) {
 			let current = startDec;
-			while (current.lessThan(endDec)) {
+			while (current.lt(endDec)) {
 				result.add(current);
 				const next = current.plus(stepDec);
-				if (next.equals(current)) {
+				if (next.eq(current)) {
 					throw new Error(message('rangeStepNoAdvance'));
 				}
 				current = next;
 			}
 		} else {
 			let current = startDec;
-			while (current.greaterThan(endDec)) {
+			while (current.gt(endDec)) {
 				result.add(current);
 				const next = current.plus(stepDec);
-				if (next.equals(current)) {
+				if (next.eq(current)) {
 					throw new Error(message('rangeStepNoAdvance'));
 				}
 				current = next;
@@ -342,7 +342,7 @@ export class DecimalSet {
 		}
 		let maxValue: Decimal | undefined;
 		for (const value of this.elements.values()) {
-			if (maxValue === undefined || value.greaterThan(maxValue)) {
+			if (maxValue === undefined || value.gt(maxValue)) {
 				maxValue = value;
 			}
 		}
@@ -360,7 +360,7 @@ export class DecimalSet {
 		}
 		let minValue: Decimal | undefined;
 		for (const value of this.elements.values()) {
-			if (minValue === undefined || value.lessThan(minValue)) {
+			if (minValue === undefined || value.lt(minValue)) {
 				minValue = value;
 			}
 		}
@@ -448,7 +448,7 @@ export class DecimalSet {
 		if (compareFn) {
 			return array.sort(compareFn);
 		}
-		return array.sort((a, b) => a.comparedTo(b));
+		return array.sort((a, b) => a.cmp(b));
 	}
 
 	/**

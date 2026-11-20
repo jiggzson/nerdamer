@@ -2,6 +2,7 @@ import { Expression } from '../core/classes/expression/Expression';
 import { half, zero } from '../core/classes/expression/shortcuts';
 import { Vector } from '../core/classes/vector/Vector';
 import { MEDIAN, MODE } from '../core/constants/functionNames';
+import { MathError, message } from '../core/errors';
 
 import type { ExpressionInput, ParserEntity } from '../core/types';
 
@@ -88,8 +89,12 @@ export function mode(...args: StatisticsInput[]): Expression {
 		: Expression.toFunction(MODE, candidates);
 }
 
-function generalizedVariance(sample: boolean, args: StatisticsInput[]): Expression {
+function generalizedVariance(sample: boolean, args: StatisticsInput[], name: string): Expression {
 	const values = valuesFrom(args);
+	// The sample variance divides by n-1, so it's undefined for a single value.
+	if (sample && values.length < 2) {
+		throw new MathError(message('sampleTooSmall', { fn: name }));
+	}
 	const average = mean(...values);
 	const denominator = values.length - (sample ? 1 : 0);
 	return sum(values, average).div(Expression.Number(denominator));
@@ -97,16 +102,21 @@ function generalizedVariance(sample: boolean, args: StatisticsInput[]): Expressi
 
 /** Returns the population variance using the legacy algebraic squared-deviation definition. */
 export function variance(...args: StatisticsInput[]): Expression {
-	return generalizedVariance(false, args);
+	return generalizedVariance(false, args, 'variance');
 }
 
 /** Returns the sample variance using n-1 in the denominator. */
 export function sampleVariance(...args: StatisticsInput[]): Expression {
-	return generalizedVariance(true, args);
+	return generalizedVariance(true, args, 'sampleVariance');
 }
 
-/** Legacy parser spelling for sample variance. */
-export const smpvar = sampleVariance;
+/**
+ * Legacy parser spelling for sample variance. A separate function, rather than an
+ * alias, so that its errors name smpvar.
+ */
+export function smpvar(...args: StatisticsInput[]): Expression {
+	return generalizedVariance(true, args, 'smpvar');
+}
 
 /** Returns the population standard deviation. */
 export function stdev(...args: StatisticsInput[]): Expression {
@@ -115,11 +125,16 @@ export function stdev(...args: StatisticsInput[]): Expression {
 
 /** Returns the sample standard deviation. */
 export function sampleStandardDeviation(...args: StatisticsInput[]): Expression {
-	return sampleVariance(...args).pow(half());
+	return generalizedVariance(true, args, 'sampleStandardDeviation').pow(half());
 }
 
-/** Legacy parser spelling for sample standard deviation. */
-export const smpstdev = sampleStandardDeviation;
+/**
+ * Legacy parser spelling for sample standard deviation. A separate function, rather
+ * than an alias, so that its errors name smpstdev.
+ */
+export function smpstdev(...args: StatisticsInput[]): Expression {
+	return generalizedVariance(true, args, 'smpstdev').pow(half());
+}
 
 /** Returns the z-score (x - mean) / standardDeviation. */
 export function zscore(

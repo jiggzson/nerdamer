@@ -237,9 +237,11 @@ export function subst(
 	if (expression.isNUM() && !includeNumeric) {
 		retval = expression;
 	}
-	// Ordinary function nodes cannot algebraically equal a plain variable without
-	// assumptions; avoid repeating symbolic comparison at every nested level.
-	else if (!(expression.isFunction() && value.isPlainVariable() && !hasAssumptions()) &&
+	// Without assumptions, only a variable node can equal a plain variable: functions,
+	// sums and products can't. Skip the symbolic comparison for those rather than
+	// repeating it at every nested level, since the recursion below still substitutes
+	// inside them.
+	else if (!(!expression.isVAR() && value.isPlainVariable() && !hasAssumptions()) &&
 		expression.eq(value)) {
 		retval = withValue;
 	}
@@ -309,7 +311,11 @@ export function getU(x: ExpressionInput, map?: MapObjectType) {
 	do {
 		u = `u${count}`;
 		count++;
-	} while (variables.includes(u) || u in map);
+	} while (
+		variables.includes(u) ||
+		u in map ||
+		Object.values(map).some(value => value.hasVariable(u))
+	);
 
 	return u;
 }
@@ -351,8 +357,10 @@ export function uSub(
 	// Perform the substitution
 	const subbed = subst(x, value, _(u));
 
-	// Mark it as updated
-	if (!subbed.eq(x)) {
+	// Mark it as updated. The symbol is new to x unless the map already holds it for this
+	// value, so the substitution happened exactly when it appears. Comparing subbed with x
+	// symbolically gives the same answer at the cost of expanding both.
+	if (subbed.hasVariable(u)) {
 		map[u] = value;
 	}
 

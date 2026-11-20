@@ -1,6 +1,6 @@
 import { MathematicalAggregate } from '../../common/classes/MathematicalAggregate';
 import { isNerdamerNativeType } from '../../common/common';
-import { toParserEntities } from '../../common/functions/structuredEntityUtils';
+import { toExpressions, toParserEntities } from '../../common/functions/structuredEntityUtils';
 import { dataTypes, MATRIX, VECTOR } from '../../constants/entityTypes';
 import { message, DimensionError, MathError, UnexpectedDataType } from '../../errors';
 import { Collection } from '../collection/Collection';
@@ -58,7 +58,7 @@ export class Vector extends MathematicalAggregate<Vector> {
 
 	/** Creates an Expression-only Vector from expression-compatible inputs. */
 	static create(v: ExpressionInput[]): Vector {
-		return new Vector(v.map(x => Expression.create(x)));
+		return new Vector(toExpressions(v));
 	}
 
 	static isVector(obj: unknown): obj is Vector {

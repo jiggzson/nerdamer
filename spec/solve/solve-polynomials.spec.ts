@@ -13,7 +13,7 @@ describe('Solver exception boundary', () => {
 			throw error;
 		});
 		try {
-			expect(() => solve('sin(x)+x', 'x')).toThrow(error);
+			expect(() => solve('sin(x)+x*sin(x)^2', 'x')).toThrow(error);
 		} finally {
 			factor.mockRestore();
 		}
@@ -24,9 +24,9 @@ describe('Solver exception boundary', () => {
 			throw new UnsupportedOperationError('unsupported solver operation');
 		});
 		try {
-			const result = solve('sin(x)+x', 'x');
+			const result = solve('sin(x)+x*sin(x)^2', 'x');
 			expect(result.count()).toBe(0);
-			expect(result.unsolved?.eq(Expression.create('sin(x)+x'))).toBe(true);
+			expect(result.unsolved?.eq(Expression.create('sin(x)+x*sin(x)^2'))).toBe(true);
 			expect(result.partial).toBe(false);
 		} finally {
 			factor.mockRestore();
@@ -76,6 +76,35 @@ describe('Symbolic solver recursion limits', () => {
 });
 
 describe('Solve Polynomials', () => {
+	it('uses direct cube roots for cubic equations without quadratic or linear terms', () => {
+		const numeric = SymbolicSolver.cubic(['-8', '0', '0', '1'].map(value => Expression.create(value)));
+		expect(numeric).toHaveLength(3);
+		expect(numeric[0].evaluate().minus(Expression.create(2)).isNearlyZero()).toBe(true);
+		for (const root of numeric) {
+			expect(Expression.create('x^3-8').subst('x', root).evaluate().isNearlyZero()).toBe(true);
+		}
+
+		const symbolic = SymbolicSolver.cubic(['-b', '0', '0', 'a'].map(value => Expression.create(value)));
+		expect(symbolic).toHaveLength(3);
+		for (const root of symbolic) {
+			const substituted = root.evaluate({ a: '2', b: '16' });
+			expect(Expression.create('x^3-8').subst('x', substituted).evaluate().isNearlyZero()).toBe(true);
+		}
+	});
+
+	it('solves the factorable symbolic quartic from issue 644', () => {
+		const input = Expression.create('-b^8-a*b^2*x+a*x^3*b^7+a^2*x^4*b');
+		const solutions = solve(input, 'x');
+		expect(solutions.unsolved).toBeUndefined();
+		expect(solutions.count()).toBe(4);
+
+		for (const solution of solutions.elements) {
+			const value = solution.evaluate({ a: '2', b: '2' });
+			const residual = input.evaluate({ a: '2', b: '2', x: value });
+			expect(residual.isNearlyZero()).toBe(true);
+		}
+	});
+
 	it('uses an exact rational resolvent root for a quartic when available', () => {
 		const coefficients = ['1/5', '1', '5', '25', '125'].map(coefficient =>
 			Expression.create(coefficient)

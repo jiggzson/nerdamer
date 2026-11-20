@@ -5,6 +5,7 @@ import {
 	DOT,
 	BLANK,
 	SYMBOLIC_ACCESSOR,
+	COMMA,
 } from '../../constants/parserSyntax';
 import { ALIASES } from '../../constants/symbolNames';
 import { UnexpectedTokenError, ParserError, message } from '../../errors';
@@ -273,7 +274,10 @@ export function tokenize(
 			if (isWhiteSpace && options.keepWhiteSpace) {
 				scope.push(new Token(tokenStr, Token.SPACE, SOT));
 			} else if (!(tokenStr === BLANK || isWhiteSpace)) {
-				if (tokenBuffer.is(Token.NUMBER) && tokenStr.indexOf(DOT) !== tokenStr.lastIndexOf(DOT)) {
+				if (
+					tokenBuffer.is(Token.NUMBER) &&
+					(tokenStr.indexOf(DOT) !== tokenStr.lastIndexOf(DOT) || !/\d/.test(tokenStr))
+				) {
 					throw new UnexpectedTokenError(
 						message('malformedNumericLiteral', { literal: tokenStr, position: String(SOT) })
 					);
@@ -350,6 +354,28 @@ export function tokenize(
 	}
 
 	return tokens;
+}
+
+/** The comparison operators, which evaluate to 0 or 1. */
+const COMPARISONS = ['<', '<=', '>', '>=', '==', '!='];
+
+/**
+ * The first comparison operator in a token scope, looking into vectors but not into
+ * parentheses or function calls, where a comparison is an ordinary value.
+ */
+export function findComparison(scope: Scope): string | undefined {
+	let retval: string | undefined;
+	for (const item of scope) {
+		if (Scope.isScope(item)) {
+			retval = item.type === 'square' ? findComparison(item) : undefined;
+		} else if (item.type === Token.OPERATOR && COMPARISONS.includes(item.value)) {
+			retval = item.value;
+		}
+		if (retval !== undefined) {
+			break;
+		}
+	}
+	return retval;
 }
 
 
@@ -451,6 +477,23 @@ export function toRPN(scope: Scope, context: SyntaxContext) {
 						) {
 							operator = operator.postfixVariant;
 							token.resolvedOperator = operator;
+						}
+					}
+
+					// An infix or prefix operator needs an operand after it, before the end of
+					// the input or of its bracket: x^2-, (x-) and [1,2-] are incomplete.
+					// Postfix operators (x!, 5%) and a trailing comma ([1,2,]) are complete.
+					if (!operator.isPostfix && token.value !== COMMA) {
+						let nextIndex = i + 1;
+						while (
+							Token.isToken(scope[nextIndex]) &&
+							((scope[nextIndex] as Token).type === Token.SPACE ||
+								(scope[nextIndex] as Token).type === Token.UNDEFINED)
+						) {
+							nextIndex++;
+						}
+						if (scope[nextIndex] === undefined) {
+							throw new ParserError(message('missingOperand', { operator: token.value }));
 						}
 					}
 

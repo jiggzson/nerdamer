@@ -3,6 +3,10 @@
 export const FACTORIAL = 'fact';
 export const DOUBLE_FACTORIAL = 'dfact';
 export const FIB = 'fib';
+export const APPEND = 'append';
+export const BINOM = 'binom';
+export const NEXT_PRIME = 'nextprime';
+export const POWMOD = 'powmod';
 export const SQRT = 'sqrt';
 export const ABS = 'abs';
 export const MOD = 'mod';
@@ -25,10 +29,12 @@ export const COUNT = 'count';
 export const CROSS = 'cross';
 export const DEFINT = 'defint';
 export const DEG = 'deg';
+export const DIFFERENCE = 'difference';
 export const DIFF = 'diff';
 export const DOT_PRODUCT = 'dot';
 export const EI = 'Ei';
 export const ERF = 'erf';
+export const ERFC = 'erfc';
 export const FACTOR = 'factor';
 export const PFACTOR = 'pfactor';
 export const PFACTORD = 'pfactord';
@@ -41,6 +47,9 @@ export const IMAGPART = 'imagpart';
 export const IMATRIX = 'imatrix';
 export const INTEGRATE = 'integrate';
 export const ISPRIME = 'isprime';
+export const INTERSECTION = 'intersection';
+export const INTERSECTS = 'intersects';
+export const ISSUBSET = 'issubset';
 export const LAPLACE = 'laplace';
 export const LI = 'Li';
 export const LIMIT = 'limit';
@@ -58,10 +67,12 @@ export const STEP = 'step';
 export const TRI = 'tri';
 export const SIZE = 'size';
 export const TRUNC = 'trunc';
+export const UNION = 'union';
 export const SHI = 'Shi';
 export const SI = 'Si';
 export const SINC = 'sinc';
 export const SUM_FUNCTION = 'sum';
+export const TAYLOR = 'taylor';
 
 // Trigonometric functions
 export const TRIG_FUNCTION_NAMES = Object.freeze({
@@ -138,7 +149,7 @@ export const STATISTICS = Object.freeze([
  * Does not include general polynomial factorization or sequence/combinatorics helpers.
  */
 export const NUMBER_THEORY = Object.freeze([
-	ISPRIME, GCD, 'lcm', MOD, 'modinv', PFACTOR, PFACTORD,
+	ISPRIME, NEXT_PRIME, GCD, 'lcm', MOD, 'modinv', POWMOD, PFACTOR, PFACTORD,
 ] as const);
 
 /**
@@ -146,7 +157,7 @@ export const NUMBER_THEORY = Object.freeze([
  * Names are case-sensitive: Shi, Si, Chi, Ci, Ei and Li are not lowercase aliases.
  */
 export const SPECIAL_FUNCTIONS = Object.freeze([
-	ERF, 'erfc', GAMMA, GAMMA_INCOMPLETE, GAMMA_INCOMPLETE_LOWER, SINC,
+	ERF, ERFC, GAMMA, GAMMA_INCOMPLETE, GAMMA_INCOMPLETE_LOWER, SINC,
 	SHI, SI, CHI, CI, EI, LI,
 ] as const);
 

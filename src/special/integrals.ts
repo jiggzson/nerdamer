@@ -2,6 +2,7 @@ import { Complex } from '../core/classes/complex/Complex';
 import { Expression } from '../core/classes/expression/Expression';
 import { two, zero } from '../core/classes/expression/shortcuts';
 import { CHI, CI, EI, LI, SHI, SI } from '../core/constants/functionNames';
+import { message, UnsupportedOperationError } from '../core/errors';
 import { pureImaginaryCoefficient } from '../core/functions/complex';
 import {
 	Chi as decChi,
@@ -240,7 +241,12 @@ export function Ei(x: Expression): Expression {
 	} else if (x.isZero()) {
 		retval = Expression.NegInf();
 	} else if (x.isNUM() && Settings.EVALUATE) {
-		retval = Expression.Number(decEi(x.getMultiplier().toDecimal()));
+		const value = decEi(x.getMultiplier().toDecimal());
+		// Ei is never zero for a nonzero real x, so zero means the result underflowed
+		if (value.isZero()) {
+			throw new UnsupportedOperationError(message('resultOutOfRange'));
+		}
+		retval = Expression.Number(value);
 	} else {
 		retval = Expression.toFunction(EI, [Expression.create(x)]);
 	}
@@ -270,6 +276,9 @@ export function Li(x: Expression): Expression {
 		retval = Expression.Inf();
 	} else if (x.isOne()) {
 		retval = Expression.NegInf();
+	} else if (x.isZero()) {
+		// Li(0) = 0 exactly
+		retval = zero();
 	} else if (x.isNUM() && Settings.EVALUATE) {
 		const m = x.getMultiplier();
 		if (m.isNegative()) {

@@ -1,7 +1,8 @@
 import { Expression } from '../../classes/expression/Expression';
-import { zero } from '../../classes/expression/shortcuts';
+import { one, zero } from '../../classes/expression/shortcuts';
 import { FACTORIAL } from '../../constants/functionNames';
 import { WRAP } from '../../constants/parserSyntax';
+import { powerOfProduct } from '../rationalNormalization';
 
 type PowerExpansionTerm = { powers: number[]; coefficient: bigint };
 
@@ -110,11 +111,13 @@ export function isExpandable(x: Expression) {
 export function powerExpand(x: Expression) {
 	let retval = x;
 	const power = x.getPower();
-	// Reparsing this shape as a power of one makes no progress and can feed the
-	// same complex radical back through component expansion indefinitely.
+	// Reparsing a first-power sum containing a nested complex sum can repeat
+	// expensive normalization without expanding any power (issue #644).
+	// Preserve reconstruction of ordinary sums for canonicalization.
 	const skipExpansion = x.isSum() && power.isOne() && x.isComplex() &&
 		x.elementsArray().some(element => element.hasRadical() ||
-			element.elementsArray().some(factor => factor.hasRadical()));
+			element.elementsArray().some(factor =>
+				factor.hasRadical() || (factor.isSum() && factor.isComplex())));
 
 	if (x.isSum() && power.isInteger() && !skipExpansion) {
 		const sgn = power.sign();
@@ -211,12 +214,17 @@ function productExpand(x: Expression) {
 	 * - It has a scoped multiplier
 	 * - Contains a sum
 	 */
+	// Store the power
+	const pow = x.getPower();
+	// A noninteger power can't be raised factor by factor; see powerOfProduct.
+	if (!pow.isInteger()) {
+		const base = expand(Expression.setPower(x.toUnitMultiplier(), one()));
+		return Expression.fromRational(x.getMultiplier()).times(powerOfProduct(base, pow));
+	}
 	// We start with the multiplier
 	let retval: Expression;
 
 	retval = Expression.fromRational(x.getMultiplier());
-	// Store the power
-	const pow = x.getPower();
 	// Store the check to see if the power is one. If it is then don't raise it
 	const powIsOne = pow.isOne();
 	// Loop through the remaining elements

@@ -1,5 +1,6 @@
 import '../helpers/registerNerdamerFunctions';
 import { Parser } from '../../src/core/classes/parser/Parser';
+import { Vector } from '../../src/core/classes/vector/Vector';
 
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { requireVariableName } from '../../src/core/classes/expression/utils';
@@ -7,6 +8,17 @@ import { UnexpectedInputError } from '../../src/core/errors';
 import { prepareSolverInputs } from '../../src/solve/utils';
 
 describe('Expression analysis', () => {
+	it('returns free variables as symbolic Vector elements', () => {
+		const result = Parser.parse('vars(y+x+x^2)');
+		expect(Vector.isVector(result)).toBe(true);
+		if (!Vector.isVector(result)) return;
+		expect(result.text()).toBe('[x, y]');
+		expect(result.elements.every(Expression.isExpression)).toBe(true);
+		expect(result.elements.every(element => Expression.isExpression(element) && element.isVAR())).toBe(true);
+		expect(Parser.parse('vars(2)').text()).toBe('[]');
+		expect(Parser.parse('vars(sin(x*y))').text()).toBe('[x, y]');
+	});
+
 	it('should accurately extract variables', () => {
 		expect((Parser.parse('a^x-6*y') as Expression).variables().sort()).toEqual(['a', 'x', 'y']);
 		expect((Parser.parse('cos(x*y)') as Expression).variables().sort()).toEqual(['x', 'y']);

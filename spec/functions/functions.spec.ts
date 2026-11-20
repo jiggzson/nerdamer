@@ -4,7 +4,7 @@ import { Expression } from '../../src/core/classes/expression/Expression';
 import { sqrtToPow, powToSqrt } from '../../src/core/classes/parser/operations/power';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import nerdamer from '../../src/index';
-import { UndefinedError } from '../../src/core/errors';
+import { message, UndefinedError } from '../../src/core/errors';
 import { mathFunctionRegistry } from '../../src/core/dispatch';
 
 describe('The square root function', () => {
@@ -129,6 +129,68 @@ describe('Factorial', () => {
 	});
 });
 
+describe('The gamma function', () => {
+	it('rejects zero and negative integers as poles', () => {
+		for (const source of ['gamma(0)', 'gamma(-1)', 'gamma(-2)', 'gamma(0.0)', 'gamma(-3.0)']) {
+			expect(() => Parser.parse(source)).toThrow(UndefinedError);
+			expect(() => Parser.parse(source)).toThrow(message('gammaUndefined'));
+		}
+		expect(() => nerdamer('gamma(x)').evaluate({ x: '-4' })).toThrow(UndefinedError);
+	});
+
+	it('keeps values on either side of the poles', () => {
+		expect(Parser.parse('gamma(5)').text()).toEqual('24');
+		expect(Parser.parse('gamma(1/2)').text()).toEqual('pi^(1/2)');
+		expect(Parser.parse('gamma(-1/2)').text()).toEqual('-2*pi^(1/2)');
+		expect(Parser.parse('gamma(-5/2)').text()).toEqual('(-8/15)*pi^(1/2)');
+		expect(Parser.parse('gamma(x)').text()).toEqual('gamma(x)');
+		expect(Number(nerdamer('gamma(-2.1)').evaluate().text({ decimal: true }))).toBeCloseTo(-4.626098277572807, 12);
+	});
+});
+
+describe('The double factorial function', () => {
+	it('accepts plain numbers and strings through the root interface', () => {
+		expect(nerdamer.dfactorial(7).text()).toEqual('105');
+		expect(nerdamer.dfact(6).text()).toEqual('48');
+		expect(nerdamer.dfactorial('9').text()).toEqual('945');
+	});
+
+	it('evaluates integers exactly', () => {
+		expect(Parser.parse('7!!').text()).toEqual('105');
+		expect(Parser.parse('0!!').text()).toEqual('1');
+		expect(Parser.parse('1!!').text()).toEqual('1');
+		expect(Parser.parse('2!!').text()).toEqual('2');
+		expect(Parser.parse('dfact(30)').text()).toEqual('42849873690624000');
+	});
+
+	it('follows n!! = n*(n-2)!! for negative odd integers', () => {
+		expect(Parser.parse('(-1)!!').text()).toEqual('1');
+		expect(Parser.parse('(-3)!!').text()).toEqual('-1');
+		expect(Parser.parse('(-5)!!').text()).toEqual('1/3');
+		expect(Parser.parse('(-7)!!').text()).toEqual('-1/15');
+		expect(nerdamer('dfactorial(-3)').evaluate().text()).toEqual('-1');
+
+		for (let n = -5; n <= 9; n += 2) {
+			const left = Parser.parse(`dfact(${n})`);
+			const right = Parser.parse(`${n}*dfact(${n - 2})`);
+			expect(Expression.isExpression(left) && left.eq(right)).toBe(true);
+		}
+	});
+
+	it('rejects negative even integers as poles', () => {
+		for (const source of ['(-2)!!', 'dfact(-4)']) {
+			expect(() => Parser.parse(source)).toThrow(UndefinedError);
+			expect(() => Parser.parse(source)).toThrow(message('doubleFactorialUndefined'));
+		}
+		expect(() => nerdamer('dfact(x)').evaluate({ x: '-2' })).toThrow(UndefinedError);
+	});
+
+	it('keeps symbolic and non-integer input unevaluated', () => {
+		expect(Parser.parse('dfact(x)').text()).toEqual('dfact(x)');
+		expect(Parser.parse('dfact(1/2)').text()).toEqual('dfact(1/2)');
+	});
+});
+
 describe('Complex rounding functions', () => {
 	it('applies floor and ceiling to each complex component', () => {
 		expect(nerdamer('floor(3/2+7*i/3)').text()).toEqual('1+2*i');
@@ -150,6 +212,28 @@ describe('Logarithms', () => {
 		expect(Parser.parse('log(1/e^e)').text()).toEqual('-e');
 		expect(Parser.parse('log(1/sqrt(2))').text()).toEqual('(-1/2)*log(2)');
 		expect(Parser.parse('e+log(6)').text()).toEqual('e+log(6)');
+	});
+
+	it('gives -Infinity for log(0), the limit from the right', () => {
+		for (const source of ['log(0)', 'log(0.0)', 'log(x-x)']) {
+			const value = Parser.parse(source);
+			expect(Expression.isExpression(value) && value.isNegInf()).toBe(true);
+		}
+		expect(nerdamer('log(0)').evaluate().text()).toEqual('-Inf');
+		expect(nerdamer('log(x)').evaluate({ x: '0' }).text()).toEqual('-Inf');
+	});
+
+	it('keeps the sign of log(0) correct for any base', () => {
+		expect(nerdamer('log(0,2)').evaluate().text()).toEqual('-Inf');
+		expect(nerdamer('log10(0)').evaluate().text()).toEqual('-Inf');
+		expect(nerdamer('log(0,1/2)').evaluate().text()).toEqual('Inf');
+	});
+
+	it('resolves limits that approach log(0)', () => {
+		expect(nerdamer('limit(log(x),x,0,right)').text()).toEqual('-Inf');
+		expect(nerdamer('limit(x*log(x),x,0,right)').text()).toEqual('0');
+		expect(nerdamer('limit(sqrt(x)*log(x),x,0,right)').text()).toEqual('0');
+		expect(nerdamer('limit(x^x,x,0,right)').text()).toEqual('1');
 	});
 });
 
@@ -177,7 +261,7 @@ describe('The erf, erfc function', () => {
 	it('should calculate erf correctly', () => {
 		expect(Parser.parse('erf(0)').text()).toEqual('0');
 		expect(Parser.parse('erf(0.3)').text()).toEqual('0.32862675945912742764');
-		expect(Parser.parse('erf(1)').text()).toEqual('0.84270079294971486936');
+		expect(Parser.parse('erf(1)').text()).toEqual('0.84270079294971486934');
 		expect(Parser.parse('erf(-0.67)').text()).toEqual('-0.65662770230030504644');
 		expect(Parser.parse('erf(100)').text()).toEqual('1');
 	});
@@ -185,9 +269,9 @@ describe('The erf, erfc function', () => {
 	it('should calculate erfc correctly', () => {
 		expect(Parser.parse('erfc(0)').text()).toEqual('1');
 		expect(Parser.parse('erfc(0.3)').text()).toEqual('0.67137324054087257236');
-		expect(Parser.parse('erfc(1)').text()).toEqual('0.15729920705028513064');
+		expect(Parser.parse('erfc(1)').text()).toEqual('0.15729920705028513066');
 		expect(Parser.parse('erfc(-0.67)').text()).toEqual('1.6566277023003050464');
-		expect(Parser.parse('erfc(100)').text()).toEqual('0');
+		expect(Parser.parse('erfc(100)').text()).toEqual('6.405961424921732039e-4346');
 	});
 });
 
@@ -228,7 +312,7 @@ describe('Closed-form sums and products', () => {
 		['sum(2^k,k,0,n)', '2^(n+1)-1'],
 		['sum(2^k,k,3,n)', '(2^(n+1)-8)'],
 		['sum(a,k,1,n)', 'a*n'],
-		['sum(k,k,1,20000)', '200010000'],
+		['sum(k,k,1,20001)', '200030001'],
 		['product(k,k,1,n)', 'factorial(n)'],
 		['product(2^k,k,1,n)', '2^(n*(n+1)/2)'],
 		['product(a,k,1,n)', 'a^n'],
@@ -239,7 +323,7 @@ describe('Closed-form sums and products', () => {
 	it.each([
 		'sum((-2)^k,k,0,Infinity)',
 		'sum(2^(-k^2),k,1,Infinity)',
-		'sum(k^3,k,1,20000)',
+		'sum(k^3,k,1,20001)',
 		'product(k+1,k,1,n)',
 	])('preserves unsupported form %s', input => {
 		const result = Expression.create(input);
@@ -388,11 +472,11 @@ describe('sum and product (finite)', () => {
 
 	describe('evaluation safety limit', () => {
 		it('does not evaluate when term count exceeds limit', () => {
-			expect(Expression.create('sum(k^3, k, 1, 20000)').text()).toBe('sum(k^3, k, 1, 20000)');
+			expect(Expression.create('sum(k^3, k, 1, 20001)').text()).toBe('sum(k^3, k, 1, 20001)');
 		});
 
 		it('evaluates at limit boundary', () => {
-			expect(Expression.create('sum(1, k, 1, 10000)').text()).toBe('10000');
+			expect(Expression.create('sum(1, k, 1, 20000)').text()).toBe('20000');
 		});
 	});
 });

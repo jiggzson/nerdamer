@@ -1,4 +1,5 @@
 import { polyFactorExpressions } from '../../algebra/factor/factor';
+import { simplifyLogRatio } from '../../algebra/simplify/funcsimp';
 import { Expression } from '../../core/classes/expression/Expression';
 import {
 	eight,
@@ -68,8 +69,21 @@ import type { ExpressionInput } from '../../core/types';
  */
 export type SolveRecursionContext = { depth: number; exhausted?: boolean };
 
+/**
+ * Functions whose principal inverse plus its periodic families gives exactly the solutions
+ * of f(u) = c, so no candidate needs substituting back.
+ */
+const EXACT_INVERSES: string[] = [SIN, COS, TAN, COT, SINH, COSH, TANH];
+
 export class SymbolicSolver {
 	private static readonly MAX_FN_SOLVE_STEPS = 64;
+	/**
+	 * Whether every candidate so far came only through exact steps, which can't add a
+	 * root that fails the original equation. Steps that can (squaring a radical, combining
+	 * logarithms, inverting a function with a restricted range) clear it, so the caller
+	 * still substitutes those candidates back.
+	 */
+	private exact = true;
 	private input: Expression;
 	private readonly recursion: SolveRecursionContext;
 	private x: string;
@@ -112,6 +126,19 @@ export class SymbolicSolver {
 		const b = coeffs[2];
 		const a = coeffs[3];
 
+		// Solve a*x^3+d=0 directly instead of constructing a Cardano
+		// discriminant whose square root is branch-sensitive for symbolic a and d.
+		if (b.isZero() && c.isZero()) {
+			const root = cbrt(d.neg().div(a));
+			const realPart = root.div(two()).neg();
+			const imaginaryPart = root.times(sqrt(three())).times(Expression.Img()).div(two());
+			return [
+				root,
+				realPart.plus(imaginaryPart),
+				realPart.minus(imaginaryPart),
+			];
+		}
+
 		// Normalize
 		const b1 = b.div(a);
 		const c1 = c.div(a);
@@ -128,6 +155,24 @@ export class SymbolicSolver {
 
 		// Shift for converting back from depressed cubic
 		const shift = zero().minus(b1).div(three());
+
+		// Three distinct real roots (casus irreducibilis). Cardano would express them
+		// through cube roots of complex numbers, so use the real trigonometric form
+		// t_k = 2*sqrt(-p/3)*cos(acos(3q/(2p)*sqrt(-3/p))/3 - 2*pi*k/3) instead.
+		if (p.isNUM() && q.isNUM() && discriminant.isNUM() && discriminant.lt(zero())) {
+			const amplitude = two().times(sqrt(p.neg().div(three())));
+			const cosine = three()
+				.times(q)
+				.div(two().times(p))
+				.times(sqrt(three().neg().div(p)));
+			const angle = acos(cosine);
+			const roots: Expression[] = [];
+			for (let k = 0; k < 3; k++) {
+				const turn = two().times(Expression.Pi()).times(Expression.create(k)).div(three());
+				roots.push(amplitude.times(cos(angle.div(three()).minus(turn))).plus(shift));
+			}
+			return roots;
+		}
 
 		// General Cardano solution
 		const sqrtDisc = sqrt(discriminant);
@@ -353,6 +398,7 @@ export class SymbolicSolver {
 			const solver = new SymbolicSolver(eq, x, this.recursion);
 			const result = solver.solve();
 			if (!result.unsolved) {
+				this.exact &&= result.exact;
 				return result.solutions;
 			}
 			// An exhausted nested solver is unresolved, not proof of an empty root set.
@@ -379,6 +425,8 @@ export class SymbolicSolver {
 					e.getArguments().length > 0
 			);
 			if (logTerms.length === elements.length && logTerms.some(e => e.hasVariable(x))) {
+				// log(a) + log(b) = log(ab) only holds on part of the domain.
+				this.exact = false;
 				let product = one();
 				for (const logTerm of logTerms) {
 					const exponent = Expression.fromRational(logTerm.getMultiplier());
@@ -391,6 +439,8 @@ export class SymbolicSolver {
 				e => e.hasVariable(x) && e.getPower().eq(half())
 			);
 			if (radicalTerms.length === 1) {
+				// Squaring the isolated radical can add roots.
+				this.exact = false;
 				const radicalTerm = radicalTerms[0];
 				let remainder = zero();
 				for (const element of elements) {
@@ -435,6 +485,8 @@ export class SymbolicSolver {
 				const unitFactor = radicalFactor.toUnitMultiplier();
 				const coefficient = radicalTerm.div(unitFactor);
 				if (!coefficient.hasVariable(x) && !remainder.hasVariable(x)) {
+					// Squaring the isolated radical can add roots.
+					this.exact = false;
 					const base = radicalFactor.getBase();
 					const isolated = remainder.neg().div(coefficient);
 					return solveForX(base, isolated.pow(two().neg()));
@@ -512,6 +564,8 @@ export class SymbolicSolver {
 					}
 					const coefficient = term.div(logarithm);
 					if (!coefficient.hasVariable(x) && !coefficient.isZero()) {
+						// log(u) = c only inverts to u = e^c when c is in log's range.
+						this.exact = false;
 						let value = exp(remainder.neg().div(coefficient));
 						// Invert log(u)/log(b) = c as u = b^c, retaining exact integer powers.
 						const inverseBaseLog = term.elementsArray().find(factor =>
@@ -551,25 +605,64 @@ export class SymbolicSolver {
 
 					// f(u) = -remainder / m
 					let c = remainder.neg().div(m);
-					// f(u)^n = c => f(u) = c^(1/n)
-					if (!p.isOne()) {
+					// f(u)^n = c holds for each of the n roots c^(1/n)*e^(2*pi*i*k/n), and
+					// each is an ordinary first-power equation with its periodic family. A
+					// non-integer power has one inversion, and abs(u) is never negative.
+					let targets = [c];
+					const n = p.abs();
+					if (p.isInteger() && !p.isOne() && fname !== ABS) {
+						const base = p.isNegative() ? one().div(c) : c;
+						const root = base.pow(one().div(n));
+						targets = [];
+						const pi = Expression.Pi();
+						for (let k = 0; k < Number(n.getMultiplier().numerator); k++) {
+							const angle = pi.times(2 * k).div(n);
+							const unity = cos(angle).plus(Expression.Img().times(sin(angle)));
+							targets.push(root.times(unity));
+						}
+					} else if (!p.isOne()) {
 						c = c.pow(p.invert());
+						targets = [c];
 					}
 
-					const values = this.invertFunction(fname, c, p.isOne());
-					if (values !== undefined) {
-						const results: Expression[] = [];
-						for (const v of values) {
-							const roots = solveForX(u, v);
-							if (roots) {
-								results.push(...roots);
+					// Inverting a range-restricted function, a non-integer power, or abs with x on
+					// the other side can add roots. So can a target where the inverse isn't
+					// defined, such as tan(u) = i.
+					const i = Expression.Img();
+					const undefinedTarget = (target: Expression) =>
+						((fname === TAN || fname === COT) && (target.eq(i) || target.eq(i.neg()))) ||
+						(fname === TANH && (target.eq(one()) || target.eq(one().neg())));
+					if (
+						!EXACT_INVERSES.includes(fname) ||
+						remainder.hasVariable(x) ||
+						(!p.isInteger() && !p.isOne()) ||
+						targets.some(undefinedTarget)
+					) {
+						this.exact = false;
+					}
+
+					const results: Expression[] = [];
+					const periodic = targets.length > 1 || p.isOne();
+					let invertible = false;
+					for (const target of targets) {
+						const values = this.invertFunction(fname, target, periodic);
+						if (values !== undefined) {
+							invertible = true;
+							for (const v of values) {
+								const roots = solveForX(u, v);
+								if (roots) {
+									results.push(...roots);
+								}
 							}
 						}
+					}
+					if (invertible) {
 						return results.length > 0 ? results : undefined;
 					}
 				}
 			}
-			if (elements.length === 2) {
+			// b^u plus terms free of x, such as e^x-1-i.
+			if (elements.length >= 2) {
 				const expIdx = elements.findIndex(e => {
 					let retval = false;
 					if (e.isEXP()) {
@@ -585,14 +678,31 @@ export class SymbolicSolver {
 				});
 				if (expIdx !== -1) {
 					const expTerm = elements[expIdx];
-					const constTerm = elements[1 - expIdx];
+					const m = expTerm.getMultiplier();
+					// The other terms, moved to the right-hand side. With a negative multiplier they
+					// keep their sign and the multiplier drops it, so -e^x+a+b gives a+b, not -(-a-b).
+					let rest = zero();
+					for (const element of elements) {
+						if (element !== expTerm) {
+							rest = rest.plus(m.isNegative() ? element : element.neg());
+						}
+					}
 
-					if (!constTerm.hasVariable(x)) {
+					if (!rest.hasVariable(x)) {
 						const base = expTerm.getBase();
 						const u = expTerm.getPower();
-						const m = expTerm.getMultiplier();
-						const c = constTerm.neg().div(m);
-						return solveForX(u, log(c).div(log(base)));
+						const c = rest.div(m.abs());
+						// b^u = c holds for u = (log(c) + 2*pi*i*n)/log(b) at every integer n. When c
+						// has a real logarithm the principal root alone is returned, so real
+						// answers stay real. When it has none, as for e^x = -1, every root is
+						// complex and the principal one alone would be incomplete.
+						let value = log(c);
+						if (c.variables().length === 0 && (c.isComplex() || c.isNegative())) {
+							const period = two().times(Expression.Pi()).times(Expression.Img());
+							value = value.plus(period.times(Expression.N()));
+						}
+						// An exact power, as 2^x = 8, gives the exponent itself: 3, not log(8)/log(2).
+						return solveForX(u, simplifyLogRatio(value.div(log(base))));
 					}
 				}
 			}
@@ -772,7 +882,7 @@ export class SymbolicSolver {
 		let solutions: Expression[] | undefined;
 		if (this.recursion.depth >= SymbolicSolver.MAX_FN_SOLVE_STEPS) {
 			this.recursion.exhausted = true;
-			return { solutions: [], unsolved: this.input };
+			return { solutions: [], unsolved: this.input, exact: false };
 		}
 		this.recursion.depth++;
 		try {
@@ -816,6 +926,10 @@ export class SymbolicSolver {
 				}
 
 				if (cleanCoeffs && deg >= 1 && deg <= 4) {
+					// The linear root is exact. The higher-degree formulas keep their check.
+					if (deg > 1) {
+						this.exact = false;
+					}
 					switch (deg) {
 						case 1:
 							solutions = [coeffs[0].neg().div(coeffs[1])];
@@ -848,6 +962,7 @@ export class SymbolicSolver {
 		return {
 			solutions,
 			unsolved,
+			exact: this.exact,
 		};
 		} finally {
 			this.recursion.depth--;

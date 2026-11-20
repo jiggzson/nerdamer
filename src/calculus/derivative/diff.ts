@@ -27,6 +27,7 @@ import {
 	DIFF,
 	EI,
 	ERF,
+	ERFC,
 	LI,
 	LOG,
 	SEC,
@@ -40,7 +41,7 @@ import {
 	TANH,
 } from '../../core/constants/functionNames';
 import { SYMBOLIC_ACCESSOR } from '../../core/constants/parserSyntax';
-import { message, UnsupportedOperationError } from '../../core/errors';
+import { message, UnexpectedInputError, UnsupportedOperationError } from '../../core/errors';
 import { log } from '../../math/index';
 
 import type { ExpressionInput } from '../../core/types';
@@ -82,14 +83,15 @@ function productRule(expression: Expression, variable: Expression): Expression {
  * Expression input is reused during normalization.
  *
  * @remarks
- * `n` requests a repeated derivative. A non-integer order, a non-variable
- * differentiation target, or an unsupported derivative is preserved as an
- * unevaluated `diff(...)` expression. Constants and expressions independent of
- * the selected variable differentiate to zero.
+ * `n` requests a repeated derivative, and order zero returns the input. A negative
+ * or non-integer order, a non-variable differentiation target, or an unsupported
+ * derivative is preserved as an unevaluated `diff(...)` expression. Negative orders
+ * are reserved for antiderivatives. Constants and expressions independent of the
+ * selected variable differentiate to zero.
  *
  * @param x - Expression to differentiate.
  * @param variable - Variable with respect to which the derivative is taken.
- * @param n - Positive integer derivative order. Defaults to the first derivative.
+ * @param n - Non-negative integer derivative order. Defaults to the first derivative.
  * @returns The symbolic derivative, or an unevaluated `diff(...)` call when the
  * requested operation cannot be resolved.
  * @throws {@link core!UnsupportedOperationError} If `variable` is numeric.
@@ -108,11 +110,16 @@ export function diff(
 	x = Expression.create(x);
 
 	const variables = x.variables();
-	// Set the variable if none was provided
+	// Without a variable, use the only one. With several, which one is meant would be a guess
+	// that depends on input order. With none, the derivative is zero whatever the variable.
+	if (variable === undefined && variables.length > 1) {
+		throw new UnexpectedInputError(message('ambiguousVariable', { expression: x.text() }));
+	}
 	variable ??= Expression.Variable(variables[0]);
 
 	variable = Expression.create(variable);
 	const nth = typeof n === 'number' ? Expression.create(n) : n;
+	const order = nth?.isInteger() ? Number(nth) : 1;
 	// If the variable is a number then complain
 	if (variable?.isNUM()) {
 		throw new UnsupportedOperationError(message('unsupportedOperation'));
@@ -120,8 +127,11 @@ export function diff(
 
 	let retval: Expression | undefined;
 
-	if (x.hasFunction(SYMBOLIC_ACCESSOR, true)) {
+	// A negative order is an antiderivative, so check it before the constant shortcut
+	if (x.hasFunction(SYMBOLIC_ACCESSOR, true) || order < 0) {
 		retval = Expression.toFunction(DIFF, [x, variable, nth]);
+	} else if (order === 0) {
+		retval = x.copy();
 	} else if (variables.length === 0 || !x.hasVariable(variable.value) || x.isConstant()) {
 		retval = zero();
 	}
@@ -137,9 +147,6 @@ export function diff(
 	}
 	// If the expression doesn't have a variable or if it's a constant then we're done
 	else {
-		// Reduce the nth call of the derivative
-		const n = nth ? Number(nth) - 1 : 0;
-
 		// Pull the derivate of the outside. At this point we've already performed all the required checks.
 		const m = x.getMultiplier().times(x.getPower());
 		const p = x.getPower().minus(one());
@@ -271,6 +278,9 @@ export function diff(
 				case ERF:
 					retval = _(`(2*e^(-(${x})^2))/sqrt(pi)`);
 					break;
+				case ERFC:
+					retval = _(`-(2*e^(-(${x})^2))/sqrt(pi)`);
+					break;
 				case SGN:
 					retval = zero();
 					break;
@@ -288,11 +298,12 @@ export function diff(
 		if (retval) {
 			retval = retval.times(fp);
 		}
+	}
 
-		// Pull the nth -1 derivative if that was requested
-		if (n > 0 && retval) {
-			retval = diff(retval, variable, Expression.Number(n));
-		}
+	// Each branch above takes one derivative, so pull the remaining orders. An unevaluated
+	// diff(...) already carries the full order and must not be wrapped again.
+	if (order > 1 && retval && !retval.isFunction(DIFF)) {
+		retval = diff(retval, variable, order - 1);
 	}
 
 	return retval || Expression.toFunction(DIFF, [x, variable, nth]);

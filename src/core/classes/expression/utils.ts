@@ -74,7 +74,8 @@ export function cloneExpressionTree(source: Expression): Expression {
 	target.deferred = src.deferred;
 	target.isEnumerable = src.isEnumerable;
 	target.type = src.type;
-	target.value = src.value;
+	// The backing text, so copying a number does not build text it may never need.
+	target.valueText = src.valueText;
 	target.precision = src.precision;
 	target.scientific = src.scientific;
 
@@ -146,7 +147,8 @@ export function copyOver(src: Expression, target: Expression, options?: OptionsO
 	}
 	// Last but not least
 	target.type = src.type;
-	target.value = src.value;
+	// The backing text, so copying a number does not build text it may never need.
+	target.valueText = src.valueText;
 	target.precision = src.precision;
 	target.scientific = src.scientific;
 	target.deferred = src.deferred;

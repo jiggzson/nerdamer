@@ -40,12 +40,12 @@ function validateManifest(): void {
 	const bugs = typeof manifest.bugs === 'string' ? manifest.bugs : manifest.bugs?.url;
 
 	if (manifest.name !== 'nerdamer') throw new Error('Unexpected package name.');
-	if (manifest.version !== '2.0.1') throw new Error('Package version is not set to 2.0.1.');
+	if (manifest.version !== '2.1.0') throw new Error('Package version is not set to 2.1.0.');
 	if (manifest.publishConfig?.tag !== 'latest') throw new Error('Package must publish under the latest tag.');
 	if (manifest.files?.some(path => path === 'docs' || path.startsWith('docs/'))) {
 		throw new Error('Internal docs directory must be excluded from the published package.');
 	}
-	for (const path of ['README.md', 'BREAKING_CHANGES.md']) {
+	for (const path of ['README.md', 'BREAKING_CHANGES.md', 'RELEASE_NOTES.md']) {
 		const content = readFileSync(join(ROOT, path), 'utf8');
 		if (/\]\((?:\.\/)?docs\//i.test(content)) {
 			throw new Error(`Public ${path} links to internal docs.`);

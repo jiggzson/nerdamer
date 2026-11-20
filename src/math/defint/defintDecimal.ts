@@ -75,9 +75,9 @@ function toleranceForPrecision(): Decimal {
 function simpson(a: Decimal, b: Decimal, fa: Decimal, fm: Decimal, fb: Decimal): Decimal {
 	// (b-a)/6 * (fa + 4*fm + fb)
 	return b
-		.sub(a)
+		.minus(a)
 		.div(SIX)
-		.mul(fa.add(fm.mul(FOUR)).add(fb));
+		.times(fa.plus(fm.times(FOUR)).plus(fb));
 }
 
 type Frame = {
@@ -136,7 +136,7 @@ function withFiniteBounds(
 		return y;
 	};
 
-	const m0 = a.add(b).div(TWO);
+	const m0 = a.plus(b).div(TWO);
 	const fa = evalF(a);
 	const fm = evalF(m0);
 	const fb = evalF(b);
@@ -154,7 +154,7 @@ function withFiniteBounds(
 			const mid = m0;
 			const left = integrateFiniteSegments(f, a, mid, opts);
 			const right = integrateFiniteSegments(f, mid, b, opts);
-			return left.add(right).mul(sign);
+			return left.plus(right).times(sign);
 		}
 	}
 
@@ -185,8 +185,8 @@ function withFiniteBounds(
 		const b0 = fr.b;
 		const m = fr.m;
 
-		const lm = a0.add(m).div(TWO);
-		const rm = m.add(b0).div(TWO);
+		const lm = a0.plus(m).div(TWO);
+		const rm = m.plus(b0).div(TWO);
 
 		const fLM = evalF(lm);
 		const fRM = evalF(rm);
@@ -251,17 +251,17 @@ function withFiniteBounds(
 
 		const Sleft = simpson(a0, m, fr.fa, fLM, fr.fm);
 		const Sright = simpson(m, b0, fr.fm, fRM, fr.fb);
-		const S2 = Sleft.add(Sright);
+		const S2 = Sleft.plus(Sright);
 
 		// Error estimate and acceptance test
-		const err = absD(S2.sub(fr.S)).div(FIFTEEN);
+		const err = absD(S2.minus(fr.S)).div(FIFTEEN);
 
 		// Relative scaling: accept if err <= tolAbs + tolRel*|S2|
-		const scale = fr.tolAbs.add(fr.tolRel.mul(absD(S2)));
+		const scale = fr.tolAbs.plus(fr.tolRel.times(absD(S2)));
 
 		if (err.lte(scale) || fr.depth >= opts.maxDepth) {
-			const improved = S2.add(S2.sub(fr.S).div(FIFTEEN)); // Richardson
-			acc = acc.add(improved);
+			const improved = S2.plus(S2.minus(fr.S).div(FIFTEEN)); // Richardson
+			acc = acc.plus(improved);
 			continue;
 		}
 
@@ -298,7 +298,7 @@ function withFiniteBounds(
 		});
 	}
 
-	return acc.mul(sign);
+	return acc.times(sign);
 }
 
 function integrateFiniteSegments(
@@ -311,18 +311,18 @@ function integrateFiniteSegments(
 	}
 ): Decimal {
 	// One extra level of protection: split into 4 chunks and integrate those that remain finite.
-	const m = a.add(b).div(TWO);
-	const q1 = a.add(m).div(TWO);
-	const q3 = m.add(b).div(TWO);
+	const m = a.plus(b).div(TWO);
+	const q1 = a.plus(m).div(TWO);
+	const q3 = m.plus(b).div(TWO);
 
 	// Integrate each segment with slightly looser tolerances (since we subdivided already).
 	const tolAbs = opts.tolAbs.div(FOUR);
 	const tolRel = opts.tolRel.div(FOUR);
 
 	return withFiniteBounds(f, a, q1, { ...opts, tolAbs, tolRel })
-		.add(withFiniteBounds(f, q1, m, { ...opts, tolAbs, tolRel }))
-		.add(withFiniteBounds(f, m, q3, { ...opts, tolAbs, tolRel }))
-		.add(withFiniteBounds(f, q3, b, { ...opts, tolAbs, tolRel }));
+		.plus(withFiniteBounds(f, q1, m, { ...opts, tolAbs, tolRel }))
+		.plus(withFiniteBounds(f, m, q3, { ...opts, tolAbs, tolRel }))
+		.plus(withFiniteBounds(f, q3, b, { ...opts, tolAbs, tolRel }));
 }
 
 /**
@@ -381,41 +381,41 @@ export function definiteIntegrate(
 			const a0 = A;
 			const g: DecimalFn = t => {
 				// x = a + t/(1-t)
-				const oneMinusT = ONE.sub(t);
-				const x = a0.add(t.div(oneMinusT));
+				const oneMinusT = ONE.minus(t);
+				const x = a0.plus(t.div(oneMinusT));
 				// dx/dt = 1/(1-t)^2
-				const dxdt = ONE.div(oneMinusT.mul(oneMinusT));
-				return f(x).mul(dxdt);
+				const dxdt = ONE.div(oneMinusT.times(oneMinusT));
+				return f(x).times(dxdt);
 			};
 			// integrate t in [0,1] but avoid evaluating at 1 exactly
 			const eps = new Decimal(10).pow(-(Decimal.precision ?? DEFAULT_DECIMAL_PRECISION) + INFINITE_BOUND_PRECISION_SLACK);
-			return withFiniteBounds(g, ZERO, ONE.sub(eps), coreOpts);
+			return withFiniteBounds(g, ZERO, ONE.minus(eps), coreOpts);
 		}
 
 		if (isInfA && A.isNeg() && !isInfB) {
 			const b0 = B;
 			const g: DecimalFn = t => {
-				const oneMinusT = ONE.sub(t);
-				const x = b0.sub(t.div(oneMinusT));
-				const dxdt = ONE.div(oneMinusT.mul(oneMinusT));
-				return f(x).mul(dxdt);
+				const oneMinusT = ONE.minus(t);
+				const x = b0.minus(t.div(oneMinusT));
+				const dxdt = ONE.div(oneMinusT.times(oneMinusT));
+				return f(x).times(dxdt);
 			};
 			const eps = new Decimal(10).pow(-(Decimal.precision ?? DEFAULT_DECIMAL_PRECISION) + INFINITE_BOUND_PRECISION_SLACK);
-			return withFiniteBounds(g, ZERO, ONE.sub(eps), coreOpts);
+			return withFiniteBounds(g, ZERO, ONE.minus(eps), coreOpts);
 		}
 
 		if (isInfA && A.isNeg() && isInfB && B.isPos()) {
 			// x = tan(pi*(t-1/2)), dx/dt = pi*sec^2(...)
 			const PI = Decimal.acos(-1);
 			const g: DecimalFn = t => {
-				const u = PI.mul(t.sub(new Decimal('0.5')));
+				const u = PI.times(t.minus(new Decimal('0.5')));
 				const x = Decimal.tan(u);
 				const sec2 = ONE.div(Decimal.cos(u).pow(2));
-				const dxdt = PI.mul(sec2);
-				return f(x).mul(dxdt);
+				const dxdt = PI.times(sec2);
+				return f(x).times(dxdt);
 			};
 			const eps = new Decimal(10).pow(-(Decimal.precision ?? DEFAULT_DECIMAL_PRECISION) + INFINITE_BOUND_PRECISION_SLACK);
-			return withFiniteBounds(g, eps, ONE.sub(eps), coreOpts);
+			return withFiniteBounds(g, eps, ONE.minus(eps), coreOpts);
 		}
 
 		throw new Error(message('defintUnsupportedInfiniteBounds'));
@@ -434,12 +434,12 @@ export function definiteIntegrate(
 	let total = ZERO;
 	let start = A;
 	for (const bp of bps) {
-		total = total.add(
+		total = total.plus(
 			withFiniteBounds(f, start, bp, { ...coreOpts, tolAbs: segTolAbs, tolRel: segTolRel })
 		);
 		start = bp;
 	}
-	total = total.add(
+	total = total.plus(
 		withFiniteBounds(f, start, B, { ...coreOpts, tolAbs: segTolAbs, tolRel: segTolRel })
 	);
 	return total;

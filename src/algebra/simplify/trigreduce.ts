@@ -1,7 +1,7 @@
 import { Expression } from '../../core/classes/expression/Expression';
 import { zero, one, two } from '../../core/classes/expression/shortcuts';
-import { COS, SIN } from '../../core/constants/functionNames';
-import { sin, cos } from '../../math/trig';
+import { COS, COSH, SIN, SINH } from '../../core/constants/functionNames';
+import { sin, cos, sinh, cosh } from '../../math/trig';
 
 // ============================================================================
 // POWER REDUCTION (trigreduce)
@@ -9,6 +9,8 @@ import { sin, cos } from '../../math/trig';
 // Reduces powers of trig functions using double-angle identities:
 //   sin²(u) → (1 - cos(2u)) / 2
 //   cos²(u) → (1 + cos(2u)) / 2
+//   sinh²(u) → (cosh(2u) - 1) / 2
+//   cosh²(u) → (cosh(2u) + 1) / 2
 //   sin²(u)·cos²(u) → (1 - cos(4u)) / 8   (via sin(2u)²/4)
 //
 // Higher powers are handled recursively:
@@ -24,11 +26,13 @@ import { sin, cos } from '../../math/trig';
  *   sin(u)^(2k+1) → sin(u) · [sin(u)^(2k) reduced]
  *   cos(u)^(2k+1) → cos(u) · [cos(u)^(2k) reduced]
  *
+ * sinh and cosh reduce the same way, through sinh²(u) = (cosh(2u) - 1)/2.
+ *
  * Only applies when the power is an integer ≥ 2 (or ≤ -2).
  * Fractional powers like sin(x)^(1/2) are left unchanged.
  */
 export function reduceTrigPower(e: Expression): Expression {
-	if (!e.isFunction(SIN) && !e.isFunction(COS)) {
+	if (!e.isFunction([SIN, COS, SINH, COSH])) {
 		return e;
 	}
 
@@ -40,7 +44,11 @@ export function reduceTrigPower(e: Expression): Expression {
 	}
 
 	const u = args[0];
-	const isSin = e.isFunction(SIN);
+	const hyperbolic = e.isFunction([SINH, COSH]);
+	const isSin = e.isFunction([SIN, SINH]);
+	// The odd and even function of the pair, sin and cos or sinh and cosh.
+	const oddFn = hyperbolic ? sinh : sin;
+	const evenFn = hyperbolic ? cosh : cos;
 
 	// Only reduce integer powers with |n| >= 2.
 	// The power is an Expression. Check that it's a pure integer by inspecting
@@ -65,11 +73,7 @@ export function reduceTrigPower(e: Expression): Expression {
 
 	// For negative powers, reduce the positive power and invert
 	if (nBig < 0n) {
-		const positive = reduceTrigPower(
-			isSin
-				? sin(u).pow(Expression.Number(nAbs))
-				: cos(u).pow(Expression.Number(nAbs))
-		);
+		const positive = reduceTrigPower((isSin ? oddFn : evenFn)(u).pow(Expression.Number(nAbs)));
 		return Expression.fromRational(m).times(positive.invert());
 	}
 
@@ -80,24 +84,23 @@ export function reduceTrigPower(e: Expression): Expression {
 		// sin²(u) = (1 - cos(2u)) / 2
 		// cos²(u) = (1 + cos(2u)) / 2
 		const twoU = u.times(two());
-		if (isSin) {
+		if (isSin && hyperbolic) {
+			result = cosh(twoU).minus(one()).div(two());
+		} else if (isSin) {
 			result = one().minus(cos(twoU)).div(two());
 		} else {
-			result = one().plus(cos(twoU)).div(two());
+			result = one().plus(evenFn(twoU)).div(two());
 		}
 	} else if (n % 2 === 0) {
 		// Even power: sin^(2k)(u) = (sin²(u))^k, then reduce sin²
 		const halfPower = n / 2;
-		const squared = reduceTrigPower(isSin ? sin(u).pow(two()) : cos(u).pow(two()));
+		const squared = reduceTrigPower((isSin ? oddFn : evenFn)(u).pow(two()));
 		result = squared.pow(Expression.create(`${halfPower}`));
 	} else {
 		// Odd power: sin^(2k+1)(u) = sin(u) · sin^(2k)(u)
-		const evenPart = reduceTrigPower(
-			isSin
-				? sin(u).pow(Expression.create(`${n - 1}`))
-				: cos(u).pow(Expression.create(`${n - 1}`))
-		);
-		result = (isSin ? sin(u) : cos(u)).times(evenPart);
+		const fn = isSin ? oddFn : evenFn;
+		const evenPart = reduceTrigPower(fn(u).pow(Expression.create(`${n - 1}`)));
+		result = fn(u).times(evenPart);
 	}
 
 	if (!m.isOne()) {
@@ -113,7 +116,7 @@ export function reduceTrigPower(e: Expression): Expression {
  */
 export function trigReduce(x: Expression): Expression {
 	// Direct trig function
-	if ((x.isFunction(SIN) || x.isFunction(COS)) && x.getPower().isInteger()) {
+	if (x.isFunction([SIN, COS, SINH, COSH]) && x.getPower().isInteger()) {
 		const p = x.getPower();
 		if (p.abs().gte(two())) {
 			return reduceTrigPower(x);
@@ -312,32 +315,37 @@ export function expandDoubleAngle(x: Expression): Expression {
 //   sin(a)·cos(b) = (1/2)[sin(a+b) + sin(a-b)]
 //   cos(a)·cos(b) = (1/2)[cos(a-b) + cos(a+b)]
 //   sin(a)·sin(b) = (1/2)[cos(a-b) - cos(a+b)]
+//   sinh(a)·cosh(b) = (1/2)[sinh(a+b) + sinh(a-b)], with similar sinh and cosh pairs
 //
 // Also the reverse identity:
 //   2·sin(u)·cos(u) → sin(2u)
 // ============================================================================
 
 interface TrigFactor {
-	fn: string; // 'sin' or 'cos'
+	fn: string; // 'sin', 'cos', 'sinh' or 'cosh'
 	arg: Expression;
 	power: Expression;
 }
 
 /**
- * Extracts sin/cos factors from a product for product-to-sum conversion.
- * Only extracts factors with power = 1 (linear trig factors).
+ * Extracts sin/cos factors, or the factors with the given names, from a product for
+ * product-to-sum conversion. Only extracts factors with power = 1 (linear trig factors).
  */
-function extractTrigFactors(x: Expression): { trigFactors: TrigFactor[]; rest: Expression } {
+function extractTrigFactors(
+	x: Expression,
+	names: string[] = [SIN, COS]
+): { trigFactors: TrigFactor[]; rest: Expression } {
 	const trigFactors: TrigFactor[] = [];
 	let rest = Expression.fromRational(x.getMultiplier());
 
 	if (!x.isProduct()) {
 		// Check if x itself is a single trig function
-		if ((x.isFunction(SIN) || x.isFunction(COS)) && x.getPower().eq(one())) {
+		const fn = names.find(name => x.isFunction(name));
+		if (fn !== undefined && x.getPower().eq(one())) {
 			const args = x.getArguments();
 			if (args.length > 0) {
 				trigFactors.push({
-					fn: x.isFunction(SIN) ? SIN : COS,
+					fn,
 					arg: args[0],
 					power: x.getPower(),
 				});
@@ -349,11 +357,12 @@ function extractTrigFactors(x: Expression): { trigFactors: TrigFactor[]; rest: E
 	}
 
 	for (const element of x.elementsArray()) {
-		if ((element.isFunction(SIN) || element.isFunction(COS)) && element.getPower().eq(one())) {
+		const fn = names.find(name => element.isFunction(name));
+		if (fn !== undefined && element.getPower().eq(one())) {
 			const args = element.getArguments();
 			if (args.length > 0) {
 				trigFactors.push({
-					fn: element.isFunction(SIN) ? SIN : COS,
+					fn,
 					arg: args[0],
 					power: element.getPower(),
 				});
@@ -371,61 +380,112 @@ function extractTrigFactors(x: Expression): { trigFactors: TrigFactor[]; rest: E
 }
 
 /**
- * Converts a product of two trig functions to a sum using product-to-sum identities.
+ * Converts a product of two trig functions to a sum using product-to-sum identities, and
+ * likewise a product of two hyperbolic functions.
  *
  * sin(a)·cos(b) → (1/2)[sin(a+b) + sin(a-b)]
  * cos(a)·cos(b) → (1/2)[cos(a-b) + cos(a+b)]
  * sin(a)·sin(b) → (1/2)[cos(a-b) - cos(a+b)]
+ * sinh(a)·cosh(b) → (1/2)[sinh(a+b) + sinh(a-b)]
+ * cosh(a)·cosh(b) → (1/2)[cosh(a+b) + cosh(a-b)]
+ * sinh(a)·sinh(b) → (1/2)[cosh(a+b) - cosh(a-b)]
  */
 export function productToSum(x: Expression): Expression {
-	const { trigFactors, rest } = extractTrigFactors(x);
+	const { trigFactors, rest: withoutTrig } = extractTrigFactors(x);
+	const { trigFactors: hyperbolicFactors, rest } = extractTrigFactors(withoutTrig, [SINH, COSH]);
 
-	// Need at least 2 trig factors to apply product-to-sum
-	if (trigFactors.length < 2) {
+	// Need at least 2 trig factors of one kind to apply product-to-sum
+	if (trigFactors.length < 2 && hyperbolicFactors.length < 2) {
 		return x;
 	}
 
-	// Process pairs of trig factors
+	const builders: Record<string, (u: Expression) => Expression> = {
+		[SIN]: sin,
+		[COS]: cos,
+		[SINH]: sinh,
+		[COSH]: cosh,
+	};
 	let result: Expression = rest;
-	let i = 0;
 
-	while (i < trigFactors.length - 1) {
-		const f1 = trigFactors[i];
-		const f2 = trigFactors[i + 1];
-		const a = f1.arg;
-		const b = f2.arg;
-		const aPlusB = a.plus(b);
-		const aMinusB = a.minus(b);
-		const half = one().div(two());
+	// Pair sine and cosine factors with each other, and sinh and cosh with each other.
+	// Mixed products such as sin(a)·sinh(b) have no such identity and are kept.
+	for (const factors of [trigFactors, hyperbolicFactors]) {
+		let i = 0;
 
-		let converted: Expression;
+		while (i < factors.length - 1) {
+			const f1 = factors[i];
+			const f2 = factors[i + 1];
+			const a = f1.arg;
+			const b = f2.arg;
+			const aPlusB = a.plus(b);
+			const aMinusB = a.minus(b);
+			const half = one().div(two());
 
-		if (f1.fn === SIN && f2.fn === COS) {
-			// sin(a)·cos(b) = (1/2)[sin(a+b) + sin(a-b)]
-			converted = half.times(sin(aPlusB).plus(sin(aMinusB)));
-		} else if (f1.fn === COS && f2.fn === SIN) {
-			// cos(a)·sin(b) = (1/2)[sin(a+b) - sin(a-b)]
-			converted = half.times(sin(aPlusB).minus(sin(aMinusB)));
-		} else if (f1.fn === COS && f2.fn === COS) {
-			// cos(a)·cos(b) = (1/2)[cos(a-b) + cos(a+b)]
-			converted = half.times(cos(aMinusB).plus(cos(aPlusB)));
-		} else {
-			// sin(a)·sin(b) = (1/2)[cos(a-b) - cos(a+b)]
-			converted = half.times(cos(aMinusB).minus(cos(aPlusB)));
+			let converted: Expression;
+
+			if (f1.fn === SIN && f2.fn === COS) {
+				// sin(a)·cos(b) = (1/2)[sin(a+b) + sin(a-b)]
+				converted = half.times(sin(aPlusB).plus(sin(aMinusB)));
+			} else if (f1.fn === COS && f2.fn === SIN) {
+				// cos(a)·sin(b) = (1/2)[sin(a+b) - sin(a-b)]
+				converted = half.times(sin(aPlusB).minus(sin(aMinusB)));
+			} else if (f1.fn === COS && f2.fn === COS) {
+				// cos(a)·cos(b) = (1/2)[cos(a-b) + cos(a+b)]
+				converted = half.times(cos(aMinusB).plus(cos(aPlusB)));
+			} else if (f1.fn === SIN) {
+				// sin(a)·sin(b) = (1/2)[cos(a-b) - cos(a+b)]
+				converted = half.times(cos(aMinusB).minus(cos(aPlusB)));
+			} else if (f1.fn === SINH && f2.fn === COSH) {
+				// sinh(a)·cosh(b) = (1/2)[sinh(a+b) + sinh(a-b)]
+				converted = half.times(sinh(aPlusB).plus(sinh(aMinusB)));
+			} else if (f1.fn === COSH && f2.fn === SINH) {
+				// cosh(a)·sinh(b) = (1/2)[sinh(a+b) - sinh(a-b)]
+				converted = half.times(sinh(aPlusB).minus(sinh(aMinusB)));
+			} else if (f1.fn === COSH) {
+				// cosh(a)·cosh(b) = (1/2)[cosh(a+b) + cosh(a-b)]
+				converted = half.times(cosh(aPlusB).plus(cosh(aMinusB)));
+			} else {
+				// sinh(a)·sinh(b) = (1/2)[cosh(a+b) - cosh(a-b)]
+				converted = half.times(cosh(aPlusB).minus(cosh(aMinusB)));
+			}
+
+			result = result.times(converted);
+			i += 2;
 		}
 
-		result = result.times(converted);
-		i += 2;
-	}
-
-	// If there's an unpaired trig factor, multiply it back in
-	if (i < trigFactors.length) {
-		const leftover = trigFactors[i];
-		const fn = leftover.fn === SIN ? sin : cos;
-		result = result.times(fn(leftover.arg));
+		// If there's an unpaired factor, multiply it back in
+		if (i < factors.length) {
+			const leftover = factors[i];
+			result = result.times(builders[leftover.fn](leftover.arg));
+		}
 	}
 
 	return result;
+}
+
+
+/** A bound on the rounds of {@link linearizeTrig}. Each round halves the trig degree of a term. */
+const MAX_LINEARIZE_ROUNDS = 32;
+
+/**
+ * Rewrites products and integer powers of sine and cosine as a sum of terms with at most one
+ * sine or cosine factor each, as in sin(x)^2*cos(x) = cos(x)/4 - cos(3*x)/4, and likewise
+ * for sinh and cosh. Other factors, such as x^2 or e^x, are kept. Power reduction and
+ * product-to-sum are applied to each term until no term changes.
+ */
+export function linearizeTrig(x: Expression): Expression {
+	let retval = x.expand();
+	let changed = true;
+	for (let round = 0; changed && round < MAX_LINEARIZE_ROUNDS; round++) {
+		const terms = retval.isSum() ? retval.distributeMultiplier().elementsArray() : [retval];
+		let next = zero();
+		for (const term of terms) {
+			next = next.plus(productToSum(trigReduce(term)).expand());
+		}
+		changed = next.text() !== retval.text();
+		retval = next;
+	}
+	return retval;
 }
 
 /**

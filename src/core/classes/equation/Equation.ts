@@ -373,4 +373,21 @@ export class Equation {
 	toString(): string {
 		return this.text();
 	}
+
+	/**
+	 * Lists the variables of both sides, in the order they're found.
+	 *
+	 * @example
+	 * ```ts
+	 * nerdamer('x=y').variables(); // ['x', 'y']
+	 * ```
+	 *
+	 * @param vars - Optional list that names are added to, without repeats.
+	 * @returns The list of distinct variable names.
+	 */
+	variables(vars: string[] = []): string[] {
+		this.LHS.variables(vars);
+		this.RHS.variables(vars);
+		return vars;
+	}
 }

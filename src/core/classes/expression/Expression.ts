@@ -2,6 +2,7 @@ import Decimal from 'decimal.js';
 
 import { abs, mod } from '../../../math/index';
 import { isNerdamerNativeType } from '../../common/common';
+import { toExpressions } from '../../common/functions/structuredEntityUtils';
 import {
 	EXPRESSION_TYPES,
 	EXPRESSION,
@@ -22,7 +23,7 @@ import {
 	INTEGER_PARAM,
 	PI,
 } from '../../constants/symbolNames';
-import { message, UnexpectedDataType } from '../../errors';
+import { message, UnexpectedDataType, UnsupportedOperationError } from '../../errors';
 import { build } from '../../functions/build';
 import { imagPart, realPart } from '../../functions/complex';
 import { expand } from '../../functions/expand/expand';
@@ -274,10 +275,10 @@ export class Expression implements Base<Expression> {
 	type!: number;
 
 	/**
-	 * The value of the expression. This hash is used for comparing variable.
-	 * This value is set in the constructor or the copyOver method
+	 * The text behind {@link Expression.value}. A number from {@link Expression.fromRational}
+	 * leaves it unset until it is read.
 	 */
-	value!: string;
+	valueText?: string;
 
 	/**
 	 * Constructs or copies an expression value.
@@ -392,6 +393,10 @@ export class Expression implements Base<Expression> {
 	 *
 	 * The conversion preserves the rational's `asDecimal` provenance flag so later
 	 * formatting and decimal-contagion logic can distinguish decimal-origin values.
+	 * The rational is used as given, not reduced again: values from
+	 * {@link Rational.create} and Rational arithmetic are already in reduced form, while
+	 * callers using the raw `Rational` constructor must supply a reduced fraction with a
+	 * positive denominator.
 	 *
 	 * @param x - Rational value to convert.
 	 * @returns A new numeric expression with an independent multiplier.
@@ -403,10 +408,12 @@ export class Expression implements Base<Expression> {
 	 * ```
 	 */
 	static fromRational(x: Rational) {
-		const value =
-			x.denominator === 1n ? x.numerator.toString() : `${x.numerator}/${x.denominator}`;
-		const retval = Expression.Number(value);
-		retval.getMultiplier().asDecimal = x.asDecimal;
+		const retval = Expression.Number('1');
+		// Rationals are already reduced, so use a copy rather than re-parsing the text:
+		// parsing reduces again, and the GCD dominates the cost for huge values.
+		retval.multiplier = x.copy();
+		// The value is the multiplier's text, built when first read.
+		retval.valueText = undefined;
 		return retval;
 	}
 
@@ -585,6 +592,14 @@ export class Expression implements Base<Expression> {
 	 * ```
 	 */
 	public static Number(x: string | bigint | number | Decimal) {
+		// A Decimal that overflowed (or is NaN) has no exact value; infinity is its own type.
+		// A finite one with a huge exponent would need that many digits as an exact number.
+		if (
+			Decimal.isDecimal(x) &&
+			(!x.isFinite() || x.e > Settings.MAX_NUMBER_DIGITS || x.e < -Settings.MAX_NUMBER_DIGITS)
+		) {
+			throw new UnsupportedOperationError(message('resultOutOfRange'));
+		}
 		return Expression.Type(String(x), NUM);
 	}
 
@@ -634,7 +649,7 @@ export class Expression implements Base<Expression> {
 	 * ```
 	 */
 	public static symbols(...values: ExpressionInput[]) {
-		return values.map(x => Expression.create(x));
+		return toExpressions(values);
 	}
 
 	/**
@@ -679,7 +694,10 @@ export class Expression implements Base<Expression> {
 			}
 			// The value is now the entire Expression. Consider (x^x)^(1/3).
 			// The value of the Expression is x^x and not x since only x^x can directly operate on it.
-			retval = new Expression(x.idString(), true);
+			// The id string leaves out the multiplier, so keep it when it isn't one: (-a)^(1/2)
+			// must not share the value a, or multiplying it by a would add the powers.
+			const id = x.getMultiplier().isOne() ? x.idString() : x.text();
+			retval = new Expression(id, true);
 			retval.base = Expression.create(x);
 			retval.power = pow;
 			retval.type = EXP;
@@ -704,11 +722,11 @@ export class Expression implements Base<Expression> {
 	static toFunction(name: string, args: (NerdamerInput | undefined)[]) {
 		const f = Expression.Function(name);
 		// Remove undefined from the array
-		f.args = args
-			.filter((x): x is NerdamerInput => {
+		f.args = toExpressions(
+			args.filter((x): x is NerdamerInput => {
 				return x !== undefined;
 			})
-			.map(x => Expression.create(x));
+		);
 		// Set the name
 		f.name = name;
 		// TODO: This needs to be generated the same way as in text.
@@ -1748,6 +1766,32 @@ export class Expression implements Base<Expression> {
 	}
 
 	/**
+	 * Checks whether this Expression is infinite in any direction: infinity itself, or a
+	 * product with an infinite factor such as `i*Inf` or `x*Inf`. Unlike {@link
+	 * Expression.isInf}, which is true only for real `±Inf`, the value here may point in a
+	 * complex or unknown direction, so it must not be treated as `±Inf`.
+	 *
+	 * @returns `true` for `±Inf` or a linear product containing it.
+	 */
+	isInfinite(): boolean {
+		return (
+			this.isInf() ||
+			(this.isProduct() &&
+				this.isLinear() &&
+				Object.values(this.getElements()).some(element => element.isInf()))
+		);
+	}
+
+	/**
+	 * Legacy alias for {@link Expression.isInf}: whether this node is `±Inf` itself.
+	 *
+	 * @returns `true` if the type is INF.
+	 */
+	isInfinity(): boolean {
+		return this.isInf();
+	}
+
+	/**
 	 * Checks whether this Expression is an exact integer.
 	 *
 	 * @returns `true` if the expression is `NUM` with an integer multiplier.
@@ -2576,27 +2620,55 @@ export class Expression implements Base<Expression> {
 	 * nodes rebuild it from their current elements. Other node types are left unchanged.
 	 * This method mutates the receiver and returns the same object for chaining.
 	 *
-	 * @param aggregateElements - Exact aggregate elements already available to a caller
-	 * rebuilding a SUM/PRD node. When supplied, the generated value is also the ordinary
-	 * lookup key and can seed the key cache without a second formatting pass.
+	 * The text is rebuilt when `value` is next read, not here. A sum built one term at a time
+	 * is updated after every term, and rendering it each time made building it quadratic.
+	 *
 	 * @returns This expression after updating its stored value where applicable.
 	 */
-	updateValue(aggregateElements?: Expression[]) {
+	updateValue() {
 		this._keyValueCache = undefined;
 
-		if (this.isFunction()) {
-			this.value = `${this.name}(${this.getArguments()
-				.map(x => x.text())
-				.join(', ')})`;
-		} else if (this.isProduct() || this.isSum()) {
-			const elements = aggregateElements ?? this.elementsArray();
-			this.value = Expression.getValue(elements, 'text', this.type);
-			if (aggregateElements && (this.type === SUM || this.type === PRD)) {
-				this._keyValueCache = this.value;
-			}
+		if (this.isFunction() || this.isProduct() || this.isSum()) {
+			this.valueText = undefined;
 		}
 
 		return this;
+	}
+
+	/**
+	 * The value of the expression. This hash is used for comparing variable.
+	 * This value is set in the constructor or the copyOver method
+	 *
+	 * A number built from a rational, and a function, product or sum after
+	 * {@link Expression.updateValue}, gets its text on first read: rendering a huge numerator
+	 * or a long sum costs far more than the arithmetic that produced it, and most
+	 * intermediate results are never compared or printed.
+	 */
+	get value(): string {
+		let retval = this.valueText;
+		if (retval === undefined) {
+			if (this.isFunction()) {
+				retval = `${this.name}(${this.getArguments()
+					.map(x => x.text())
+					.join(', ')})`;
+			} else if (this.isProduct() || this.isSum()) {
+				retval = Expression.getValue(this.elementsArray(), 'text', this.type);
+			} else {
+				const m = this.multiplier;
+				retval =
+					m === undefined
+						? '1'
+						: m.denominator === 1n
+							? String(m.numerator)
+							: `${m.numerator}/${m.denominator}`;
+			}
+			this.valueText = retval;
+		}
+		return retval;
+	}
+
+	set value(text: string) {
+		this.valueText = text;
 	}
 
 	/**

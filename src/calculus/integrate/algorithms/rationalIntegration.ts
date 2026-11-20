@@ -1,14 +1,13 @@
 import { polyFactorExpressions } from '../../../algebra/factor/factor';
 import { partfrac } from '../../../algebra/partfrac';
 import { Expression } from '../../../core/classes/expression/Expression';
-import { four, half, minusOne, one, two, zero } from '../../../core/classes/expression/shortcuts';
+import { four, half, one, two, zero } from '../../../core/classes/expression/shortcuts';
 import { Polynomial } from '../../../core/classes/polynomial/Polynomial';
 import { divide } from '../../../core/classes/polynomial/utils';
 import { INTEGRATE } from '../../../core/constants/functionNames';
 import { getU, subst } from '../../../core/functions/subst';
 import { log } from '../../../math/index';
 import { atan } from '../../../math/trig';
-import { matchPowerSubstitution } from '../bySubstitution';
 import { pmintRational, pmintRationalCoefficientMatch } from '../poorMansIntegrator';
 import { hasTranscendental, MAX_INTEGRATION_DEPTH } from '../utils';
 
@@ -346,7 +345,9 @@ export function tryIntegrateRational(expr: Expression, dx: string, depth: number
 
 	const degNum = pNum.deg();
 	const degDen = pDen.deg();
-	if (degDen < 2) {
+	// c/(a*x+b) is a table entry. A linear denominator still needs the division below when
+	// the fraction is improper, as in x^2/(x+1) = x-1+1/(x+1).
+	if (degDen < 2 && degNum < degDen) {
 		return undefined;
 	}
 
@@ -416,86 +417,6 @@ export function tryIntegrateRational(expr: Expression, dx: string, depth: number
 
 	return result.plus(decomposedIntegral);
 }
-
-export function tryIntegratePowerQuotient(
-	expr: Expression,
-	dx: string,
-	depth: number,
-	integrate: IntegrationCallback
-): Expression | undefined {
-	if (depth >= MAX_INTEGRATION_DEPTH) {
-		return undefined;
-	}
-
-	const powResult = matchPowerSubstitution(expr, dx);
-	if (powResult) {
-		const n = powResult.power;
-		const oneMinusN = one().plus(n.times(minusOne()));
-		return powResult.fx.pow(oneMinusN).div(oneMinusN).times(powResult.constant);
-	}
-
-	const num = expr.getNumerator();
-	const den = expr.getDenominator();
-	if (den.isOne() || !den.hasVariable(dx)) {
-		return undefined;
-	}
-
-	const denBase = den.getBase();
-	const denPower = den.getPower();
-	if (denPower.isOne()) {
-		return undefined;
-	}
-	if (hasTranscendental(num, dx) || hasTranscendental(denBase, dx)) {
-		return undefined;
-	}
-
-	let pNum: Polynomial;
-	try {
-		pNum = new Polynomial(num, [dx]);
-		new Polynomial(denBase, [dx]);
-	} catch (error) {
-		rethrowUnexpected(error);
-		return undefined;
-	}
-	if (pNum.deg() < 1) {
-		return undefined;
-	}
-
-	let quotient: Expression;
-	let remainder: Expression;
-	try {
-		[quotient, remainder] = divide(num, denBase, undefined, [dx]);
-	} catch (error) {
-		rethrowUnexpected(error);
-		return undefined;
-	}
-	if (Expression.create(quotient).isZero()) {
-		return undefined;
-	}
-
-	const term1 = Expression.create(quotient).times(
-		denBase.pow(one().plus(denPower.times(minusOne())))
-	);
-	const term2Num = Expression.create(remainder);
-	const term2 = term2Num.isZero() ? zero() : term2Num.div(den);
-
-	const integral1 = integrate(term1, dx, depth);
-	if (integral1.isFunction(INTEGRATE)) {
-		return undefined;
-	}
-
-	let result = integral1;
-	if (!term2Num.isZero()) {
-		const integral2 = integrate(term2, dx, depth);
-		if (integral2.isFunction(INTEGRATE)) {
-			return undefined;
-		}
-		result = result.plus(integral2);
-	}
-
-	return result;
-}
-
 
 const MAX_EXACT_RATIONAL_DEGREE = 3;
 

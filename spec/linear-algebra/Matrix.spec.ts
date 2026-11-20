@@ -3,8 +3,9 @@
 import '../helpers/registerNerdamerFunctions';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { Matrix } from '../../src/core/classes/matrix/Matrix';
+import nerdamer from '../../src/index';
 import { Parser } from '../../src/core/classes/parser/Parser';
-import { UnsupportedOperationError } from '../../src/core/errors';
+import { UnexpectedDataType, UnsupportedOperationError } from '../../src/core/errors';
 
 describe('Matrices', () => {
 	// =========================================================================
@@ -852,5 +853,53 @@ describe('Matrices', () => {
 			expect(actual.dimensions()).toEqual([2, 3]);
 			expect(actual.eq(expected)).toBe(true);
 		});
+	});
+});
+
+
+describe('Public matrix trace and rank', () => {
+	it('dispatches trace through the parser and the root API', () => {
+		expect(Parser.parse('trace(matrix([1,2],[3,4]))').text()).toBe('5');
+		expect(Parser.parse('trace(matrix([a,1],[0,b]))').text()).toBe('a+b');
+		expect(Parser.parse('trace(imatrix(3))').text()).toBe('3');
+		const matrix = new Matrix([1, 2], [3, 4]);
+		expect(nerdamer.trace(matrix).eq(5)).toBe(true);
+	});
+
+	it('returns matrix rank as a scalar expression', () => {
+		expect(Parser.parse('rank(matrix([1,2],[2,4]))').text()).toBe('1');
+		expect(Parser.parse('rank(matrix([1,2,3],[2,4,6]))').text()).toBe('1');
+		expect(Parser.parse('rank(imatrix(3))').text()).toBe('3');
+		expect(nerdamer.rank(Matrix.identity(3)).text()).toBe('3');
+	});
+
+	it('rejects a nonsquare matrix trace', () => {
+		expect(() => Parser.parse('trace(matrix([1,2,3],[4,5,6]))')).toThrow();
+	});
+});
+
+describe('Matrix functions given something other than a matrix', () => {
+	it.each([
+		['rank([[1,2],[2,4]])', 'rank', 'Vector'],
+		['trace([[1,2],[3,4]])', 'trace', 'Vector'],
+		['determinant([[1,2],[3,4]])', 'determinant', 'Vector'],
+		['transpose([1,2])', 'transpose', 'Vector'],
+		['invert(2)', 'invert', 'Expression'],
+		['rref(x)', 'rref', 'Expression'],
+		['nullspace([[1,2],[2,4]])', 'nullspace', 'Vector'],
+		['rank(5)', 'rank', 'Expression'],
+		['augment([[1],[2]],matrix([3],[4]))', 'augment', 'Vector'],
+		['augment(matrix([1],[2]),[[3],[4]])', 'augment', 'Vector'],
+	])('%s names the function and the type it received', (source, fn, type) => {
+		const parse = () => Parser.parse(source);
+		expect(parse).toThrow(UnexpectedDataType);
+		expect(parse).toThrow(`${fn} requires a matrix! Received ${type}. Write a matrix as matrix([1,2],[3,4]).`);
+	});
+
+	it('still works on matrices', () => {
+		expect(Parser.parse('rank(matrix([1,2],[2,4]))').text()).toEqual('1');
+		expect(Parser.parse('trace(matrix([1,2],[3,4]))').text()).toEqual('5');
+		expect(Parser.parse('determinant(matrix([1,2],[3,4]))').text()).toEqual('-2');
+		expect(Parser.parse('augment(matrix([1],[2]),matrix([3],[4]))').text()).toEqual('matrix([1, 3], [2, 4])');
 	});
 });

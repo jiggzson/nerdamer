@@ -1,6 +1,7 @@
 import nerdamer from '../../src/index';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { Expression } from '../../src/core/classes/expression/Expression';
+import { DivisionByZeroError } from '../../src/core/errors';
 
 describe('Symbolic arithmetic construction', () => {
 	it('should handle zero correctly', () => {
@@ -91,7 +92,7 @@ describe('Symbolic arithmetic construction', () => {
 		expect(Parser.parse('2*(1+x)*3*(z+x)^x*8').text()).toEqual('48*(z+x)^x*(1+x)');
 		expect(Parser.parse('(x+x^2)*(x+x^2)').text()).toEqual('(x+x^2)^2');
 		expect(Parser.parse('(x+x^2)*2*(x+x^2)').text()).toEqual('2*(x+x^2)^2');
-		expect(Parser.parse('(x*y)*(x*y)').text()).toEqual('(x*y)^2');
+		expect(Parser.parse('(x*y)*(x*y)').text()).toEqual('x^2*y^2');
 		expect(Parser.parse('(x*y)*(x*z)').text()).toEqual('x^2*y*z');
 		expect(Parser.parse('(x+y)*(x+y)').text()).toEqual('(x+y)^2');
 		expect(Parser.parse('(x+y)*(y+x)').text()).toEqual('(x+y)^2');
@@ -285,5 +286,19 @@ describe('Symbolic arithmetic regressions', () => {
 
 		expect(left.subtract(right).text()).toEqual('-4');
 		expect(right.subtract(left).text()).toEqual('4');
+	});
+
+	it('rejects zero to a negative numeric power as division by zero', () => {
+		for (const source of ['0^(-1)', '0^(-2)', '0^(-1/2)', '0^-1.5', '(x-x)^(-1)', '5*0^(-1)']) {
+			expect(() => Parser.parse(source)).toThrow(DivisionByZeroError);
+		}
+		expect(() => Expression.create('0').pow('-2')).toThrow(DivisionByZeroError);
+		expect(() => nerdamer('x^(-1)').evaluate({ x: '0' })).toThrow(DivisionByZeroError);
+	});
+
+	it('leaves zero to a symbolic or positive power unchanged', () => {
+		for (const source of ['0^x', '0^(-x)', '0^2', '0^(1/2)']) {
+			expect(Parser.parse(source).text()).toEqual('0');
+		}
 	});
 });

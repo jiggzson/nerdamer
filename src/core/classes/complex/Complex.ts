@@ -61,17 +61,7 @@ export class Complex {
 
 	/** Returns the squared modulus `re^2 + im^2` without computing a square root. */
 	absSquared(): Decimal {
-		return this.re.mul(this.re).plus(this.im.mul(this.im));
-	}
-
-	/**
-	 * Adds another complex value component-wise.
-	 *
-	 * @param other - Complex value to add.
-	 * @returns A new complex sum.
-	 */
-	add(other: Complex): Complex {
-		return new Complex(this.re.plus(other.re), this.im.plus(other.im));
+		return this.re.times(this.re).plus(this.im.times(this.im));
 	}
 
 	/**
@@ -97,7 +87,7 @@ export class Complex {
 	 * Thrown when both components of `other` are exactly zero at the current Decimal value.
 	 */
 	div(other: Complex): Complex {
-		const denom = other.re.mul(other.re).plus(other.im.mul(other.im));
+		const denom = other.re.times(other.re).plus(other.im.times(other.im));
 
 		// Exact division by zero is undefined. Numerical tolerances belong to
 		// the algorithms using Complex rather than this arithmetic primitive.
@@ -106,15 +96,15 @@ export class Complex {
 		}
 
 		return new Complex(
-			this.re.mul(other.re).plus(this.im.mul(other.im)).div(denom),
-			this.im.mul(other.re).minus(this.re.mul(other.im)).div(denom)
+			this.re.times(other.re).plus(this.im.times(other.im)).div(denom),
+			this.im.times(other.re).minus(this.re.times(other.im)).div(denom)
 		);
 	}
 
 	/** Computes exp(re + im*i) without losing Decimal precision. */
 	exp(): Complex {
 		const magnitude = this.re.exp();
-		return new Complex(magnitude.mul(this.im.cos()), magnitude.mul(this.im.sin()));
+		return new Complex(magnitude.times(this.im.cos()), magnitude.times(this.im.sin()));
 	}
 
 	/** Principal logarithm, with its argument in (-pi, pi]. */
@@ -126,12 +116,32 @@ export class Complex {
 	}
 
 	/**
+	 * Subtracts another complex value component-wise.
+	 *
+	 * @param other - Complex value to subtract.
+	 * @returns A new complex difference.
+	 */
+	minus(other: Complex): Complex {
+		return new Complex(this.re.minus(other.re), this.im.minus(other.im));
+	}
+
+	/**
 	 * Returns the additive inverse of this complex value.
 	 *
 	 * @returns A new complex value with both components negated.
 	 */
 	neg(): Complex {
 		return new Complex(this.re.neg(), this.im.neg());
+	}
+
+	/**
+	 * Adds another complex value component-wise.
+	 *
+	 * @param other - Complex value to add.
+	 * @returns A new complex sum.
+	 */
+	plus(other: Complex): Complex {
+		return new Complex(this.re.plus(other.re), this.im.plus(other.im));
 	}
 
 	/** Principal complex power exp(exponent * log(this)). */
@@ -147,7 +157,7 @@ export class Complex {
 	 * Thrown when both components are exactly zero at the current Decimal value.
 	 */
 	reciprocal(): Complex {
-		const denom = this.re.mul(this.re).plus(this.im.mul(this.im));
+		const denom = this.re.times(this.re).plus(this.im.times(this.im));
 
 		if (denom.isZero()) {
 			throw new DivisionByZeroError(message('divisionByZero'));
@@ -164,17 +174,7 @@ export class Complex {
 	 */
 	scale(s: Decimal | number): Complex {
 		const scalar = s instanceof Decimal ? s : new Decimal(s);
-		return new Complex(this.re.mul(scalar), this.im.mul(scalar));
-	}
-
-	/**
-	 * Subtracts another complex value component-wise.
-	 *
-	 * @param other - Complex value to subtract.
-	 * @returns A new complex difference.
-	 */
-	sub(other: Complex): Complex {
-		return new Complex(this.re.minus(other.re), this.im.minus(other.im));
+		return new Complex(this.re.times(scalar), this.im.times(scalar));
 	}
 
 	/**
@@ -185,8 +185,8 @@ export class Complex {
 	 */
 	times(other: Complex): Complex {
 		return new Complex(
-			this.re.mul(other.re).minus(this.im.mul(other.im)),
-			this.re.mul(other.im).plus(this.im.mul(other.re))
+			this.re.times(other.re).minus(this.im.times(other.im)),
+			this.re.times(other.im).plus(this.im.times(other.re))
 		);
 	}
 }

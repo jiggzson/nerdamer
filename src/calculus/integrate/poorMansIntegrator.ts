@@ -15,10 +15,15 @@ import { Polynomial } from '../../core/classes/polynomial/Polynomial';
  * - SymPy's related heuristic integrator (independent reference):
  *   https://github.com/sympy/sympy/blob/master/sympy/integrals/heurisch.py
  *
- * This implementation uses Nerdamer's derivative-closed exponential/trigonometric
- * generators and bounded polynomial/rational coefficient systems. Its rational
- * matcher uses restricted candidate bases, partial fractions, and a specialized
- * even-quartic decomposition. It does not implement Bronstein's general
+ * This implementation uses Nerdamer's derivative-closed exponential, trigonometric and
+ * hyperbolic generators, products of those families, and bounded polynomial/rational coefficient
+ * systems. A product family's derivative matrix is the Kronecker sum of its factors'
+ * matrices, as for the tensor product of linear differential systems:
+ * - Marius van der Put and Michael F. Singer, Galois Theory of Linear Differential
+ *   Equations, Springer (2003), https://doi.org/10.1007/978-3-642-55750-7
+ *
+ * Its rational matcher uses restricted candidate bases, partial fractions, and a
+ * specialized even-quartic decomposition. It does not implement Bronstein's general
  * polynomial total derivation, splitFactor, or deflation algorithm.
  * Unsupported forms return undefined; existing integration strategies remain
  * responsible for cases outside these matchers.
@@ -43,8 +48,9 @@ interface DerivativeFamily {
 
 
 /**
- * Collect exponential and sine/cosine generators with bounded rational rates.
- * Their numerators and denominators must be polynomials of degree at most two.
+ * Collect exponential, sine/cosine and sinh/cosh generators with bounded rational rates, and the
+ * products of each pair of those families. The rates' numerators and denominators must
+ * be polynomials of degree at most two.
  */
 function discoverFamilies(expr: Expression, variable: string): DerivativeFamily[] {
 	const families: DerivativeFamily[] = [];
@@ -54,8 +60,11 @@ function discoverFamilies(expr: Expression, variable: string): DerivativeFamily[
 	for (const term of terms) {
 		const factors = term.isProduct() && term.getPower().isOne() ? term.elementsArray() : [term];
 		for (const factor of factors) {
-			const isTrig = factor.isFunction() &&
-				(factor.name === 'sin' || factor.name === 'cos');
+			const hyperbolic =
+				factor.isFunction() && (factor.name === 'sinh' || factor.name === 'cosh');
+			const isTrig =
+				hyperbolic ||
+				(factor.isFunction() && (factor.name === 'sin' || factor.name === 'cos'));
 			const isExp = factor.isEXP() && !factor.getBase().hasVariable(variable);
 			if (!isTrig && !isExp) {
 				continue;
@@ -66,7 +75,9 @@ function discoverFamilies(expr: Expression, variable: string): DerivativeFamily[
 				isTrig || factor.getBase().isE() ? one() :
 					Expression.toFunction('log', [factor.getBase()])
 			);
-			const key = isTrig ? `trig:${argument.text()}` : `exp:${factor.text()}`;
+			const key = isTrig
+				? `${hyperbolic ? 'hyperbolic' : 'trig'}:${argument.text()}`
+				: `exp:${factor.text()}`;
 			const numerator = rate.getNumerator();
 			const denominator = rate.getDenominator();
 			if (seen.has(key) || rate.isZero() ||
@@ -80,7 +91,19 @@ function discoverFamilies(expr: Expression, variable: string): DerivativeFamily[
 			}
 			seen.add(key);
 
-			if (isTrig) {
+			if (hyperbolic) {
+				// D(sinh(u)) = u'*cosh(u) and D(cosh(u)) = u'*sinh(u), with no change of sign.
+				families.push({
+					generators: [
+						Expression.create(`sinh(${argument.text()})`),
+						Expression.create(`cosh(${argument.text()})`),
+					],
+					derivatives: [
+						[zero(), rate],
+						[rate, zero()],
+					],
+				});
+			} else if (isTrig) {
 				families.push({
 					generators: [
 						Expression.create(`sin(${argument.text()})`),
@@ -96,7 +119,44 @@ function discoverFamilies(expr: Expression, variable: string): DerivativeFamily[
 			}
 		}
 	}
+	// Products of two families, such as {e^x*sin(x), e^x*cos(x)}, are closed under
+	// differentiation too, so a term like x^2*e^x*sin(x) has a generator.
+	const count = families.length;
+	for (let i = 0; i < count; i++) {
+		for (let j = i + 1; j < count; j++) {
+			families.push(productFamily(families[i], families[j]));
+		}
+	}
 	return families;
+}
+
+/**
+ * The family of products of a generator of f and a generator of g. By the product rule,
+ * D(f_j*g_l) = D(f_j)*g_l + f_j*D(g_l), so its derivative matrix is the Kronecker sum
+ * of the two: entry ((i,k),(j,l)) is f's (i,j) entry where k = l plus g's (k,l) entry
+ * where i = j.
+ */
+function productFamily(f: DerivativeFamily, g: DerivativeFamily): DerivativeFamily {
+	const m = g.generators.length;
+	const generators = f.generators.flatMap(a => g.generators.map(b => a.times(b)));
+	const derivatives = generators.map(() => generators.map(() => zero()));
+	for (let i = 0; i < f.generators.length; i++) {
+		for (let k = 0; k < m; k++) {
+			for (let j = 0; j < f.generators.length; j++) {
+				for (let l = 0; l < m; l++) {
+					let entry = zero();
+					if (k === l) {
+						entry = entry.plus(f.derivatives[i][j]);
+					}
+					if (i === j) {
+						entry = entry.plus(g.derivatives[k][l]);
+					}
+					derivatives[i * m + k][j * m + l] = entry;
+				}
+			}
+		}
+	}
+	return { generators, derivatives };
 }
 
 /**
@@ -486,109 +546,110 @@ export function pmintRational(
 	input: ExpressionInput,
 	variable: string
 ): Expression | undefined {
-	let retval: Expression | undefined;
 	const expr = Expression.create(input);
 	try {
 		// A powered sum remains sum-typed; only split an actual additive expression.
 		if (expr.isSum() && expr.getPower().isOne()) {
 			let sum = zero();
-			let resolved = true;
 			for (const term of expr.elementsArray()) {
 				const value = pmintRational(term, variable);
 				if (value === undefined) {
-					resolved = false;
-					break;
+					return undefined;
 				}
 				sum = sum.plus(value);
 			}
-			if (resolved) {retval = sum;}
-		} else {
-			const den = expr.getDenominator();
-			if (den.isOne() && expr.isPolynomialLike()) {
-				const coefficients = new Polynomial(expr, [variable]).toArray(false, variable);
-				const x = Expression.create(variable);
-				retval = coefficients.reduce(
-					(sum, coefficient, k) => sum.plus(
-						coefficient.times(x.pow(k + 1)).div(Expression.Number(k + 1))
-					),
-					zero()
-				);
-			}
-			if (retval === undefined && !den.isOne()) {
-				const numerator = expr.getNumerator();
-				const numeratorDegree = new Polynomial(numerator, [variable]).deg();
-				const denominatorDegree = new Polynomial(den, [variable]).deg();
-				if (numeratorDegree >= denominatorDegree) {
-					const [quotient, remainder] = divide(numerator, den);
-					const polynomial = pmintRational(quotient, variable);
-					const fractional = remainder.isZero() ? zero() :
-						pmintRational(remainder.div(den), variable);
-					if (polynomial !== undefined && fractional !== undefined) {
-						retval = polynomial.plus(fractional);
-					}
-				}
-			}
-			if (retval === undefined && !den.isOne()) {
-			retval = pmintRationalCoefficientMatch(expr, variable);
-			if (retval === undefined) {
-			const power = den.getPower();
-			const n = power.isInteger() && power.gt(zero()) ?
-				Number(power.text()) : 1;
-			const q = n > 1 ? den.getBase() : den;
-			const d = new Polynomial(q, [variable]).deg();
+			return sum;
+		}
 
-			// The radical split can avoid expensive partial fraction attempts
-			// on even monic quartics. Keep ordinary decomposition as fallback.
-			if (retval === undefined && d >= 1 && d <= 6) {
-				// An even monic quartic can split over a quadratic radical
-				// when both real quadratic factors have positive discriminant complements.
-				if (retval === undefined && n === 1 && d === 4) {
-					const coefficients = new Polynomial(q, [variable]).toArray(false, variable);
-					const a = coefficients[2] ?? zero();
-					const b = coefficients[0] ?? zero();
-					if ((coefficients[4] ?? zero()).eq(one()) &&
-						(coefficients[3] ?? zero()).isZero() &&
-						(coefficients[1] ?? zero()).isZero() &&
-						a.isNUM() && b.isNUM() && b.gt(zero())) {
-						const t = b.pow(Expression.Number('1/2'));
-						const uSquared = Expression.Number(2).times(t).minus(a);
-						if (uSquared.isNUM() && uSquared.gt(zero())) {
-							const u = uSquared.pow(Expression.Number('1/2'));
-							const x = Expression.create(variable);
-							const plus = x.pow(2).plus(u.times(x)).plus(t);
-							const minus = x.pow(2).minus(u.times(x)).plus(t);
-							const numerator = new Polynomial(expr.getNumerator(), [variable])
-								.toArray(false, variable);
-							const p0 = numerator[0] ?? zero();
-							const p1 = numerator[1] ?? zero();
-							const p2 = numerator[2] ?? zero();
-							const p3 = numerator[3] ?? zero();
-							const sum = p0.div(t);
-							const difference = p2.minus(sum).div(u);
-							const offset = p1.minus(t.times(p3)).div(u);
-							const two = Expression.Number(2);
-							const left = p3.minus(difference).div(two).times(x)
-								.plus(sum.minus(offset).div(two));
-							const right = p3.plus(difference).div(two).times(x)
-								.plus(sum.plus(offset).div(two));
-							const split = left.div(plus).plus(right.div(minus));
-							retval = pmintRational(split, variable);
-						}
+		const den = expr.getDenominator();
+		if (den.isOne()) {
+			if (!expr.isPolynomialLike()) {
+				return undefined;
+			}
+			const coefficients = new Polynomial(expr, [variable]).toArray(false, variable);
+			const x = Expression.create(variable);
+			return coefficients.reduce(
+				(sum, coefficient, k) => sum.plus(
+					coefficient.times(x.pow(k + 1)).div(Expression.Number(k + 1))
+				),
+				zero()
+			);
+		}
+
+		const numerator = expr.getNumerator();
+		const numeratorDegree = new Polynomial(numerator, [variable]).deg();
+		const denominatorDegree = new Polynomial(den, [variable]).deg();
+		if (numeratorDegree >= denominatorDegree) {
+			const [quotient, remainder] = divide(numerator, den);
+			const polynomial = pmintRational(quotient, variable);
+			const fractional = remainder.isZero() ? zero() :
+				pmintRational(remainder.div(den), variable);
+			if (polynomial !== undefined && fractional !== undefined) {
+				return polynomial.plus(fractional);
+			}
+		}
+
+		const matched = pmintRationalCoefficientMatch(expr, variable);
+		if (matched !== undefined) {
+			return matched;
+		}
+
+		const power = den.getPower();
+		const n = power.isInteger() && power.gt(zero()) ?
+			Number(power.text()) : 1;
+		const q = n > 1 ? den.getBase() : den;
+		const d = new Polynomial(q, [variable]).deg();
+		if (d < 1 || d > 6) {
+			return undefined;
+		}
+
+		// An even monic quartic can split over quadratic radicals, avoiding
+		// a costlier partial-fraction attempt.
+		if (n === 1 && d === 4) {
+			const coefficients = new Polynomial(q, [variable]).toArray(false, variable);
+			const a = coefficients[2] ?? zero();
+			const b = coefficients[0] ?? zero();
+			if ((coefficients[4] ?? zero()).eq(one()) &&
+				(coefficients[3] ?? zero()).isZero() &&
+				(coefficients[1] ?? zero()).isZero() &&
+				a.isNUM() && b.isNUM() && b.gt(zero())) {
+				const t = b.pow(Expression.Number('1/2'));
+				const uSquared = Expression.Number(2).times(t).minus(a);
+				if (uSquared.isNUM() && uSquared.gt(zero())) {
+					const u = uSquared.pow(Expression.Number('1/2'));
+					const x = Expression.create(variable);
+					const plus = x.pow(2).plus(u.times(x)).plus(t);
+					const minus = x.pow(2).minus(u.times(x)).plus(t);
+					const numerator = new Polynomial(expr.getNumerator(), [variable])
+						.toArray(false, variable);
+					const p0 = numerator[0] ?? zero();
+					const p1 = numerator[1] ?? zero();
+					const p2 = numerator[2] ?? zero();
+					const p3 = numerator[3] ?? zero();
+					const sum = p0.div(t);
+					const difference = p2.minus(sum).div(u);
+					const offset = p1.minus(t.times(p3)).div(u);
+					const two = Expression.Number(2);
+					const left = p3.minus(difference).div(two).times(x)
+						.plus(sum.minus(offset).div(two));
+					const right = p3.plus(difference).div(two).times(x)
+						.plus(sum.plus(offset).div(two));
+					const split = left.div(plus).plus(right.div(minus));
+					const result = pmintRational(split, variable);
+					if (result !== undefined) {
+						return result;
 					}
 				}
-				if (retval === undefined) {
-					const decomposed = partfrac(expr, variable);
-					if (decomposed.text() !== expr.text() &&
-						decomposed.isSum() && decomposed.getPower().isOne()) {
-						retval = pmintRational(decomposed, variable);
-					}
-				}
 			}
-			}
-			}
+		}
+
+		const decomposed = partfrac(expr, variable);
+		if (decomposed.text() !== expr.text() &&
+			decomposed.isSum() && decomposed.getPower().isOne()) {
+			return pmintRational(decomposed, variable);
 		}
 	} catch {
 		// Unsupported polynomial or coefficient domain.
 	}
-	return retval;
+	return undefined;
 }

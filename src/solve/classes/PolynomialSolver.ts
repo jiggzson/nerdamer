@@ -1,10 +1,19 @@
 import Decimal from 'decimal.js';
 
+import { squareFreeGaussian } from '../../algebra/gcd/complexPolynomialGcd';
+import { GaussianRational } from '../../algebra/gcd/GaussianRational';
+import { squareFreeFactorizationUnivariate } from '../../algebra/polynomial/SparsePolynomialFactor';
 import { Complex } from '../../core/classes/complex/Complex';
 import { Expression } from '../../core/classes/expression/Expression';
 import { Polynomial } from '../../core/classes/polynomial/Polynomial';
+import { SparsePolynomial } from '../../core/classes/polynomial/SparsePolynomial';
 import { message, PolynomialError, UnexpectedInputError } from '../../core/errors';
 import { LCM } from '../../core/functions/bigint/bigint';
+import { precisionBlock } from '../../core/Settings';
+import { jenkinsTraubRoots } from '../jenkinsTraub';
+
+/** Available numerical polynomial algorithms. Aberth remains the default. */
+export type PolynomialMethod = 'aberth' | 'jenkinsTraub';
 
 const DEFAULT_PRECISION = 50;
 const DEFAULT_EPSILON = 1e-14;
@@ -29,15 +38,18 @@ type NativeComplex = {
  * coefficient of `x^k`. Expression, Polynomial, and string inputs are converted directly
  * to numerical complex coefficients before solving. Linear and quadratic inputs are handled
  * directly; higher degrees use simultaneous Aberth iteration followed by
- * Newton refinement.
+ * Newton refinement. Jenkins–Traub can be selected explicitly for real
+ * coefficients without changing the default. Exact real-rational inputs with repeated factors
+ * use square-free decomposition to preserve their root multiplicities.
  *
  * @remarks
- * The solver temporarily changes the global `decimal.js` precision while
- * {@link roots} runs and restores the previous precision before returning.
- * The requested precision controls the numerical work, while `epsilon`
+ * The solver raises the global `decimal.js` precision to at least the requested
+ * precision while {@link roots} runs (see `precisionBlock`), so a higher user
+ * precision is kept, and restores the previous precision before returning.
+ * The working precision controls the numerical work, while `epsilon`
  * controls convergence and cleanup of numerical noise. Roots are returned
- * once per polynomial degree, so repeated roots can appear as repeated nearby
- * approximations.
+ * once per polynomial degree. Exact rational repeated roots are reconstructed
+ * from square-free factors; other repeated roots can remain nearby approximations.
  *
  * This class finds numerical roots; it does not certify completeness or exact
  * multiplicities for ill-conditioned polynomials.
@@ -51,6 +63,8 @@ type NativeComplex = {
 export class PolynomialSolver {
 	private degree: number;
 	private eps: Decimal;
+	private gaussianCoefficients?: GaussianRational[];
+	private integerCoefficients?: bigint[];
 	private p: Complex[];
 	private precision: number;
 
@@ -61,13 +75,13 @@ export class PolynomialSolver {
 	 * Decimal coefficients.
 	 * @param variable - Variable expected in polynomial or string input. It is used to reject
 	 * a conflicting variable or multivariate polynomial.
-	 * @param precision - Working `decimal.js` precision used while finding roots.
+	 * @param precision - Minimum working `decimal.js` precision used while finding roots.
 	 * @param epsilon - Numerical convergence tolerance. Defaults to `1e-14`.
 	 * @throws {@link core!UnexpectedInputError} If symbolic input is multivariate, uses a
 	 * variable different from `variable`, or has nonnumeric coefficients.
 	 */
 	constructor(
-		input: Decimal[] | Polynomial | Expression | string,
+		input: Decimal[] | Complex[] | Polynomial | Expression | string,
 		variable?: string,
 		precision = DEFAULT_PRECISION,
 		epsilon?: Decimal
@@ -75,7 +89,9 @@ export class PolynomialSolver {
 		let coefficients: Complex[];
 
 		if (Array.isArray(input)) {
-			coefficients = input.map(coefficient => new Complex(coefficient, 0));
+			coefficients = input.map(coefficient =>
+				coefficient instanceof Complex ? coefficient : new Complex(coefficient, 0)
+			);
 		} else {
 			const polynomialInput = Polynomial.isPolynomial(input);
 			const expression = polynomialInput
@@ -126,22 +142,35 @@ export class PolynomialSolver {
 			);
 
 			if (exactRationals) {
+				if (numericComponents.some(component => !component.imaginary.isZero())) {
+					this.gaussianCoefficients = numericComponents.map(
+						component => new GaussianRational(component.real, component.imaginary)
+					);
+				}
 				const commonDenominator = LCM(
 					...numericComponents.flatMap(component => [
 						component.real.denominator,
 						component.imaginary.denominator,
 					])
 				);
-				coefficients = numericComponents.map(component => {
-					const real =
+				const integers = numericComponents.map(component => ({
+					real:
 						component.real.numerator *
-						(commonDenominator / component.real.denominator);
-					const imaginary =
+						(commonDenominator / component.real.denominator),
+					imaginary:
 						component.imaginary.numerator *
-						(commonDenominator / component.imaginary.denominator);
-
-					return new Complex(new Decimal(String(real)), new Decimal(String(imaginary)));
-				});
+						(commonDenominator / component.imaginary.denominator),
+				}));
+				coefficients = integers.map(
+					component =>
+						new Complex(
+							new Decimal(String(component.real)),
+							new Decimal(String(component.imaginary))
+						)
+				);
+				if (integers.every(component => component.imaginary === 0n)) {
+					this.integerCoefficients = integers.map(component => component.real);
+				}
 			} else {
 				coefficients = numericComponents.map(
 					component =>
@@ -169,16 +198,21 @@ export class PolynomialSolver {
 		const radius = this.rootMagnitudeBound(P);
 
 		for (let k = 0; k < n; k++) {
-			const angle = new Decimal(2).mul(Math.PI).mul(k).div(n).plus(ABERTH_INITIAL_ANGLE_OFFSET);
+			const angle = new Decimal(2).times(Math.PI).times(k).div(n).plus(ABERTH_INITIAL_ANGLE_OFFSET);
 			const r = radius
-				.mul(ABERTH_RADIUS_SCALE)
-				.mul(new Decimal(1).plus(new Decimal(k).mul(ABERTH_ROOT_SPACING_SCALE).div(n)));
-			roots.push(new Complex(r.mul(Decimal.cos(angle)), r.mul(Decimal.sin(angle))));
+				.times(ABERTH_RADIUS_SCALE)
+				.times(new Decimal(1).plus(new Decimal(k).times(ABERTH_ROOT_SPACING_SCALE).div(n)));
+			roots.push(new Complex(r.times(Decimal.cos(angle)), r.times(Decimal.sin(angle))));
 		}
 
-		const epsSquared = this.eps.mul(this.eps);
-		const convergenceTolerance = this.eps.mul(ABERTH_CONVERGENCE_SCALE);
-		const convergenceToleranceSquared = convergenceTolerance.mul(convergenceTolerance);
+		const epsSquared = this.eps.times(this.eps);
+		// Distances between roots and step sizes scale with the roots themselves, so their
+		// tolerances are relative to the root bound. Absolute ones would stop at once for
+		// polynomials whose roots are all tiny.
+		const spacing = this.eps.times(radius);
+		const spacingSquared = spacing.times(spacing);
+		const convergenceTolerance = spacing.times(ABERTH_CONVERGENCE_SCALE);
+		const convergenceToleranceSquared = convergenceTolerance.times(convergenceTolerance);
 
 		// Aberth iterations
 		for (let iter = 0; iter < ABERTH_MAX_ITERATIONS; iter++) {
@@ -191,7 +225,7 @@ export class PolynomialSolver {
 				// Compute P(z) and P'(z) together.
 				const [pz, dpz] = this.evaluateWithDerivative(P, z);
 
-				if (dpz.absSquared().lessThan(epsSquared)) {
+				if (dpz.re.isZero() && dpz.im.isZero()) {
 					newRoots.push(z);
 					continue;
 				}
@@ -203,24 +237,22 @@ export class PolynomialSolver {
 				let sum = new Complex(0, 0);
 				for (let j = 0; j < n; j++) {
 					if (i !== j) {
-						const diff = z.sub(roots[j]);
-						if (diff.absSquared().greaterThan(epsSquared)) {
-							sum = sum.add(diff.reciprocal());
+						const diff = z.minus(roots[j]);
+						if (diff.absSquared().gt(spacingSquared)) {
+							sum = sum.plus(diff.reciprocal());
 						}
 					}
 				}
 
 				// Aberth correction: w = N(z) / (1 - N(z) * sum)
-				const denom = new Complex(1, 0).sub(newton.times(sum));
-				const correction = denom.absSquared().lessThan(epsSquared)
-					? newton
-					: newton.div(denom);
-				const newZ = z.sub(correction);
+				const denom = new Complex(1, 0).minus(newton.times(sum));
+				const correction = denom.absSquared().lt(epsSquared) ? newton : newton.div(denom);
+				const newZ = z.minus(correction);
 
 				newRoots.push(newZ);
 
 				const changeSquared = correction.absSquared();
-				if (changeSquared.greaterThan(maxChangeSquared)) {
+				if (changeSquared.gt(maxChangeSquared)) {
 					maxChangeSquared = changeSquared;
 				}
 			}
@@ -230,14 +262,14 @@ export class PolynomialSolver {
 			}
 
 			// Check convergence
-			if (maxChangeSquared.lessThan(convergenceToleranceSquared)) {
+			if (maxChangeSquared.lt(convergenceToleranceSquared)) {
 				break;
 			}
 		}
 
 		// Final refinement with Newton's method
 		for (let i = 0; i < n; i++) {
-			roots[i] = this.newtonRefine(P, roots[i]);
+			roots[i] = this.newtonRefine(P, roots[i], spacing);
 		}
 
 		return roots;
@@ -253,8 +285,10 @@ export class PolynomialSolver {
 		const x = z.re;
 		const y = z.im;
 
-		if (y.abs().lessThan(this.eps)) {
-			if (x.greaterThanOrEqualTo(0)) {
+		// Only an exactly real value takes this branch. The general formula below handles any
+		// nonzero imaginary part, however small, without dropping it.
+		if (y.isZero()) {
+			if (x.gte(0)) {
 				return new Complex(x.sqrt(), 0);
 			} else {
 				return new Complex(0, x.neg().sqrt());
@@ -263,12 +297,12 @@ export class PolynomialSolver {
 
 		const w = mag.plus(x.abs()).div(2).sqrt();
 
-		if (x.greaterThanOrEqualTo(0)) {
-			return new Complex(w, y.div(w.mul(2)));
+		if (x.gte(0)) {
+			return new Complex(w, y.div(w.times(2)));
 		} else {
 			const absY = y.abs();
-			const imPart = y.greaterThanOrEqualTo(0) ? w : w.neg();
-			return new Complex(absY.div(w.mul(2)), imPart);
+			const imPart = y.gte(0) ? w : w.neg();
+			return new Complex(absY.div(w.times(2)), imPart);
 		}
 	}
 	/**
@@ -280,21 +314,15 @@ export class PolynomialSolver {
 		let derivative = P[0];
 
 		for (let i = 1; i < n; i++) {
-			value = value.times(z).add(P[i]);
-			derivative = derivative.times(z).add(value);
+			value = value.times(z).plus(P[i]);
+			derivative = derivative.times(z).plus(value);
 		}
 
-		value = value.times(z).add(P[n]);
+		value = value.times(z).plus(P[n]);
 		return [value, derivative];
 	}
-	private finalize(
-		roots: Complex[],
-		asExpressions: boolean,
-		precision: number,
-		cleanupComponents = true
-	) {
-		// Restore the precision
-		Decimal.set({ precision: precision });
+	/** Converts roots found inside the precision block, at the caller's precision. */
+	private finalize(roots: Complex[], asExpressions: boolean, cleanupComponents = true) {
 		if (asExpressions) {
 			return roots.map(root => {
 				let re = root.re;
@@ -302,7 +330,7 @@ export class PolynomialSolver {
 
 				if (cleanupComponents) {
 					const magnitude = root.abs();
-					const componentTolerance = magnitude.mul(this.eps);
+					const componentTolerance = magnitude.times(this.eps);
 					re = root.re.abs().lt(componentTolerance) ? new Decimal(0) : root.re;
 					im = root.im.abs().lt(componentTolerance) ? new Decimal(0) : root.im;
 				}
@@ -314,18 +342,91 @@ export class PolynomialSolver {
 		return roots;
 	}
 
+	/**
+	 * Finds the roots at the working precision, with whether `finalize` should clear
+	 * components below the tolerance. Analytic quadratic roots keep theirs.
+	 */
+	private findRoots(method: PolynomialMethod): [Complex[], boolean] {
+		// Remove leading zeros and normalize
+		let poly = [...this.p];
+		let deg = this.degree;
+
+		while (deg > 0 && poly[0].re.isZero() && poly[0].im.isZero()) {
+			poly.shift();
+			deg--;
+		}
+
+		if (deg === 0) {
+			return [[], true];
+		}
+
+		const lead = poly[0];
+		poly = poly.map(c => c.div(lead));
+
+		if (deg === 1) {
+			return [[poly[1].neg()], true];
+		}
+
+		if (deg === 2) {
+			// Quadratic roots are computed analytically, so preserve small components instead of
+			// treating them as iterative noise.
+			return [this.solveQuadratic(poly), false];
+		}
+
+        const squareFree = this.squareFreeRoots(deg, method);
+        if (squareFree) {
+            return [squareFree, true];
+        }
+
+        if (method === 'jenkinsTraub') {
+            // RPOLY returns null on incomplete solves. Explicit selection must
+            // never silently switch to Aberth or accept a partial root set.
+            const candidates = jenkinsTraubRoots(poly.map(value => value.re));
+            if (
+                candidates === null ||
+                candidates.length !== deg ||
+                !candidates.every(root => this.isNumericalRoot(root))
+            ) {
+                throw new PolynomialError(message('polynomialMaximumIterations'));
+            }
+            return [candidates, true];
+        }
+
+		// Native doubles are sufficient to locate ordinary roots. Refine those seeds with
+		// Decimal arithmetic and accept them only when every root passes the existing residual check.
+		const nativeSeeds = this.nativeAberthSeeds(poly);
+		if (nativeSeeds) {
+			const floor = this.eps.times(this.rootMagnitudeBound(poly));
+			const nativeRoots = nativeSeeds.map(root => this.newtonRefine(poly, root, floor));
+			if (
+				nativeRoots.length === deg &&
+				nativeRoots.every(root => this.isNumericalRoot(root))
+			) {
+				return [nativeRoots, true];
+			}
+		}
+
+		// Fall back to the Decimal Aberth implementation when native seeding is unavailable
+		// or does not survive Decimal refinement and validation.
+		const roots = this.aberthMethod(poly);
+
+		return [roots, true];
+	}
+
 	private isNumericalRoot(root: Complex): boolean {
 		let residual = this.p[0];
 		let scale = this.p[0].abs();
 		const magnitude = root.abs();
 
 		for (let i = 1; i < this.p.length; i++) {
-			residual = residual.times(root).add(this.p[i]);
-			scale = scale.mul(magnitude).plus(this.p[i].abs());
+			residual = residual.times(root).plus(this.p[i]);
+			scale = scale.times(magnitude).plus(this.p[i].abs());
 		}
 
-		const tolerance = this.eps.mul(scale.plus(1));
-		return residual.absSquared().lte(tolerance.mul(tolerance));
+		// Relative to the size of the terms at this root, so a point near tiny roots doesn't
+		// pass merely because every term there is small.
+		const tolerance = this.eps.times(scale);
+		return residual.absSquared().lte(tolerance.times(tolerance));
 	}
 
 	/**
@@ -371,6 +472,8 @@ export class PolynomialSolver {
 			Number.EPSILON * NATIVE_EPSILON_SCALE
 		);
 		const epsSquared = nativeTolerance * nativeTolerance;
+		// Root spacing and step sizes are relative to the root bound, as in aberthMethod.
+		const spacingSquared = epsSquared * radius * radius;
 
 		for (let iter = 0; iter < ABERTH_MAX_ITERATIONS; iter++) {
 			let maxChangeSquared = 0;
@@ -411,7 +514,7 @@ export class PolynomialSolver {
 					return null;
 				}
 
-				if (derivativeMagnitudeSquared < epsSquared) {
+				if (derivativeMagnitudeSquared === 0) {
 					newRoots.push(z);
 					continue;
 				}
@@ -432,7 +535,7 @@ export class PolynomialSolver {
 					const diffRe = z.re - roots[j].re;
 					const diffIm = z.im - roots[j].im;
 					const diffMagnitudeSquared = diffRe * diffRe + diffIm * diffIm;
-					if (diffMagnitudeSquared > epsSquared) {
+					if (diffMagnitudeSquared > spacingSquared) {
 						sumRe += diffRe / diffMagnitudeSquared;
 						sumIm -= diffIm / diffMagnitudeSquared;
 					}
@@ -476,7 +579,7 @@ export class PolynomialSolver {
 				roots[i] = newRoots[i];
 			}
 
-			if (maxChangeSquared < epsSquared) {
+			if (maxChangeSquared < spacingSquared) {
 				break;
 			}
 		}
@@ -485,28 +588,42 @@ export class PolynomialSolver {
 	}
 
 	/**
-	 * Refine a single root using Newton's method
+	 * Refine a single root using Newton's method.
+	 *
+	 * Both stopping tests are relative: the residual to the size of the terms at z, and the
+	 * step to |z|. `floor` keeps the step test usable for a root at zero, and should be
+	 * small next to every root, such as eps times the root bound.
 	 */
-	private newtonRefine(P: Complex[], z: Complex): Complex {
-		const epsSquared = this.eps.mul(this.eps);
-		const convergenceTolerance = this.eps.mul(NEWTON_CONVERGENCE_SCALE);
-		const convergenceToleranceSquared = convergenceTolerance.mul(convergenceTolerance);
+	private newtonRefine(P: Complex[], z: Complex, floor: Decimal): Complex {
+		// Each digit of working precision beyond the default tightens the step test by one,
+		// so a user working at 100 digits gets 100 and the default is unchanged.
+		const extraDigits = Math.max(0, Decimal.precision - DEFAULT_PRECISION);
+		const convergenceTolerance = this.eps
+			.times(NEWTON_CONVERGENCE_SCALE)
+			.times(new Decimal(10).pow(-extraDigits));
 
 		for (let iter = 0; iter < NEWTON_MAX_ITERATIONS; iter++) {
 			const [pz, dpz] = this.evaluateWithDerivative(P, z);
 
-			if (pz.absSquared().lessThan(convergenceToleranceSquared)) {
+			let scale = P[0].abs();
+			const magnitude = z.abs();
+			for (let i = 1; i < P.length; i++) {
+				scale = scale.times(magnitude).plus(P[i].abs());
+			}
+			// The solver works with far more digits than eps, so the residual can be held to the
+			// square of the step tolerance. Anything looser can stop a step early near close roots.
+			if (pz.abs().lte(convergenceTolerance.times(convergenceTolerance).times(scale))) {
 				break;
 			}
 
-			if (dpz.absSquared().lessThan(epsSquared)) {
+			if (dpz.re.isZero() && dpz.im.isZero()) {
 				break;
 			}
 
 			const correction = pz.div(dpz);
-			const newZ = z.sub(correction);
+			const newZ = z.minus(correction);
 
-			if (correction.abs().lessThan(convergenceTolerance.mul(newZ.abs().plus(1)))) {
+			if (correction.abs().lt(convergenceTolerance.times(newZ.abs().plus(floor)))) {
 				z = newZ;
 				break;
 			}
@@ -534,13 +651,13 @@ export class PolynomialSolver {
 			const ratio = P[i].abs().div(leadingMagnitude);
 			if (!ratio.isZero()) {
 				const candidate = ratio.pow(new Decimal(1).div(i));
-				if (candidate.greaterThan(maxCandidate)) {
+				if (candidate.gt(maxCandidate)) {
 					maxCandidate = candidate;
 				}
 			}
 		}
 
-		return maxCandidate.mul(2);
+		return maxCandidate.times(2);
 	}
 
 	private solveQuadratic(p: Complex[]): [Complex, Complex] {
@@ -550,13 +667,75 @@ export class PolynomialSolver {
 
 		const b2 = b.times(b);
 		const ac4 = a.times(c).scale(4);
-		const disc = b2.sub(ac4);
+		const disc = b2.minus(ac4);
 
 		const sqrtDisc = this.complexSqrt(disc);
 		const twoA = a.scale(2);
 		const negB = b.neg();
 
-		return [negB.add(sqrtDisc).div(twoA), negB.sub(sqrtDisc).div(twoA)];
+		return [negB.plus(sqrtDisc).div(twoA), negB.minus(sqrtDisc).div(twoA)];
+	}
+
+	/**
+	 * Avoids numerically separating repeated roots when exact rational
+	 * coefficients permit square-free factorization over the integers.
+	 */
+	private squareFreeRoots(degree: number, method: PolynomialMethod): Complex[] | null {
+		if (degree < 3) {
+			return null;
+		}
+
+		if (this.gaussianCoefficients) {
+			const factors = squareFreeGaussian(this.gaussianCoefficients);
+			if (!factors?.length) {
+				return null;
+			}
+			const roots: Complex[] = [];
+			for (const { factor, multiplicity } of factors) {
+				const coefficients = factor.map(coefficient =>
+					new Complex(coefficient.real.toDecimal(), coefficient.imaginary.toDecimal())
+				);
+				const factorRoots = new PolynomialSolver(
+					coefficients,
+					undefined,
+					this.precision,
+					this.eps
+				).roots(false, method);
+				for (const root of factorRoots) {
+					for (let i = 0; i < multiplicity; i++) {
+						roots.push(root);
+					}
+				}
+			}
+			return roots.length === degree ? roots : null;
+		}
+
+		if (!this.integerCoefficients) {
+			return null;
+		}
+		const polynomial = SparsePolynomial.fromCoefficients(this.integerCoefficients);
+		const factors = squareFreeFactorizationUnivariate(polynomial, 0).factors;
+		if (!factors.some(factor => factor.multiplicity > 1n)) {
+			return null;
+		}
+		const roots: Complex[] = [];
+		for (const { factor, multiplicity } of factors) {
+			const coefficients = factor.toCoefficients().map(
+				coefficient => new Decimal(String(coefficient))
+			);
+			const factorRoots = new PolynomialSolver(
+				coefficients,
+				undefined,
+				this.precision,
+				this.eps
+			).roots(false, method);
+			for (const root of factorRoots) {
+				for (let i = 0; i < Number(multiplicity); i++) {
+					roots.push(root);
+				}
+			}
+		}
+		return roots.length === degree ? roots : null;
 	}
 
 	/**
@@ -569,75 +748,40 @@ export class PolynomialSolver {
 	 *
 	 * @param asExpressions - Whether to convert roots to symbolic expressions.
 	 * Defaults to `true`.
+	 * @param method - Numerical method: `aberth` (default) or
+	 * `jenkinsTraub` (real coefficients only; throws on incomplete solves).
 	 * @returns One root value per effective polynomial degree, including repeated
 	 * numerical approximations for repeated roots.
 	 */
-	roots(asExpressions?: true): Expression[];
-	roots(asExpressions?: false): Complex[];
-	roots(asExpressions = true) {
-		// Store the currently used precision
-		const precision = Decimal.precision;
-		// Set the precision to a high number. Default = 50
-		Decimal.set({ precision: this.precision });
-
-		// Remove leading zeros and normalize
-		let poly = [...this.p];
-		let deg = this.degree;
-
-		while (deg > 0 && poly[0].re.isZero() && poly[0].im.isZero()) {
-			poly.shift();
-			deg--;
-		}
-
-		if (deg === 0) {
-			return this.finalize([], asExpressions, precision);
-		}
-
-		const lead = poly[0];
-		poly = poly.map(c => c.div(lead));
-
-		if (deg === 1) {
-			return this.finalize([poly[1].neg()], asExpressions, precision);
-		}
-
-		if (deg === 2) {
-			// Quadratic roots are computed analytically, so preserve small components instead of
-			// treating them as iterative noise.
-			return this.finalize(this.solveQuadratic(poly), asExpressions, precision, false);
-		}
-
-		// Native doubles are sufficient to locate ordinary roots. Refine those seeds with
-		// Decimal arithmetic and accept them only when every root passes the existing residual check.
-		const nativeSeeds = this.nativeAberthSeeds(poly);
-		if (nativeSeeds) {
-			const nativeRoots = nativeSeeds.map(root => this.newtonRefine(poly, root));
-			if (
-				nativeRoots.length === deg &&
-				nativeRoots.every(root => this.isNumericalRoot(root))
-			) {
-				return this.finalize(nativeRoots, asExpressions, precision);
-			}
-		}
-
-		// Fall back to the Decimal Aberth implementation when native seeding is unavailable
-		// or does not survive Decimal refinement and validation.
-		const roots = this.aberthMethod(poly);
-
-		return this.finalize(roots, asExpressions, precision);
+	roots(asExpressions?: true, method?: PolynomialMethod): Expression[];
+	roots(asExpressions: false, method?: PolynomialMethod): Complex[];
+	roots(asExpressions = true, method: PolynomialMethod = 'aberth') {
+		if (method !== 'aberth' && method !== 'jenkinsTraub') {
+            throw new UnexpectedInputError(message('wrongInput', {
+                expected: 'aberth or jenkinsTraub',
+                received: String(method),
+            }));
+        }
+        if (method === 'jenkinsTraub' && this.p.some(coefficient => !coefficient.im.isZero())) {
+            throw new UnexpectedInputError(message('wrongInput', {
+                expected: 'real polynomial coefficients for Jenkins–Traub',
+                received: 'complex polynomial coefficients',
+            }));
+        }
+		const [found, cleanup] = precisionBlock(this.precision, () => this.findRoots(method));
+		return this.finalize(found, asExpressions, cleanup);
 	}
 
 	/**
 	 * Computes roots numerically, rejects candidates with an excessive polynomial residual,
 	 * and converts accepted values only after numerical validation is complete.
 	 */
-	validatedRoots(asExpressions?: true): Expression[];
-	validatedRoots(asExpressions?: false): Complex[];
-	validatedRoots(asExpressions = true) {
-		const precision = Decimal.precision;
-		Decimal.set({ precision: this.precision });
-
-		const roots = this.roots(false).filter(root => this.isNumericalRoot(root));
-
-		return this.finalize(roots, asExpressions, precision);
+	validatedRoots(asExpressions?: true, method?: PolynomialMethod): Expression[];
+	validatedRoots(asExpressions: false, method?: PolynomialMethod): Complex[];
+	validatedRoots(asExpressions = true, method: PolynomialMethod = 'aberth') {
+		const roots = precisionBlock(this.precision, () =>
+			this.roots(false, method).filter(root => this.isNumericalRoot(root))
+		);
+		return this.finalize(roots, asExpressions);
 	}
 }

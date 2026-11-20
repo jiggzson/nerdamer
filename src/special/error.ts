@@ -1,8 +1,9 @@
 import { Complex } from '../core/classes/complex/Complex';
 import { Expression } from '../core/classes/expression/Expression';
 import { one } from '../core/classes/expression/shortcuts';
-import { ERF } from '../core/constants/functionNames';
-import { erf as decErf, erfComplex } from '../core/functions/decimal';
+import { ERF, ERFC } from '../core/constants/functionNames';
+import { message, UnsupportedOperationError } from '../core/errors';
+import { erf as decErf, erfc as decErfc, erfComplex } from '../core/functions/decimal';
 import { Settings } from '../core/Settings';
 
 /**
@@ -28,14 +29,8 @@ export function erf(x: Expression): Expression {
 	if (x.isPosInf() || x.isNegInf()) {
 		retval = x.isNegInf() ? one().neg() : one();
 	} else if (x.isNUM()) {
-		const m = x.getMultiplier();
-		// Gives junk values after erf > 6.7
-		if (m.gt('6.5')) {
-			retval = one();
-		} else {
-			// Calculate it's numeric value
-			retval = Expression.Number(decErf(m.toDecimal()));
-		}
+		// Accurate to the configured precision for any real argument
+		retval = Expression.Number(decErf(x.getMultiplier().toDecimal()));
 	} else if (Settings.EVALUATE && x.isComplex()) {
 		const real = x.realPart();
 		const imaginary = x.imagPart();
@@ -62,6 +57,9 @@ export function erf(x: Expression): Expression {
 /**
  * Computes the complementary error function: `erfc(x) = 1 − erf(x)`.
  *
+ * Numeric arguments are evaluated directly rather than as `1 − erf(x)`, which would lose
+ * all relative precision once erf(x) rounds to 1 (for example `erfc(7) ≈ 4.18e-23`).
+ *
  * @param x - The input expression.
  * @returns The complementary error function value.
  *
@@ -69,9 +67,27 @@ export function erf(x: Expression): Expression {
  *
  * @example
  * ```ts
- * erfc(Expression.create(0)).text()   // "0"
+ * erfc(Expression.create(0)).text()   // "1"
  * ```
  */
 export function erfc(x: Expression): Expression {
-	return one().minus(erf(x));
+	let retval: Expression;
+	if (x.isNUM()) {
+		const value = decErfc(x.getMultiplier().toDecimal());
+		// erfc is never zero for a finite x, so zero means the result underflowed
+		if (value.isZero()) {
+			throw new UnsupportedOperationError(message('resultOutOfRange'));
+		}
+		retval = Expression.Number(value);
+	}
+	// Infinities and evaluated complex values have no direct erfc, so use erf.
+	else if (x.isPosInf() || x.isNegInf() || (Settings.EVALUATE && x.isComplex())) {
+		retval = one().minus(erf(x));
+	}
+	// Keep erfc as its own node so a value substituted later reaches the accurate
+	// numeric erfc instead of cancelling in 1 - erf(x).
+	else {
+		retval = Expression.toFunction(ERFC, [x]);
+	}
+	return retval;
 }

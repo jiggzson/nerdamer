@@ -26,6 +26,7 @@
 		"MonomialOrder",
 		"OperatorFunction",
 		"SettingsType",
+		"SolveRecursionContext",
 		"__module"
 	],
 	"externalSymbolLinkMappings": {

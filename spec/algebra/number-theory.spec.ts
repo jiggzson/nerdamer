@@ -105,3 +105,40 @@ describe('Native symbolic fallbacks', () => {
 		}
 	});
 });
+
+
+describe('Public exact integer functions', () => {
+	it('finds the next prime strictly above the argument', () => {
+		expect(nerdamer('nextprime(-7)').text()).toBe('2');
+		expect(nerdamer('nextprime(2)').text()).toBe('3');
+		expect(nerdamer('nextprime(17)').text()).toBe('19');
+		expect(nerdamer.nextprime('100').text()).toBe('101');
+	});
+
+	it('computes exact binomial coefficients with the existing BigInt kernel', () => {
+		expect(nerdamer('binom(10,3)').text()).toBe('120');
+		expect(nerdamer('binom(100,0)').text()).toBe('1');
+		expect(nerdamer('binom(5,8)').text()).toBe('0');
+		expect(nerdamer('binom(5,-1)').text()).toBe('0');
+		expect(nerdamer.binom(52,5).text()).toBe('2598960');
+	});
+
+	it('computes modular powers without floating-point conversion', () => {
+		expect(nerdamer('powmod(3,1000,7)').text()).toBe('4');
+		expect(nerdamer('powmod(-3,3,7)').text()).toBe('1');
+		expect(nerdamer('powmod(7,0,1)').text()).toBe('0');
+		expect(nerdamer.powmod('9007199254740993', 123, 1000000007).text()).toBe('181618848');
+	});
+
+	it('preserves unresolved symbolic calls', () => {
+		expect(nerdamer('nextprime(n)').text()).toBe('nextprime(n)');
+		expect(nerdamer('binom(n,k)').text()).toBe('binom(n, k)');
+		expect(nerdamer('powmod(a,b,m)').text()).toBe('powmod(a, b, m)');
+	});
+
+	it('rejects invalid integer domains', () => {
+		expect(() => nerdamer('binom(-3,2)')).toThrow();
+		expect(() => nerdamer('powmod(2,-1,7)')).toThrow();
+		expect(() => nerdamer('powmod(2,5,0)')).toThrow();
+	});
+});

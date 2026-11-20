@@ -52,6 +52,47 @@ describe('PolynomialSolver input validation', () => {
 	});
 });
 
+describe('Exact multiplicities in numerical polynomial roots', () => {
+	it('returns the repeated integer root without numerical spreading', () => {
+		const roots = new PolynomialSolver('(x-1)^8', 'x').validatedRoots(false);
+
+		expect(roots).toHaveLength(8);
+		for (const root of roots) {
+			expect(root.re.eq(1)).toBe(true);
+			expect(root.im.isZero()).toBe(true);
+		}
+	});
+
+	it('preserves distinct repeated roots and their multiplicities', () => {
+		const roots = new PolynomialSolver('(x-1)^5*(x+1)^4', 'x').validatedRoots(false);
+
+		expect(roots).toHaveLength(9);
+		expect(roots.filter(root => root.re.eq(1) && root.im.isZero())).toHaveLength(5);
+		expect(roots.filter(root => root.re.eq(-1) && root.im.isZero())).toHaveLength(4);
+	});
+
+	it('separates close repeated roots with exact rational coefficients', () => {
+		const roots = new PolynomialSolver(
+			'(x-1)^5*(x-1000001/1000000)^3',
+			'x'
+		).validatedRoots(false);
+
+		expect(roots).toHaveLength(8);
+		expect(roots.filter(root => root.re.eq(1) && root.im.isZero())).toHaveLength(5);
+		expect(
+			roots.filter(root => root.re.eq('1.000001') && root.im.isZero())
+		).toHaveLength(3);
+	});
+
+	it('preserves repeated complex roots of a real quadratic factor', () => {
+		const roots = new PolynomialSolver('(x^2+1)^3', 'x').validatedRoots(false);
+
+		expect(roots).toHaveLength(6);
+		expect(roots.filter(root => root.re.isZero() && root.im.eq(1))).toHaveLength(3);
+		expect(roots.filter(root => root.re.isZero() && root.im.eq(-1))).toHaveLength(3);
+	});
+});
+
 describe('Parameterized polynomial roots', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/216
 	it('solves factorable and parameterized polynomials', () => {

@@ -1,6 +1,27 @@
 import { Expression } from '../classes/expression/Expression';
 import { one, zero } from '../classes/expression/shortcuts';
 
+/**
+ * Raises a product with power one to a noninteger power without splitting it unsafely:
+ * (a*b)^(1/2) isn't a^(1/2)*b^(1/2) when both are negative. A factor with an even integer
+ * power can't be negative, so it comes out, as in (a^2*b)^(1/2) = abs(a)*b^(1/2); pow keeps
+ * the other factors together unless their signs are known.
+ */
+export function powerOfProduct(product: Expression, power: Expression): Expression {
+	let even = one();
+	let rest = one();
+	for (const factor of product.isProduct() ? product.elementsArray() : [product]) {
+		const p = factor.getPower();
+		if (p.isInteger() && p.isEven() && !factor.isComplex()) {
+			even = even.times(factor.pow(power));
+		} else {
+			rest = rest.times(factor);
+		}
+	}
+	const multiplier = Expression.fromRational(product.getMultiplier());
+	return multiplier.pow(power).times(even).times(rest.pow(power));
+}
+
 // Smaller sums do not benefit enough from additional pairwise normalization.
 const BALANCED_SUM_MIN_TERMS = 32;
 
@@ -55,7 +76,12 @@ function groupByDenominator(x: Expression) {
 export function toCommonDenominator(x: Expression) {
 	let retval = x;
 
-	if (x.isProduct()) {
+	if (x.isProduct() && !x.getPower().isInteger()) {
+		// (a*b)^(1/2) isn't a^(1/2)*b^(1/2) when both are negative, so normalize the product
+		// and raise it as a whole; pow keeps the factors with an unknown branch together.
+		const base = toCommonDenominator(Expression.setPower(x.toUnitMultiplier(), one()));
+		retval = powerOfProduct(base, x.getPower()).times(x.getMultiplier());
+	} else if (x.isProduct()) {
 		retval = Expression.fromRational(x.getMultiplier());
 		x.each(e => {
 			e = e.pow(x.getPower());

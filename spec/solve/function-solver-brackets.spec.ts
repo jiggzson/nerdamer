@@ -4,6 +4,7 @@ import '../../src/index';
 import { message } from '../../src/core/errors';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { FunctionSolver } from '../../src/solve/classes/FunctionSolver';
+import { solve } from '../../src/solve/solve';
 
 describe('FunctionSolver brackets and scan coverage', () => {
 	it.each([[2, 5], [5, 2]])('accepts an endpoint root for either bracket orientation: %s, %s', (a, b) => {
@@ -11,17 +12,15 @@ describe('FunctionSolver brackets and scan coverage', () => {
 		const result = solver.Brent(new Decimal(a), new Decimal(b));
 		expect(result.converged).toBe(true);
 		expect(result.iterations).toBe(0);
-		expect(result.root.equals(2)).toBe(true);
+		expect(result.root.eq(2)).toBe(true);
 		expect(result.error.isZero()).toBe(true);
 	});
 
-	it.each([[0, 1], [1, 0]])('reports the residual of an endpoint accepted within tolerance: %s, %s', (a, b) => {
+	it.each([[0, 1], [1, 0]])('does not accept an endpoint by residual alone: %s, %s', (a, b) => {
 		const solver = new FunctionSolver('x-1e-16', 'x');
 		const result = solver.Brent(new Decimal(a), new Decimal(b));
 		expect(result.converged).toBe(true);
-		expect(result.iterations).toBe(0);
-		expect(result.root.isZero()).toBe(true);
-		expect(result.error.equals('1e-16')).toBe(true);
+		expect(result.root.eq('1e-16')).toBe(true);
 	});
 
 	it('reports same-sign endpoints as failure with a candidate coordinate', () => {
@@ -29,7 +28,7 @@ describe('FunctionSolver brackets and scan coverage', () => {
 		const result = solver.Brent(new Decimal(10), new Decimal(11));
 		expect(result.converged).toBe(false);
 		expect(result.iterations).toBe(0);
-		expect(result.root.equals(11)).toBe(true);
+		expect(result.root.eq(11)).toBe(true);
 		expect(result.error.isFinite()).toBe(false);
 		expect(result.errorMsg).toBe(message('differentSignsAtEndPointsRequired'));
 	});
@@ -38,7 +37,7 @@ describe('FunctionSolver brackets and scan coverage', () => {
 		const solver = new FunctionSolver('cos(x)-x', 'x', { maxIterations: 0 });
 		const result = solver.Brent(new Decimal(0), new Decimal(1));
 		expect(result.converged).toBe(false);
-		expect(result.root.equals(1)).toBe(true);
+		expect(result.root.eq(1)).toBe(true);
 		expect(result.error.isFinite()).toBe(false);
 	});
 
@@ -49,8 +48,8 @@ describe('FunctionSolver brackets and scan coverage', () => {
 		const roots = solver.roots();
 		expect(roots).toHaveLength(1);
 		for (const root of roots) {
-			expect(root.minus('0.2375').abs().getMultiplier().toDecimal().lessThan('1e-14')).toBe(true);
-			expect(solver.evaluate(root.getMultiplier().toDecimal()).abs().lessThan(solver.tolerance)).toBe(true);
+			expect(root.minus('0.2375').abs().getMultiplier().toDecimal().lt('1e-14')).toBe(true);
+			expect(solver.evaluate(root.getMultiplier().toDecimal()).abs().lt(solver.tolerance)).toBe(true);
 		}
 	});
 
@@ -61,7 +60,7 @@ describe('FunctionSolver brackets and scan coverage', () => {
 		const roots = solver.roots();
 		expect(roots).toHaveLength(2);
 		for (const expected of ['1.015', '1.2475']) {
-			expect(roots.some(root => root.minus(expected).abs().getMultiplier().toDecimal().lessThan('1e-14'))).toBe(true);
+			expect(roots.some(root => root.minus(expected).abs().getMultiplier().toDecimal().lt('1e-14'))).toBe(true);
 		}
 	});
 
@@ -73,6 +72,79 @@ describe('FunctionSolver brackets and scan coverage', () => {
 		expect(roots).toHaveLength(2);
 		expect(roots.some(root => root.isZero())).toBe(true);
 		expect(roots.some(root => root.eq('0.25'))).toBe(true);
+	});
+
+	it('accepts steep bracketed roots using their function scale without losing position accuracy', () => {
+		const solver = new FunctionSolver('cos(x^2)+sin(x)*sinh(x)', 'x', {
+			lowerBound: new Decimal('-20'), upperBound: new Decimal('20'),
+		});
+		const roots = solver.roots();
+		const expected = [
+			'3.0471767724967765865',
+			'6.2839949195763557018',
+			'9.4248827844016784386',
+			'12.566365927502993643',
+			'15.707963230345988889',
+			'18.849555933959358158',
+		];
+		expect(roots).toHaveLength(expected.length * 2);
+		for (const value of expected) {
+			for (const sign of ['1', '-1']) {
+				const target = new Decimal(value).times(sign);
+				expect(roots.some(root =>
+					root.getMultiplier().toDecimal().minus(target).abs().lt('1e-12')
+				)).toBe(true);
+			}
+		}
+	});
+
+	it('retains validated roots in public solve for an unfactored steep function', () => {
+		const result = solve('cos(x^2)+sin(x)*sinh(x)', 'x', {
+			lowerBound: -20, upperBound: 20,
+		});
+		const roots = result.elements.map(root => root.getMultiplier().toDecimal());
+		for (const value of ['15.707963230345988889', '-15.707963230345988889']) {
+			const expected = new Decimal(value);
+			expect(roots.some(root => root.minus(expected).abs().lt('1e-12'))).toBe(true);
+		}
+	});
+
+	it('does not accept a sign-changing pole as a Brent root', () => {
+		const solver = new FunctionSolver('1/(x-1/3)', 'x', {
+			lowerBound: new Decimal('0'), upperBound: new Decimal('1'),
+		});
+		expect(solver.roots()).toHaveLength(0);
+	});
+
+	it('retains steep Brent crossings at 50-digit working precision', () => {
+		const previousPrecision = Decimal.precision;
+		try {
+			Decimal.set({ precision: 50 });
+			const solver = new FunctionSolver('cos(x^2)+sin(x)*sinh(x)', 'x', {
+				lowerBound: -100, upperBound: 100, maxRoots: 100,
+			});
+			const roots = solver.roots().map(root => root.getMultiplier().toDecimal());
+			const expected = [
+				'40.840704496667310209',
+				'59.690260418206073533',
+				'78.539816339744829045',
+				'87.964594300514213059',
+			];
+			for (const value of expected) {
+				const target = new Decimal(value);
+				expect(roots.some(root => root.minus(target).abs().lt('1e-12'))).toBe(true);
+			}
+			expect(roots).toHaveLength(62);
+		} finally {
+			Decimal.set({ precision: previousPrecision });
+		}
+	});
+
+	it('does not accept an odd-order pole as a steep Brent root', () => {
+		const solver = new FunctionSolver('1/(x-1/3)^3', 'x', {
+			lowerBound: 0, upperBound: 1,
+		});
+		expect(solver.roots()).toHaveLength(0);
 	});
 
 	it('reuses a cached scan value when accepting an endpoint root', () => {

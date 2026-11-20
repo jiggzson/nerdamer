@@ -79,10 +79,10 @@ export type EvalInputType = number | bigint | Rational;
 export class Polynomial {
 	/** Default ordering chosen for newly parsed multivariate polynomials. */
 	public static defaultOrdering: Ordering = 'lex';
+	/** The expression form, or undefined until it is next rebuilt from the terms. */
+	private storedExpression: Expression | undefined;
 	/** Runtime tag used by Nerdamer's polynomial type guard. */
 	dataType: typeof POLYNOMIAL = POLYNOMIAL;
-	/** Expression retained from construction or the most recent explicit rebuild. */
-	expression: Expression;
 	/** Whether the polynomial's variable list contains more than one variable. */
 	isMultivariate: boolean;
 	/** Current monomial ordering of {@link terms}. */
@@ -106,7 +106,8 @@ export class Polynomial {
 	 */
 	constructor(p: ExpressionInput | Polynomial, vars?: string[], ordering?: Ordering) {
 		if (Polynomial.isPolynomial(p)) {
-			this.expression = p.expression.copy();
+			// A stale expression is rebuilt from the copied terms when it's next read.
+			this.storedExpression = p.storedExpression?.copy();
 			this.variables = [...p.variables];
 			this.ordering = p.ordering;
 			this.isMultivariate = p.isMultivariate;
@@ -424,12 +425,18 @@ export class Polynomial {
 		}
 		retval.isMultivariate = retval.variables.length > 1;
 
+		let added = false;
 		if (Polynomial.isPolynomial(x)) {
 			for (const ta of x.terms) {
-				retval.appendTerm(ta, action);
+				added = retval.appendTerm(ta, action) || added;
 			}
 		} else {
-			retval.appendTerm(x, action);
+			added = retval.appendTerm(x, action);
+		}
+		// New terms may be out of order. Sorting once here rather than after each one keeps
+		// a large append from sorting the whole polynomial per term.
+		if (added) {
+			retval.order();
 		}
 
 		if (retval.terms.length !== 0) {
@@ -444,8 +451,9 @@ export class Polynomial {
 	 *
 	 * @param t - Term to combine or append.
 	 * @param action - Coefficient operation for a matching term.
+	 * @returns Whether the term was added as a new term rather than combined with one.
 	 */
-	private appendTerm(t: Term, action: 'plus' | 'minus') {
+	private appendTerm(t: Term, action: 'plus' | 'minus'): boolean {
 		// Try to add it to an existing
 		for (let i = 0; i < this.terms.length; i++) {
 			const e = this.terms[i];
@@ -454,18 +462,16 @@ export class Polynomial {
 				if (e.coeff.isZero()) {
 					remove(this.terms, e);
 				}
-				return;
+				return false;
 			}
 		}
 		const c = t.copy();
 		if (action === 'minus') {
 			c.coeff = c.coeff.neg();
 		}
-		// No existing was found so add it to the terms
+		// No existing was found so add it to the terms. The caller restores the ordering.
 		this.terms.push(c);
-
-		// Update since the ordering may have changes
-		this.order();
+		return true;
 	}
 
 	private monomialGCDTerm(other: Polynomial): Term {
@@ -488,15 +494,13 @@ export class Polynomial {
 		return new Term('1', powers, vars);
 	}
 
+	/**
+	 * Marks the expression as out of date after the terms change. It's rebuilt when it's next
+	 * read, so a chain of arithmetic, such as the steps of a division, doesn't rebuild it at
+	 * every step: rebuilding is quadratic in the number of terms.
+	 */
 	private updateExpression() {
-		let retval = zero();
-
-		for (const term of this.terms) {
-			// Rebuild from the current term fields rather than trusting a potentially stale cache.
-			retval = retval.plus(term.copy().getExpression());
-		}
-
-		this.expression = retval;
+		this.storedExpression = undefined;
 	}
 
 	/**
@@ -838,6 +842,23 @@ export class Polynomial {
 		}
 
 		return sum;
+	}
+
+	/** Expression retained from construction, or rebuilt from the terms after arithmetic. */
+	get expression(): Expression {
+		if (!this.storedExpression) {
+			let retval = zero();
+			for (const term of this.terms) {
+				// Rebuild from the current term fields rather than trusting a potentially stale cache.
+				retval = retval.plus(term.copy().getExpression());
+			}
+			this.storedExpression = retval;
+		}
+		return this.storedExpression;
+	}
+
+	set expression(value: Expression) {
+		this.storedExpression = value;
 	}
 
 	/**

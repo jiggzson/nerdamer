@@ -425,7 +425,6 @@ describe('Trigonometric function regressions', () => {
 		];
 
 		// Regression: https://github.com/jiggzson/nerdamer/issues/398
-		// This canonical conversion is deliberately limited to evaluation.
 		expect(Expression.create('1/sin(x)').text()).toEqual('sin(x)^-1');
 
 		for (const [input, expected] of cases) {

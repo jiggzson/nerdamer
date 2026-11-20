@@ -1,3 +1,6 @@
+import Decimal from 'decimal.js';
+
+import { Complex } from '../../src/core/classes/complex/Complex';
 import { PolynomialSolver } from '../../src/solve/classes/PolynomialSolver';
 
 const hardCases = [
@@ -65,5 +68,44 @@ describe('PolynomialSolver hardening regressions', () => {
 			expect(root.re.isFinite()).toBe(true);
 			expect(root.im.isFinite()).toBe(true);
 		}
+	});
+});
+
+
+describe('Exact complex polynomial multiplicities', () => {
+	it('recovers a repeated complex root without numerical splitting', () => {
+		const roots = new PolynomialSolver('(x-(1+i))^4', 'x').validatedRoots(false);
+		const expected = new Complex(new Decimal(1), new Decimal(1));
+
+		expect(roots).toHaveLength(4);
+		for (const root of roots) {
+			expect(root.minus(expected).abs().lt('1e-20')).toBe(true);
+		}
+	});
+
+	it('keeps closely separated exact complex roots and their multiplicities', () => {
+		const roots = new PolynomialSolver(
+			'(x-(1+i))^3*(x-(1000001/1000000+i))^2',
+			'x'
+		).validatedRoots(false);
+		const first = new Complex(new Decimal(1), new Decimal(1));
+		const second = new Complex(new Decimal('1.000001'), new Decimal(1));
+
+		expect(roots).toHaveLength(5);
+		expect(roots.filter(root => root.minus(first).abs().lt('1e-20'))).toHaveLength(3);
+		expect(roots.filter(root => root.minus(second).abs().lt('1e-20'))).toHaveLength(2);
+	});
+
+	it('preserves close exact conjugate roots with multiplicity three', () => {
+		const roots = new PolynomialSolver(
+			'((x-(1+i/10000))*(x-(1-i/10000)))^3',
+			'x'
+		).validatedRoots(false);
+		const upper = new Complex(new Decimal(1), new Decimal('0.0001'));
+		const lower = new Complex(new Decimal(1), new Decimal('-0.0001'));
+
+		expect(roots).toHaveLength(6);
+		expect(roots.filter(root => root.minus(upper).abs().lt('1e-20'))).toHaveLength(3);
+		expect(roots.filter(root => root.minus(lower).abs().lt('1e-20'))).toHaveLength(3);
 	});
 });

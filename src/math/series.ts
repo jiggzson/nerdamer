@@ -9,6 +9,7 @@ import {
 import { Settings } from '../core/Settings';
 
 import type { ParserValuesObject } from '../core/classes/parser/types';
+import type { ExpressionInput } from '../core/types';
 
 /**
  * Attempts to extract an integer bigint from an Expression.
@@ -53,20 +54,21 @@ function toIntegerBigint(x: Expression): bigint | null {
  * ```
  */
 export function sum(
-	expr: Expression,
-	index: Expression,
-	lower: Expression,
-	upper: Expression
+	expr: ExpressionInput,
+	index: ExpressionInput,
+	lower: ExpressionInput,
+	upper: ExpressionInput
 ): Expression {
-	// Validate index variable
-	if (!index.isPlainVariable()) {
-		return Expression.toFunction(SUM_FUNCTION, [expr, index, lower, upper]);
-	}
-
+	// Text input, as sum('k', 'k', 1, 5) from the JS API, becomes expressions first.
 	expr = Expression.create(expr);
 	index = Expression.create(index);
 	lower = Expression.create(lower);
 	upper = Expression.create(upper);
+
+	// Validate index variable
+	if (!index.isPlainVariable()) {
+		return Expression.toFunction(SUM_FUNCTION, [expr, index, lower, upper]);
+	}
 
 	const indexName: string = index.text();
 
@@ -171,7 +173,7 @@ export function sum(
 	}
 
 	// Numeric accumulation
-	let acc: Expression = zero();
+	let layer: Expression[] = [];
 	let i: bigint = lo;
 
 	while (i <= hi) {
@@ -179,12 +181,23 @@ export function sum(
 		values[indexName] = i;
 
 		const term: Expression = expr.evaluate(values);
-		acc = acc.plus(term);
+		layer.push(term);
 
 		i = i + 1n;
 	}
 
-	return acc;
+	// Add neighboring terms in pairs, as toCommonDenominator does. Adding to a running total
+	// copies the whole sum at each term, which is quadratic; each level of pairs copies every
+	// term once.
+	while (layer.length > 1) {
+		const next: Expression[] = [];
+		for (let j = 0; j < layer.length; j += 2) {
+			next.push(j + 1 < layer.length ? layer[j].plus(layer[j + 1]) : layer[j]);
+		}
+		layer = next;
+	}
+
+	return layer[0];
 }
 
 /**
@@ -209,19 +222,19 @@ export function sum(
  * ```
  */
 export function product(
-	expr: Expression,
-	index: Expression,
-	lower: Expression,
-	upper: Expression
+	expr: ExpressionInput,
+	index: ExpressionInput,
+	lower: ExpressionInput,
+	upper: ExpressionInput
 ): Expression {
-	if (!index.isPlainVariable()) {
-		return Expression.toFunction(PRODUCT_FUNCTION, [expr, index, lower, upper]);
-	}
-
 	expr = Expression.create(expr);
 	index = Expression.create(index);
 	lower = Expression.create(lower);
 	upper = Expression.create(upper);
+
+	if (!index.isPlainVariable()) {
+		return Expression.toFunction(PRODUCT_FUNCTION, [expr, index, lower, upper]);
+	}
 
 	const indexName: string = index.text();
 
@@ -307,7 +320,7 @@ export function product(
 		return power(expr, countExpr);
 	}
 
-	let acc: Expression = one();
+	let layer: Expression[] = [];
 	let i: bigint = lo;
 
 	while (i <= hi) {
@@ -315,10 +328,19 @@ export function product(
 		values[indexName] = i;
 
 		const term: Expression = expr.evaluate(values);
-		acc = acc.times(term);
+		layer.push(term);
 
 		i = i + 1n;
 	}
 
-	return acc;
+	// Multiply neighboring factors in pairs, for the same reason as in sum.
+	while (layer.length > 1) {
+		const next: Expression[] = [];
+		for (let j = 0; j < layer.length; j += 2) {
+			next.push(j + 1 < layer.length ? layer[j].times(layer[j + 1]) : layer[j]);
+		}
+		layer = next;
+	}
+
+	return layer[0];
 }

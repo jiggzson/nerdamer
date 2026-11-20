@@ -1,7 +1,7 @@
 import nerdamer from '../../src/index';
 import { Equation } from '../../src/core/classes/equation/Equation';
 import { Expression } from '../../src/core/classes/expression/Expression';
-import { UnexpectedDataType, UnsupportedOperationError } from '../../src/core/errors';
+import { ParserError, UnexpectedDataType, UnsupportedOperationError } from '../../src/core/errors';
 import { Parser } from '../../src/core/classes/parser/Parser';
 import { Vector } from '../../src/core/classes/vector/Vector';
 
@@ -175,5 +175,40 @@ describe('Call-scoped parser values', () => {
 		expect(result.text()).toEqual('[4, 6]');
 		expect(vector.text()).toEqual('[1, 2]');
 		expect(() => Parser.parse('v+1', { v: vector })).toThrow(UnexpectedDataType);
+	});
+});
+
+describe('An operator with nothing after it', () => {
+	it.each([
+		['x^2-', '-'],
+		['x^', '^'],
+		['x*', '*'],
+		['x/', '/'],
+		['x+', '+'],
+		['2+', '+'],
+		['x=', '='],
+		['x==', '=='],
+		['x>=', '>='],
+		['x in', 'in'],
+		['(x-)', '-'],
+		['factor(x^2-)', '-'],
+		['[1,2-]', '-'],
+		['-', '-'],
+	])('%s is a ParserError naming %s', (source, operator) => {
+		const parse = () => nerdamer(source);
+		expect(parse).toThrow(ParserError);
+		expect(parse).toThrow(`Missing operand after ${operator}.`);
+	});
+
+	it.each([
+		['[1,2,]', '[1, 2]'],
+		['5%', '1/20'],
+		['x!', 'fact(x)'],
+		['x^-1', 'x^-1'],
+		['2*-x', '-2*x'],
+		['x=-1', 'x=-1'],
+		['[1,-2]', '[1, -2]'],
+	])('%s still parses', (source, expected) => {
+		expect(nerdamer(source).text()).toEqual(expected);
 	});
 });

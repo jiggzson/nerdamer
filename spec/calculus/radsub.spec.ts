@@ -1,4 +1,4 @@
-import { radicalSubstitution } from '../../src/calculus/integrate/utils';
+import { radicalSubstitution } from '../../src/calculus/integrate/algorithms/radicals';
 import { expand } from '../../src/core/functions/expand/expand';
 
 describe('radicalSubstitution', () => {

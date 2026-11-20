@@ -29,9 +29,15 @@ function normalizePolynomialInputs(
 		};
 	}
 
+	// Only an input missing some of the variables needs converting again. One that already
+	// has them all, usually the dividend, would convert to the same polynomial, and
+	// converting a large expression dominates the cost of a division.
+	const key = resolvedVariables.join(',');
 	return {
-		polynomials: inputs.map(input =>
-			Polynomial.toPolynomial(input, ordering, resolvedVariables)
+		polynomials: inputs.map((input, i) =>
+			provisional[i].variables.join(',') === key
+				? provisional[i]
+				: Polynomial.toPolynomial(input, ordering, resolvedVariables)
 		),
 		variables: resolvedVariables,
 	};

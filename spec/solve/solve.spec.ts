@@ -65,13 +65,15 @@ describe('Roots', () => {
 	});
 
 	it("should calculate numeric roots of functions using Brent's method", () => {
-		expect(
-			new FunctionSolver('sin(x)', 'x', { lowerBound: -10, upperBound: 10, method: 'Brent' })
-				.roots()
-				.toString()
-		).toEqual(
-			'-9.4247779607693798746,-6.2831853071795864769,-3.1415926535897932516,0,3.1415926535897932384,6.2831853071795864412,9.4247779607693797154'
-		);
+		const roots = new FunctionSolver('sin(x)', 'x', {
+			lowerBound: -10, upperBound: 10, method: 'Brent',
+		}).roots().map(root => root.getMultiplier().toDecimal());
+		const pi = Decimal.acos(-1);
+		expect(roots).toHaveLength(7);
+		for (let i = -3; i <= 3; i++) {
+			expect(roots[i + 3].minus(pi.times(i)).abs().lt('1e-14')).toBe(true);
+		}
+		expect(roots[3].isZero()).toBe(true);
 		expect(
 			new FunctionSolver('(2*x+3)(5x-1)', 'x', { method: 'Brent' }).roots().toString()
 		).toEqual('-1.5,0.2');
@@ -101,16 +103,34 @@ describe('Roots', () => {
 	});
 
 	it('should limit the number of roots', () => {
-		expect(new FunctionSolver('sin(x)', 'x', { maxRoots: 3 }).roots().toString()).toEqual(
-			'-3.1415926535897932516,0,3.1415926535897932384'
-		);
+		const roots = new FunctionSolver('sin(x)', 'x', { maxRoots: 3 })
+			.roots().map(root => root.getMultiplier().toDecimal());
+		const pi = Decimal.acos(-1);
+		expect(roots).toHaveLength(3);
+		for (let i = -1; i <= 1; i++) {
+			expect(roots[i + 1].minus(pi.times(i)).abs().lt('1e-14')).toBe(true);
+		}
+		expect(roots[1].isZero()).toBe(true);
 		expect(new FunctionSolver('(2*x+3)(5x-1)').roots().toString()).toEqual(
 			'-1.5,0.2'
 		);
 		expect(new FunctionSolver('log(x)').roots().toString()).toEqual('1');
-		expect(new FunctionSolver('tan(x^2)+x', 'x', { maxRoots: 7 }).roots().toString()).toEqual(
-			'-3.2709132513114817947,-2.739335850647753876,-2.0642857202996469251,-0.83360619440667797945,0,1.4722278817778812509,2.2645584185768777436'
-		);
+		const tangentRoots = new FunctionSolver('tan(x^2)+x', 'x', { maxRoots: 7 })
+			.roots().map(root => root.getMultiplier().toDecimal());
+		const expectedTangentRoots = [
+			'-3.2709132513114817947026926143',
+			'-2.7393358506477538760228237596',
+			'-2.0642857202996469249931074849',
+			'-0.8336061944066760143110295250',
+			'0',
+			'1.4722278817778812509335051912',
+			'2.2645584185768777437052517250',
+		];
+		expect(tangentRoots).toHaveLength(expectedTangentRoots.length);
+		for (let i = 0; i < expectedTangentRoots.length; i++) {
+			expect(tangentRoots[i].minus(expectedTangentRoots[i]).abs().lt('1e-14')).toBe(true);
+		}
+		expect(tangentRoots[4].isZero()).toBe(true);
 	});
 
 	it('should throw for invalid input', () => {

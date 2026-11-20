@@ -1,4 +1,4 @@
-import nerdamer from '../../src/index';
+import nerdamer, { apiTarget } from '../../src/index';
 import { pfactor, pfactord } from '../../src/algebra/factor/factor';
 import { gcd, lcm } from '../../src/algebra/gcd/gcd';
 import { partfrac } from '../../src/algebra/partfrac';
@@ -69,27 +69,27 @@ describe('Public compatibility entry points', () => {
 	});
 
 	it('keeps commonly used legacy algebra functions on the main nerdamer object', () => {
-		expect(nerdamer.expand).toBe(expand);
-		expect(nerdamer.gcd).toBe(gcd);
-		expect(nerdamer.lcm).toBe(lcm);
-		expect(nerdamer.partfrac).toBe(partfrac);
+		expect(apiTarget(nerdamer.expand)).toBe(expand);
+		expect(apiTarget(nerdamer.gcd)).toBe(gcd);
+		expect(apiTarget(nerdamer.lcm)).toBe(lcm);
+		expect(apiTarget(nerdamer.partfrac)).toBe(partfrac);
 		expect(nerdamer.divide).toBe(divide);
 		expect(nerdamer.div).toBe(div);
-		expect(nerdamer.subst).toBe(subst);
+		expect(apiTarget(nerdamer.subst)).toBe(subst);
 	});
 
 	it('keeps matching legacy function names on the main nerdamer object', () => {
-		expect(nerdamer.arccos).toBe(acos);
-		expect(nerdamer.arcsin).toBe(asin);
-		expect(nerdamer.arctan).toBe(atan);
-		expect(nerdamer.atan2).toBe(atan2);
-		expect(nerdamer.nthroot).toBe(nthroot);
-		expect(nerdamer.factorial).toBe(factorial);
-		expect(nerdamer.dfactorial).toBe(doubleFactorial);
-		expect(nerdamer.min).toBe(min);
-		expect(nerdamer.max).toBe(max);
-		expect(nerdamer.sinc).toBe(sinc);
-		expect(nerdamer.ilt).toBe(ilaplace);
+		expect(apiTarget(nerdamer.arccos)).toBe(acos);
+		expect(apiTarget(nerdamer.arcsin)).toBe(asin);
+		expect(apiTarget(nerdamer.arctan)).toBe(atan);
+		expect(apiTarget(nerdamer.atan2)).toBe(atan2);
+		expect(apiTarget(nerdamer.nthroot)).toBe(nthroot);
+		expect(apiTarget(nerdamer.factorial)).toBe(factorial);
+		expect(apiTarget(nerdamer.dfactorial)).toBe(doubleFactorial);
+		expect(apiTarget(nerdamer.min)).toBe(min);
+		expect(apiTarget(nerdamer.max)).toBe(max);
+		expect(apiTarget(nerdamer.sinc)).toBe(sinc);
+		expect(apiTarget(nerdamer.ilt)).toBe(ilaplace);
 		expect(nerdamer.mean).toBe(mean);
 		expect(nerdamer.median).toBe(median);
 		expect(nerdamer.mode).toBe(mode);
@@ -97,7 +97,7 @@ describe('Public compatibility entry points', () => {
 		expect(nerdamer.variance).toBe(variance);
 		expect(nerdamer.smpstdev).toBe(smpstdev);
 		expect(nerdamer.stdev).toBe(stdev);
-		expect(nerdamer.zscore).toBe(zscore);
+		expect(apiTarget(nerdamer.zscore)).toBe(zscore);
 	});
 
 	it('restores the legacy reserved-name helper through current parser state', () => {
@@ -116,19 +116,19 @@ describe('Public compatibility entry points', () => {
 	});
 
 	it('restores independent legacy math helpers without duplicating existing algorithms', () => {
-		expect(nerdamer.radians).toBe(radians);
-		expect(nerdamer.degrees).toBe(degrees);
-		expect(nerdamer.log10).toBe(log10);
-		expect(nerdamer.step).toBe(step);
-		expect(nerdamer.rect).toBe(rect);
-		expect(nerdamer.tri).toBe(tri);
+		expect(apiTarget(nerdamer.radians)).toBe(radians);
+		expect(apiTarget(nerdamer.degrees)).toBe(degrees);
+		expect(apiTarget(nerdamer.log10)).toBe(log10);
+		expect(apiTarget(nerdamer.step)).toBe(step);
+		expect(apiTarget(nerdamer.rect)).toBe(rect);
+		expect(apiTarget(nerdamer.tri)).toBe(tri);
 		expect(nerdamer.continued_fraction).toBe(continuedFraction);
 		expect(nerdamer.parens('x+1').text()).toEqual('(1+x)');
-		expect(nerdamer.gamma_incomplete).toBe(gammaIncomplete);
-		expect(nerdamer.gamma_incomplete_lower).toBe(gammaIncompleteLower);
-		expect(nerdamer.parens).toBe(parens);
-		expect(nerdamer.invert).toBe(invert);
-		expect(nerdamer.line).toBe(line);
+		expect(apiTarget(nerdamer.gamma_incomplete)).toBe(gammaIncomplete);
+		expect(apiTarget(nerdamer.gamma_incomplete_lower)).toBe(gammaIncompleteLower);
+		expect(apiTarget(nerdamer.parens)).toBe(parens);
+		expect(apiTarget(nerdamer.invert)).toBe(invert);
+		expect(apiTarget(nerdamer.line)).toBe(line);
 
 		expect(nerdamer('radians(180)').text()).toEqual('pi');
 		expect(nerdamer('degrees(pi)').text()).toEqual('180');
@@ -173,7 +173,7 @@ describe('Public compatibility entry points', () => {
 		expect(nerdamer.pfactord).toBe(pfactord);
 		expect(nerdamer.coeffs).toBe(coeffs);
 		expect(nerdamer.roots).toBe(roots);
-		expect(nerdamer.scientific).toBe(scientific);
+		expect(apiTarget(nerdamer.scientific)).toBe(scientific);
 
 		expect(nerdamer('pfactor(100)').text()).toEqual('[2, 2, 5, 5]');
 		expect(nerdamer('pfactor(2310)').text()).toEqual('[2, 3, 5, 7, 11]');

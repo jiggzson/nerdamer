@@ -28,7 +28,7 @@ describe('selective semantic error consolidation', () => {
 
 	it('keeps all catalog keys and placeholders aligned', () => {
 		const keys = Object.keys(EnglishErrorMessages).sort();
-		expect(keys).toHaveLength(219);
+		expect(keys).toHaveLength(234);
 		const placeholders = (value: string) => [...value.matchAll(/\{\{(\w+)\}\}/g)].map(match => match[1]).sort();
 		for (const language of languages) {
 			const catalog = ErrorMessages[language];

@@ -1,7 +1,10 @@
+import Decimal from 'decimal.js';
+
 import { Expression } from '../../core/classes/expression/Expression';
 import { one, zero } from '../../core/classes/expression/shortcuts';
 import { FACTORIAL, LOG } from '../../core/constants/functionNames';
-import { primeFactorCounts } from '../../core/functions/bigint/primeFactor';
+import { GCD, LCM } from '../../core/functions/bigint/bigint';
+import { precisionBlock } from '../../core/Settings';
 
 const MAX_FACTORIAL_ARGUMENT_DIFFERENCE = 100;
 
@@ -278,51 +281,145 @@ export function simplifyFactorials(x: Expression): Expression {
 
 
 /**
- * Reduces a ratio of positive-integer logarithms using exact prime multiplicities.
- * Leaves unrelated logarithms and products untouched.
+ * Minimum precision of the log-ratio estimate. The exact check decides the result, so this
+ * only needs to place a large ratio within the tolerance; a higher user precision is kept.
+ */
+const LOG_RATIO_PRECISION = 50;
+
+/** log(r) of a positive rational r, as a Decimal at the current precision. */
+function logFn(r: Expression): Decimal {
+	const { numerator, denominator } = r.getMultiplier();
+	return new Decimal(String(numerator)).ln().minus(new Decimal(String(denominator)).ln());
+}
+
+/**
+ * The positive rational r other than 1 with t = log(r)^k, when t is a log of a positive
+ * number or a sum of such logs with coefficients 1 and -1 (log(8/27) is stored as
+ * log(8)-log(27)). The power k of t is not checked.
+ */
+function logArgument(t: Expression): Expression | undefined {
+	let r: Expression | undefined;
+	if (t.getMultiplier().isOne() && (t.isSum() || t.isFunction(LOG))) {
+		// Terms of a sum need power 1; a single log carries the power of t.
+		const terms = t.isSum() ? t.elementsArray() : [Expression.toFunction(LOG, t.getArguments())];
+		r = one();
+		for (const term of terms) {
+			const sign = term.getMultiplier();
+			const arg = term.isFunction(LOG) && term.getPower().isOne() ? term.getArguments()[0] : undefined;
+			const valid = arg?.isNUM() && arg.gt(zero()) && (sign.isOne() || sign.eq(one().neg()));
+			r = arg && valid && r ? r.times(sign.isOne() ? arg : one().div(arg)) : undefined;
+		}
+	}
+	return r?.isOne() ? undefined : r;
+}
+
+/**
+ * log(a)/log(b) as an exact rational p/q, or undefined when it is not one, for positive
+ * rationals a and b other than 1. Called inside the precisionBlock of simplifyLogRatio.
+ *
+ * log(a)/log(b) = p/q exactly when a^q = b^p. A decimal estimate proposes p/q and the integers
+ * confirm it, which avoids factoring a and b: a large integer without small factors would not
+ * finish. A rational b that is a q-th power has a numerator or denominator of at least 2^q, so
+ * q is bounded by its bit length.
+ */
+function exactLogRatio(a: Expression, b: Expression): Expression | undefined {
+	let retval: Expression | undefined;
+	const { numerator: an, denominator: ad } = a.getMultiplier();
+	const { numerator: bn, denominator: bd } = b.getMultiplier();
+	const ratio = logFn(a).div(logFn(b));
+	const limit = (bn > bd ? bn : bd).toString(2).length;
+	for (let q = 1; q <= limit && retval === undefined; q++) {
+		const estimate = ratio.times(q);
+		const p = BigInt(estimate.round().toFixed());
+		const k = p < 0n ? -p : p;
+		const n = BigInt(q);
+		// a^q = b^p, where a negative p swaps b's numerator and denominator.
+		const [pn, pd] = p < 0n ? [bd, bn] : [bn, bd];
+		if (estimate.minus(String(p)).abs().lt(1e-9) && an ** n * pd ** k === pn ** k * ad ** n) {
+			retval = Expression.Number(p).div(Expression.Number(n));
+		}
+	}
+	return retval;
+}
+
+/**
+ * Cancels logarithms of positive rationals across the numerator and denominator, as
+ * log(8)/log(2) = 3, log(8)^2/log(2)^2 = 9, x*log(8)/log(2) = 3*x, log(8)/log(2)^2 = 3/log(2)
+ * and log(8)/log(2)+log(9)/log(3) = 5. A log is one accepted by logArgument, raised to an
+ * integer power.
+ *
+ * In a product, logs that are rational multiples of one another form a group. A group with
+ * members in both the numerator and the denominator is written over its smallest log L: the
+ * product of (L_i/L)^(p_i), times L to the sum of the p_i. Other factors, and groups on one
+ * side only such as log(4)*log(2), are left untouched. A sum is handled term by term.
  */
 export function simplifyLogRatio(x: Expression): Expression {
 	let retval = x;
-	if (x.isProduct() && x.getPower().isOne()) {
-		const factors = x.elementsArray();
-		if (factors.length === 2) {
-			const numerator = factors.find(t => t.isFunction(LOG) && t.getPower().isOne());
-			const denominator = factors.find(t => t.isFunction(LOG) && t.getPower().eq(one().neg()));
-			if (numerator && denominator &&
-				numerator.getMultiplier().isOne() && denominator.getMultiplier().isOne()) {
-				const a = numerator.getArguments()[0];
-				const b = denominator.getArguments()[0];
-				if (a?.isNUM() && b?.isNUM() && a.isInteger() && b.isInteger() &&
-					a.gt(one()) && b.gt(one())) {
-					const numeratorCounts = primeFactorCounts(a.getMultiplier().numerator);
-					const denominatorCounts = primeFactorCounts(b.getMultiplier().numerator);
-					const primes = new Set([...Object.keys(numeratorCounts), ...Object.keys(denominatorCounts)]);
-					let ratioNumerator = 0n;
-					let ratioDenominator = 0n;
-					let proportional = true;
-					for (const prime of primes) {
-						const n = numeratorCounts[prime] ?? 0n;
-						const d = denominatorCounts[prime] ?? 0n;
-						if (n === 0n || d === 0n) {
-							proportional = false;
-							break;
-						}
-						if (ratioDenominator === 0n) {
-							ratioNumerator = n;
-							ratioDenominator = d;
-						} else if (n * ratioDenominator !== d * ratioNumerator) {
-							proportional = false;
-							break;
-						}
-					}
-					if (proportional && ratioDenominator !== 0n) {
-						retval = Expression.create(ratioNumerator.toString())
-							.div(Expression.create(ratioDenominator.toString()))
-							.times(Expression.fromRational(x.getMultiplier()));
-					}
+	if (x.isSum() && x.getPower().isOne()) {
+		// Rebuilt only when a term changed, so other sums keep their form.
+		const terms = x.elementsArray();
+		const reduced = terms.map(term => simplifyLogRatio(term));
+		if (reduced.some((term, i) => term !== terms[i])) {
+			retval = reduced.reduce((total, term) => total.plus(term), zero())
+				.times(Expression.fromRational(x.getMultiplier()));
+		}
+	} else if (x.isProduct() && x.getPower().isOne()) {
+		// A product raised to an integer power, as (log(2)*log(9))^-1, contributes each of its
+		// factors raised to that power.
+		const factors = x.elementsArray().flatMap(factor => {
+			const k = factor.getPower();
+			return factor.isProduct() && k.isInteger()
+				? [Expression.fromRational(factor.getMultiplier()).pow(k), ...factor.elementsArray().map(e => e.pow(k))]
+				: [factor];
+		});
+		retval = precisionBlock(LOG_RATIO_PRECISION, () => {
+			type Log = { factor: Expression; r: Expression; power: number; scale: Expression };
+			const logs: (Log & { size: Decimal })[] = [];
+			for (const factor of factors) {
+				const power = factor.getPower();
+				const r = power.isInteger() ? logArgument(factor) : undefined;
+				if (r) {
+					const size = logFn(r).abs();
+					logs.push({ factor, r, power: Number(power.getMultiplier().numerator), scale: one(), size });
 				}
 			}
-		}
+			// Smallest first, so each group starts with the log it is written over. The sort is
+			// stable, so equal sizes keep their order.
+			logs.sort((a, b) => a.size.cmp(b.size));
+			const groups: Log[][] = [];
+			for (const log of logs) {
+				// scale is log(r) over the log the group starts with.
+				let group: Log[] | undefined;
+				for (const g of groups) {
+					const scale = exactLogRatio(log.r, g[0].r);
+					if (scale) {
+						log.scale = scale;
+						group = g;
+						break;
+					}
+				}
+				if (group) {
+					group.push(log);
+				} else {
+					groups.push([log]);
+				}
+			}
+			let result = Expression.fromRational(x.getMultiplier());
+			const rewritten = new Set<Expression>();
+			for (const group of groups.filter(g => g.some(m => m.power > 0) && g.some(m => m.power < 0))) {
+				let total = 0;
+				for (const member of group) {
+					result = result.times(member.scale.pow(member.power));
+					total += member.power;
+					rewritten.add(member.factor);
+				}
+				result = result.times(Expression.setPower(group[0].factor.copy(), one()).pow(total));
+			}
+			for (const factor of factors.filter(f => !rewritten.has(f))) {
+				result = result.times(factor);
+			}
+			return rewritten.size > 0 ? result : x;
+		});
 	}
 	return retval;
 }
@@ -701,8 +798,8 @@ function findCommonCoeffFactor(logTerms: LogTerm[]): Expression | null {
 	for (let i = 1; i < rats.length; i++) {
 		const num = rats[i].numerator < 0n ? -rats[i].numerator : rats[i].numerator;
 		const den = rats[i].denominator < 0n ? -rats[i].denominator : rats[i].denominator;
-		gcdNum = bigintGCD(gcdNum, num);
-		lcmDen = bigintLCM(lcmDen, den);
+		gcdNum = GCD(gcdNum, num);
+		lcmDen = LCM(lcmDen, den);
 	}
 
 	if (gcdNum === 0n) {
@@ -743,26 +840,6 @@ function findCommonCoeffFactor(logTerms: LogTerm[]): Expression | null {
 	}
 
 	return commonExpr;
-}
-
-/** BigInt GCD helper */
-function bigintGCD(a: bigint, b: bigint): bigint {
-	a = a < 0n ? -a : a;
-	b = b < 0n ? -b : b;
-	while (b > 0n) {
-		[a, b] = [b, a % b];
-	}
-	return a;
-}
-
-/** BigInt LCM helper */
-function bigintLCM(a: bigint, b: bigint): bigint {
-	a = a < 0n ? -a : a;
-	b = b < 0n ? -b : b;
-	if (a === 0n || b === 0n) {
-		return 0n;
-	}
-	return (a / bigintGCD(a, b)) * b;
 }
 
 /**

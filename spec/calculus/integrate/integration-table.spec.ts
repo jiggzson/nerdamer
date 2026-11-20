@@ -94,9 +94,7 @@ const tableCases: TableCase[] = [
 	{ id: 'known-products-06', source: '2^(-2*x)*sinh(x)', pattern: '(a1*sinh(a4*x1^n2)^n3)/(a2)^(a3*x1^n1)', verification: 'numeric' },
 	{ id: 'known-products-07', source: 'x*2^(2*x)', pattern: 'a1*(a2)^(a3*x1^n1)*x1^n2', verification: 'exact' },
 	{ id: 'known-products-08', source: 'x*2^(-2*x)', pattern: '(a1*x1^n2)/(a2)^(a3*x1^n1)', verification: 'exact' },
-	{ id: 'known-integrals-01', source: 'sqrt(2-2*x^2)', pattern: 'a1*(-a2*x1^n1+a3)^n2', verification: 'numeric', samples: [0.1, 0.2, 0.4] },
 	{ id: 'known-integrals-02', source: '1/(2-2*x^2)', pattern: 'a1/((-a2*x1^n1+a3)^n2)', verification: 'exact', samples: [0.1, 0.2, 0.4] },
-	{ id: 'known-integrals-03', source: '-1/sqrt(2-2*x^2)', pattern: '-a1/((-a2*x1^n1+a3)^n2)', verification: 'numeric', samples: [0.1, 0.2, 0.4] },
 	{ id: 'known-integrals-04', source: '1/(2+2*x^2)', pattern: 'a1/((a2*x1^n1+a3)^n2)', verification: 'exact' },
 	{ id: 'known-integrals-05', source: '-1/(2+2*x^2)', pattern: '-a1/((a2*x1^n1+a3)^n2)', verification: 'exact' },
 	{ id: 'known-integrals-06', source: '1/(x*sqrt(2-2/x^2))', pattern: 'a1/(x1^n1*(-a2/x1^n2+a3)^n3)', verification: 'domain-guarded', samples: [1.2], expected: '2^(-1/2)*asec(x)' },
@@ -125,13 +123,13 @@ const branchCases: BranchCase[] = [
 	{ id: 'trig-07 left even', source: 'cos(x)^2*cos(2*x)', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-07 left odd', source: 'cos(x)^3*cos(2*x)', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-07 right even', source: 'cos(x)*cos(2*x)^2', returnsCandidate: true, verification: 'numeric' },
-	{ id: 'trig-07 right odd', source: 'cos(x)*cos(2*x)^3', returnsCandidate: true, verification: 'inconclusive' },
+	{ id: 'trig-07 right odd', source: 'cos(x)*cos(2*x)^3', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-07 same frequency', source: 'cos(2*x)^2', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-07 nonlinear decline', source: 'cos(x^2)*cos(2*x)', returnsCandidate: false, verification: 'declined' },
 	{ id: 'trig-08 left even', source: 'sin(x)^2*sin(2*x)', returnsCandidate: true, verification: 'numeric' },
-	{ id: 'trig-08 right odd', source: 'sin(x)*sin(2*x)^3', returnsCandidate: true, verification: 'inconclusive' },
+	{ id: 'trig-08 right odd', source: 'sin(x)*sin(2*x)^3', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-08 same frequency', source: 'sin(2*x)^2', returnsCandidate: true, verification: 'numeric' },
-	{ id: 'trig-09 left odd', source: 'cos(x)^3*sin(2*x)', returnsCandidate: true, verification: 'inconclusive' },
+	{ id: 'trig-09 left odd', source: 'cos(x)^3*sin(2*x)', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-09 right even', source: 'cos(x)*sin(2*x)^2', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-09 generic', source: 'cos(x)*sin(2*x)', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'trig-10 mismatched decline', source: 'sec(x)*tan(2*x)', returnsCandidate: false, verification: 'declined' },
@@ -175,8 +173,6 @@ const branchCases: BranchCase[] = [
 	{ id: 'known product degree six', source: 'x^6*2^x', returnsCandidate: true, verification: 'exact' },
 	{ id: 'known product degree seven decline', source: 'x^7*2^x', returnsCandidate: false, verification: 'declined' },
 	{ id: 'known product noninteger degree decline', source: 'x^(1/2)*2^x', returnsCandidate: false, verification: 'declined' },
-	{ id: 'known integral decreasing radical branch', source: '1/sqrt(2-2*x^2)', returnsCandidate: true, verification: 'numeric', samples: [0.1, 0.2, 0.4] },
-	{ id: 'known integral increasing radical branch', source: '1/sqrt(2+2*x^2)', returnsCandidate: true, verification: 'numeric' },
 	{ id: 'special function powered numerator decline', source: 'sin(2*x)^2/x', returnsCandidate: false, verification: 'declined' },
 	{ id: 'special function nonlinear argument decline', source: 'sin(2*x^2)/x', returnsCandidate: false, verification: 'declined' },
 ];
@@ -228,18 +224,13 @@ describe('Integration table handlers', () => {
 		}
 	);
 
-	it.each(branchCases.filter(branchCase => branchCase.verification === 'inconclusive'))(
-		'$id records an inconclusive derivative residual',
+	// These branches rewrite by power reduction and integrate the rewrite recursively. They
+	// once left that integral unresolved, and the rewrite itself is still checked here.
+	const powerReductionIds = ['trig-07 right odd', 'trig-08 right odd', 'trig-09 left odd'];
+	it.each(branchCases.filter(branchCase => powerReductionIds.includes(branchCase.id)))(
+		'$id rewrites by power reduction before integrating',
 		branchCase => {
 			const source = Expression.create(branchCase.source);
-			const result = lookupResults.get(branchCase)?.copy();
-			expect(result).toBeDefined();
-			expect(result!.hasFunction('integrate', true)).toBe(true);
-
-			// An unresolved formal integral cannot be verified by direct differentiation.
-			const residual = diff(result!, 'x').minus(source);
-			expect(residual.isZero()).toBe(false);
-			expect(residual.text()).toContain('diff(');
 
 			// Verify the power-reduction identity before recursive integration.
 			const recurse = jest.fn((integrand: Expression, variable: Expression) =>

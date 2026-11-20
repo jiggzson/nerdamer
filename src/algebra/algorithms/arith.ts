@@ -8,6 +8,7 @@
  */
 
 import { message } from '../../core/errors';
+import { abs as absBig, GCD } from '../../core/functions/bigint/bigint';
 
 /**
  * Shared integer + modular arithmetic primitives used across Zippel GCD and
@@ -24,7 +25,7 @@ import { message } from '../../core/errors';
 
 /** Absolute value for BigInt. */
 export function abs(a: bigint): bigint {
-	return a < 0n ? -a : a;
+	return absBig(a);
 }
 
 /**
@@ -33,12 +34,7 @@ export function abs(a: bigint): bigint {
  * Returns a nonnegative gcd. gcd(0,0) = 0.
  */
 export function gcd(a: bigint, b: bigint): bigint {
-	a = abs(a);
-	b = abs(b);
-	while (b !== 0n) {
-		[a, b] = [b, a % b];
-	}
-	return a;
+	return GCD(a, b);
 }
 
 /**

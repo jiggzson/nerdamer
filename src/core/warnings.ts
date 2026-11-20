@@ -1,3 +1,5 @@
+import { message } from './errors';
+
 /** Non-fatal diagnostic information; never a substitute for a mathematical error. */
 export type NerdamerWarning = Readonly<{
 	code: string;
@@ -23,6 +25,22 @@ export function warn(code: string, message: string): void {
 	if (consoleWarnings && typeof console !== 'undefined' && typeof console.warn === 'function') {
 		console.warn(message);
 	}
+}
+
+/**
+ * Wraps a function under a deprecated name. The wrapper runs `fn` unchanged and records an
+ * `api.deprecatedFunction` warning naming `name` and the `replacement` to use instead.
+ *
+ * @example
+ * ```ts
+ * nerdamer.solveEquations = alias(solveSystem, 'solveEquations', 'solveeqs');
+ * ```
+ */
+export function alias<A extends unknown[], R>(fn: (...args: A) => R, name: string, replacement: string): (...args: A) => R {
+	return (...args: A) => {
+		warn('api.deprecatedFunction', message('deprecatedFunctionWarning', { function: name, replacement }));
+		return fn(...args);
+	};
 }
 
 /** Returns an independent snapshot of the recorded warnings. */

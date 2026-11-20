@@ -64,6 +64,16 @@ describe('Expansion regressions', () => {
 		expect(powerExpand(input)).toBe(input);
 	});
 
+	it('preserves the value of sums to the first power', () => {
+		const simple = Expression.create('2*(x+y)');
+		const nested = Expression.create('-b+a*((x+y)^3+sqrt(3)*i)');
+		for (const input of [simple, nested]) {
+			expect(input.getPower().isOne()).toBe(true);
+			expect(powerExpand(input).eq(input)).toBe(true);
+		}
+		expect(Expression.create('2*(x+y)').expand().eq(Expression.create('2*x+2*y'))).toBe(true);
+	});
+
 	// Regression: https://github.com/jiggzson/nerdamer/issues/3
 	it('uses the accepted expansion path for opposite squared differences', () => {
 		expect(Expression.create('(a-b)^2-(b-a)^2').expand().isZero()).toBe(true);

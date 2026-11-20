@@ -161,4 +161,22 @@ export abstract class StructuredEntity<
 		return this.text();
 	}
 
+	/**
+	 * Lists the variables of every element, in the order they're found.
+	 *
+	 * @example
+	 * ```ts
+	 * nerdamer('[x,y^2]').variables(); // ['x', 'y']
+	 * ```
+	 *
+	 * @param vars - Optional list that names are added to, without repeats.
+	 * @returns The list of distinct variable names.
+	 */
+	variables(vars: string[] = []): string[] {
+		for (const element of this.elements.flat()) {
+			element.variables(vars);
+		}
+		return vars;
+	}
+
 }

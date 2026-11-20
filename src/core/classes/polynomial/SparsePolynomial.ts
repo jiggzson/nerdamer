@@ -145,6 +145,20 @@ export class SparsePolynomial {
 	}
 
 	/**
+	 * Constructs a univariate polynomial from ascending-power integer coefficients.
+	 * Zero coefficients are omitted by the constructor.
+	 */
+	static fromCoefficients(coefficients: readonly bigint[]): SparsePolynomial {
+		return new SparsePolynomial(
+			1,
+			coefficients.map((coefficient, i) => ({
+				coefficient,
+				exponents: [BigInt(i)],
+			}))
+		);
+	}
+
+	/**
 	 * Encodes an exponent vector only for map identity.
 	 *
 	 * The polynomial retains the exponent vector beside the key, so no decoder exists.
@@ -960,6 +974,40 @@ export class SparsePolynomial {
 	 */
 	terms(): readonly SparsePolynomialTerm[] {
 		return Array.from(this.termsByKey.values());
+	}
+
+	/**
+	 * Returns ascending-power integer coefficients for a univariate polynomial.
+	 * Missing powers are zero; the zero polynomial returns [0n].
+	 */
+	toCoefficients(): bigint[] {
+		if (this.variableCount !== 1) {
+			throw new RangeError(
+				message('polyRequires', {
+					operation: 'Sparse coefficient conversion',
+					requirement: message('polyReqUnivariatePolynomial'),
+				})
+			);
+		}
+
+		const degree = this.degree(0);
+		if (degree === null) {
+			return [0n];
+		}
+		const highest = Number(degree);
+		if (!Number.isSafeInteger(highest)) {
+			throw new RangeError(
+				message('wrongInput', {
+					expected: 'a polynomial degree within the safe integer range',
+					received: degree.toString(),
+				})
+			);
+		}
+		const coefficients = new Array<bigint>(highest + 1).fill(0n);
+		for (const term of this.terms()) {
+			coefficients[Number(term.exponents[0])] = term.coefficient;
+		}
+		return coefficients;
 	}
 
 	/**

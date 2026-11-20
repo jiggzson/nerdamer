@@ -1,4 +1,4 @@
-import { sign, abs, powMod } from './bigint';
+import { sign, abs, GCD, powMod } from './bigint';
 
 export type factorCountType = Record<string, bigint>;
 
@@ -168,10 +168,13 @@ export function trialDivisionBig(n: bigint): bigint[] {
 	return factors;
 }
 
+// Trial division up to this size takes at most a million steps (a few milliseconds).
+const MAX_TRIAL_DIVISION = 10n ** 12n;
+
 /**
  * Pollard's rho algorithm for faster factorization of large numbers
  */
-export function pollardRhoBig(n: bigint): bigint {
+export function pollardRhoBig(n: bigint, maxSteps = Infinity): bigint {
 	if (n % 2n === 0n) {
 		return 2n;
 	}
@@ -181,17 +184,15 @@ export function pollardRhoBig(n: bigint): bigint {
 	let d = 1n;
 
 	const f = (val: bigint): bigint => (val * val + 1n) % n;
-	const gcd = (a: bigint, b: bigint): bigint => {
-		while (b !== 0n) {
-			[a, b] = [b, a % b];
-		}
-		return a;
-	};
-
+	let steps = 0;
 	while (d === 1n) {
+		// Report an exhausted step budget as -1, distinct from a failed cycle (0).
+		if (++steps > maxSteps) {
+			return -1n;
+		}
 		x = f(x);
 		y = f(f(y));
-		d = gcd(x > y ? x - y : y - x, n);
+		d = GCD(x > y ? x - y : y - x, n);
 	}
 
 	return d === n ? 0n : d;
@@ -200,12 +201,17 @@ export function pollardRhoBig(n: bigint): bigint {
 /**
  * Advanced factorization using Pollard's rho for large numbers
  */
-export function primeFactorsBig(n: bigint, toNumbers: true): { sign: number; factors: number[] };
 export function primeFactorsBig(
 	n: bigint,
-	toNumbers: false | void
+	toNumbers: true,
+	maxSteps?: number
+): { sign: number; factors: number[] };
+export function primeFactorsBig(
+	n: bigint,
+	toNumbers: false | void,
+	maxSteps?: number
 ): { sign: number; factors: bigint[] };
-export function primeFactorsBig(n: bigint, toNumbers?: boolean | void) {
+export function primeFactorsBig(n: bigint, toNumbers?: boolean | void, maxSteps?: number) {
 	const sgn = sign(n);
 	n = abs(n);
 	const factors: bigint[] = [];
@@ -222,7 +228,14 @@ export function primeFactorsBig(n: bigint, toNumbers?: boolean | void) {
 				return;
 			}
 
-			const divisor = pollardRhoBig(num);
+			const divisor = pollardRhoBig(num, maxSteps);
+			// With a step budget, keep a part that resists whole: trial division of a large
+			// composite would take far longer than the budget allows.
+			const tooLarge = maxSteps !== undefined && num > MAX_TRIAL_DIVISION;
+			if (divisor === -1n || (divisor === 0n && tooLarge)) {
+				factors.push(num);
+				return;
+			}
 			if (divisor === 0n) {
 				// Fallback to trial division
 				const simple = trialDivisionBig(num);
@@ -249,10 +262,12 @@ export function primeFactorsBig(n: bigint, toNumbers?: boolean | void) {
  * Places the prime factors in an object and counts their occurrences
  *
  * @param n
+ * @param maxSteps - Optional Pollard rho step budget per factor. When it runs out, the
+ * unfactored part is counted whole, so a key may then be composite.
  */
-export function primeFactorCounts(n: bigint): factorCountType {
+export function primeFactorCounts(n: bigint, maxSteps?: number): factorCountType {
 	const counts: factorCountType = {};
-	const factors = primeFactorsBig(n).factors;
+	const factors = primeFactorsBig(n, false, maxSteps).factors;
 	for (const factor of factors) {
 		const f = String(factor);
 		if (!(f in counts)) {

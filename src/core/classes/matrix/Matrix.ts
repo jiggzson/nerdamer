@@ -2,7 +2,7 @@
 import { mod, modInv } from '../../../math/index';
 import { StructuredEntity } from '../../common/classes/StructuredEntity';
 import { isNerdamerNativeType } from '../../common/common';
-import { toParserEntities } from '../../common/functions/structuredEntityUtils';
+import { toExpressions, toParserEntities } from '../../common/functions/structuredEntityUtils';
 import { dataTypes, MATRIX } from '../../constants/entityTypes';
 import {
 	message,
@@ -41,10 +41,7 @@ import type { ParserValuesObject } from '../parser/types';
  * ordering; a type or dimension mismatch compares false.
  */
 export class Matrix extends StructuredEntity<Matrix, Vector> {
-	/**
-	 * Number of row swaps performed during the last toRightTriangular call.
-	 * Used internally by determinant() to correct the sign.
-	 */
+	/** Number of row swaps performed during the last toRightTriangular call. */
 	private _rowSwaps: number = 0;
 	dataType: typeof MATRIX = MATRIX;
 	elements: Expression[][];
@@ -203,7 +200,7 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 			}
 
 			// Build the replacement before mutating so conversion errors leave the matrix unchanged.
-			const replacement = value.elements.map(e => Expression.create(e));
+			const replacement = toExpressions(value.elements);
 			this.elements[row] = replacement;
 		}
 	}
@@ -262,11 +259,22 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 	}
 
 	/**
-	 * Computes the determinant by triangular elimination.
+	 * Computes the determinant without dividing by symbolic pivots.
+	 *
+	 * Ordinary elimination divides by each pivot, which leaves a nested quotient such as
+	 * a*(d-c*a^-1*b) that fails wherever a symbolic pivot vanishes. So:
+	 * - With no variables in the matrix, fraction-free (Bareiss) elimination. Each step divides
+	 *   by the previous pivot, a constant whose division is exact.
+	 * - Otherwise, cofactor expansion along the rows, which never divides. Each minor is
+	 *   identified by its set of remaining columns and computed once, so the cost grows like
+	 *   n*2^n rather than n!. Polynomial entries give an expanded polynomial.
 	 *
 	 * The determinant of the empty matrix is one.
 	 *
 	 * @throws {@link core!UnsupportedOperationError} If the matrix is not square.
+	 *
+	 * @see E. H. Bareiss, Sylvester's Identity and Multistep Integer-Preserving Gaussian
+	 * Elimination, Math. Comp. 22 (1968) 565-578. https://doi.org/10.2307/2004533
 	 */
 	determinant(): Expression {
 		if (this.rows() === 0) {
@@ -277,19 +285,74 @@ export class Matrix extends StructuredEntity<Matrix, Vector> {
 			throw new UnsupportedOperationError(message('squareMatrixRequired'));
 		}
 
-		const M = this.toRightTriangular();
 		const n = this.rows();
-		let det = M.elements[0][0];
-		for (let i = 1; i < n; i++) {
-			det = det.times(M.get(i, i));
+		const M = this.copy().elements;
+		let retval: Expression | undefined;
+
+		if (M.every(row => row.every(e => e.variables().length === 0))) {
+			let previous = one();
+			let negate = false;
+			for (let k = 0; k < n - 1 && !retval; k++) {
+				// Swap in a row with a nonzero pivot. Each swap negates the determinant.
+				const pivot = M.findIndex((row, i) => i >= k && !row[k].eq(zero()));
+				if (pivot === -1) {
+					retval = zero();
+				} else {
+					if (pivot !== k) {
+						[M[pivot], M[k]] = [M[k], M[pivot]];
+						negate = !negate;
+					}
+					for (let i = k + 1; i < n; i++) {
+						const lead = M[i][k];
+						for (let j = k + 1; j < n; j++) {
+							// A zero entry stays zero when the subtracted product is zero too, which
+							// is most of the work in a sparse matrix.
+							const product =
+								lead.isZero() || M[k][j].isZero() ? undefined : lead.times(M[k][j]);
+							if (product || !M[i][j].isZero()) {
+								const scaled = M[i][j].times(M[k][k]);
+								M[i][j] = (product ? scaled.minus(product) : scaled).div(previous);
+							}
+						}
+					}
+					previous = M[k][k];
+				}
+			}
+			retval ??= M[n - 1][n - 1];
+			if (negate) {
+				retval = retval.neg();
+			}
+		} else {
+			// The minor of rows row..n-1 over the columns in the bit set `columns`.
+			const minors = new Map<number, Expression>();
+			const minor = (row: number, columns: number): Expression => {
+				let value = minors.get(columns);
+				if (!value) {
+					value = zero();
+					let sign = 1;
+					for (let col = 0; col < n; col++) {
+						if (columns & (1 << col)) {
+							const entry = M[row][col];
+							if (!entry.isZero()) {
+								const term = entry.times(
+									row === n - 1 ? one() : minor(row + 1, columns & ~(1 << col))
+								);
+								value = sign > 0 ? value.plus(term) : value.minus(term);
+							}
+							sign = -sign;
+						}
+					}
+					if (value.isPolynomialLike()) {
+						value = value.expand();
+					}
+					minors.set(columns, value);
+				}
+				return value;
+			};
+			retval = minor(0, (1 << n) - 1);
 		}
 
-		// Each row swap negates the determinant
-		if (M._rowSwaps % 2 !== 0) {
-			det = det.neg();
-		}
-
-		return det;
+		return retval;
 	}
 
 	dimensions(): number[] {

@@ -280,7 +280,7 @@ describe('SparsePolynomial Zassenhaus recombination', () => {
 	});
 });
 
-describe('SparsePolynomial univariate factor corpus', () => {
+describe('SparsePolynomial univariate factor', () => {
 	function parsePolynomial(input: string): SparsePolynomial {
 		return polynomialToSparsePolynomial(
 			new Polynomial(Expression.create(input), ['x'], 'lex'),

@@ -14,10 +14,9 @@ export function subtract(a: Expression, b: Expression): Expression {
 		if (a.isNUM() && b.isNUM()) {
 			retval = Expression.fromRational(a.getMultiplier().minus(b.getMultiplier()));
 		}
-		// Any value minus inf is -inf
-		else if (!a.isInf() && b.isInf()) {
-			retval = Expression.Inf().neg();
-		} else {
+		// Infinity goes through add like everything else, which decides when the other
+		// operand is finite. A symbol could itself be infinite, so x-Inf stays as it is.
+		else {
 			retval = add(a, b.neg());
 		}
 

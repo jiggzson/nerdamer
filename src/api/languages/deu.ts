@@ -8,6 +8,7 @@ declare const NERDAMER_BUILD_LANGUAGE: 'deu' | 'all';
 const catalog: MessageCatalog = {
 		// General
 		noInverse: 'Die Inverse konnte nicht berechnet werden!',
+		integerArgumentsRequired: '{{fn}} benötigt ganzzahlige Argumente!',
 		undefinedValue: 'Der angeforderte Wert ist nicht definiert!',
 		nullValue: 'Ein Wert wurde erwartet, aber null wurde empfangen.',
 		univariateInputOnly: 'Die Eingabe für diese Funktion muss univariat sein!',
@@ -20,6 +21,8 @@ const catalog: MessageCatalog = {
 		restrictedVariableName:
 			'Der angeforderte Wert kann dem reservierten Namen „{{name}}“ nicht zugewiesen werden!',
 		noVariableInExpression: 'Im Ausdruck wurde keine Variable gefunden!',
+		ambiguousVariable: 'Mehr als eine Variable in {{expression}}! Geben Sie an, welche.',
+		comparisonUnsupported: 'Der Vergleich {{operator}} in {{function}} kann nicht gelöst werden! Verwenden Sie = für eine Gleichung; Ungleichungen werden noch nicht unterstützt.',
 		quadraticExpressionExpected: 'Der Ausdruck muss quadratisch sein!',
 		wrongInput: 'Falsche Eingabe! Erwartet wurde {{expected}}, erhalten wurde {{received}}.',
 		unsupportedFunction: 'Nicht unterstützte Funktion „{{function}}“.',
@@ -51,6 +54,7 @@ const catalog: MessageCatalog = {
 		matrixStringKeyUnsupported: 'Matrix unterstützt keinen Zugriff über Textschlüssel',
 		matrixTraceUnavailable: 'Die Spur der Matrix kann nicht berechnet werden',
 		deprecatedDeleteWarning: '{{function}}(name, \'delete\') ist veraltet; das bisherige Löschverhalten wird weiterhin unterstützt.',
+		deprecatedFunctionWarning: '{{function}} ist veraltet; verwenden Sie stattdessen {{replacement}}.',
 		defintAccuracyWarning: 'Die adaptive Integration erreichte Tiefe {{depth}}, ohne die geforderte Toleranz einzuhalten; das Ergebnis kann ungenau sein.',
 		defintMaxEvals: 'defint: maxEvals überschritten ({{max}}).',
 		defintNonFiniteValue: 'defint: f(x) ist bei x={{x}} nicht endlich',
@@ -67,6 +71,7 @@ const catalog: MessageCatalog = {
 		missingOpeningBracket: 'Öffnende Klammer fehlt für "{{bracket}}":{{position}}',
 		missingClosingBracket: 'Schließende Klammer fehlt für "{{bracket}}":{{position}}',
 		prefixOperatorExpected: 'Präfixoperator erwartet, aber {{operator}} gefunden.',
+		missingOperand: 'Fehlender Operand nach {{operator}}.',
 		unsupportedParserEntity: 'Nicht unterstützte Parser-Entität',
 		factorialNegativeUndefined: 'Die Fakultät ist für negative ganze Zahlen nicht definiert.',
 		erfConvergenceFailed: 'erf konvergiert nicht. Abbruch!',
@@ -203,6 +208,8 @@ const catalog: MessageCatalog = {
 		atan2InfiniteArguments: "atan2 ist nicht definiert, wenn beide Argumente unendlich sind!",
 		tanUndefined: 'tan ist für Vielfache von pi/2 nicht definiert!',
 		loopIterationLimitExceeded: 'Die Schleife hat das Maximum von {{max}} Iterationen überschritten.',
+		inputLimitExceeded: 'Die Eingabe von {{function}} überschreitet die Grenze von {{limit}}.',
+		resultOutOfRange: 'Das Ergebnis liegt außerhalb des darstellbaren Zahlenbereichs.',
 		letRequiresBindingsAndBody:
 			'let benötigt ein oder mehrere Name/Wert-Paare, gefolgt von einem Ausdrucksrumpf.',
 
@@ -212,6 +219,8 @@ const catalog: MessageCatalog = {
 		cothUndefined: 'coth ist für 0 nicht definiert!',
 		cschUndefined: 'csch ist für 0 nicht definiert!',
 		atanhUndefined: 'atanh ist für 1 nicht definiert!',
+		gammaUndefined: 'gamma ist für Null und negative ganze Zahlen nicht definiert!',
+		doubleFactorialUndefined: 'dfactorial ist für negative gerade ganze Zahlen nicht definiert!',
 		cannotCreateArrayFromNaN: 'Aus NaN kann kein Array erstellt werden!',
 		expressionExpected: 'Ein Ausdruck wurde erwartet! Erhalten: {{type}}!',
 
@@ -226,6 +235,10 @@ const catalog: MessageCatalog = {
 		cannotCreateMatrix:
 			'Die Matrix kann nicht erstellt werden. Die Zeilendimensionen stimmen nicht überein!',
 		squareMatrixRequired: 'Die Matrix muss quadratisch sein!',
+		identitySizeInvalid: 'imatrix benötigt eine Größe von 0 oder mehr! Erhalten: {{size}}.',
+		sampleTooSmall: '{{fn}} benötigt mindestens zwei Werte!',
+		matrixRequired: '{{fn}} benötigt eine Matrix! Erhalten: {{type}}. Schreiben Sie eine Matrix als matrix([1,2],[3,4]).',
+		setRequired: '{{fn}} benötigt Mengen! Erhalten: {{type}}. Schreiben Sie eine Menge als {1,2,3}.',
 		rowsMustMatch: 'Die Zeilen der Matrizen müssen übereinstimmen!',
 		singularMatrix: 'Die angegebene Matrix ist singulär!',
 		// Vector
@@ -238,6 +251,8 @@ const catalog: MessageCatalog = {
 			'Diese Funktion wird nur für univariate Polynome unterstützt!',
 		// Solve
 		integrationDepthWarning: 'Die Integrationstiefe von {{depth}} wurde für {{expression}} erreicht.',
+		texPeriodicVariableWarning: 'Die TeX-Ausgabe zeigt den periodischen Parameter als {{parameter}}, weil {{name}} bereits eine Variable im Ausdruck ist.',
+		texPeriodicVariableUnavailable: 'TeX kann den periodischen Parameter nicht darstellen: {{names}} sind alle Variablen im Ausdruck. Setzen Sie TEX_PERIODIC_VAR auf einen anderen Namen.',
 		solvePartialResultWarning: 'Der Gleichungslöser konnte nicht alle Lösungen ermitteln; das zurückgegebene Ergebnis kann unvollständig sein.',
 		rootIterationWarning: '{{count}} Nullstellenverfeinerungen haben das Limit von {{iterations}} Iterationen erreicht; die Ergebnisse könnten unvollständig sein.',
 		convergenceFailed: 'Keine Konvergenz! {{iters}} Iterationen wurden versucht.',

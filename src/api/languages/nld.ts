@@ -8,6 +8,7 @@ declare const NERDAMER_BUILD_LANGUAGE: 'nld' | 'all';
 const catalog: MessageCatalog = {
 		// General
 		noInverse: 'Kan de inverse niet berekenen!',
+		integerArgumentsRequired: '{{fn}} vereist gehele getallen als argumenten!',
 		undefinedValue: 'De gevraagde waarde is niet gedefinieerd!',
 		nullValue: 'Er werd een waarde verwacht, maar null werd ontvangen.',
 		univariateInputOnly: 'De invoer voor deze functie moet univariaat zijn!',
@@ -20,6 +21,8 @@ const catalog: MessageCatalog = {
 		restrictedVariableName:
 			'Kan de gevraagde waarde niet toewijzen aan de gereserveerde naam "{{name}}"!',
 		noVariableInExpression: 'Geen variabele gevonden in de uitdrukking!',
+		ambiguousVariable: 'Meer dan één variabele in {{expression}}! Geef aan welke.',
+		comparisonUnsupported: 'De vergelijking {{operator}} in {{function}} kan niet worden opgelost! Gebruik = voor een gelijkheid; ongelijkheden worden nog niet ondersteund.',
 		quadraticExpressionExpected: 'De uitdrukking moet kwadratisch zijn!',
 		wrongInput: 'Onjuiste invoer! Verwacht: {{expected}}, ontvangen: {{received}}.',
 		unsupportedFunction: 'Niet-ondersteunde functie "{{function}}".',
@@ -51,6 +54,7 @@ const catalog: MessageCatalog = {
 		matrixStringKeyUnsupported: 'Matrix ondersteunt geen toegang via tekstsleutels',
 		matrixTraceUnavailable: 'Kan de spoorwaarde van de matrix niet berekenen',
 		deprecatedDeleteWarning: "{{function}}(name, 'delete') is verouderd; het bestaande verwijdergedrag blijft ondersteund voor compatibiliteit.",
+		deprecatedFunctionWarning: '{{function}} is verouderd; gebruik in plaats daarvan {{replacement}}.',
 		defintAccuracyWarning: 'De adaptieve integratie bereikte diepte {{depth}} zonder aan de gevraagde tolerantie te voldoen; het resultaat kan onnauwkeurig zijn.',
 		defintMaxEvals: 'defint: maxEvals overschreden ({{max}}).',
 		defintNonFiniteValue: 'defint: f(x) is niet eindig bij x={{x}}',
@@ -67,6 +71,7 @@ const catalog: MessageCatalog = {
 		missingOpeningBracket: 'Openingshaak ontbreekt voor "{{bracket}}":{{position}}',
 		missingClosingBracket: 'Sluitingshaak ontbreekt voor "{{bracket}}":{{position}}',
 		prefixOperatorExpected: 'Prefixoperator verwacht, maar {{operator}} aangetroffen.',
+		missingOperand: 'Ontbrekende operand na {{operator}}.',
 		unsupportedParserEntity: 'Niet-ondersteunde parserentiteit',
 		factorialNegativeUndefined: 'Faculteit is niet gedefinieerd voor negatieve gehele getallen.',
 		erfConvergenceFailed: 'erf convergeert niet. Afbreken!',
@@ -203,6 +208,8 @@ const catalog: MessageCatalog = {
 		atan2InfiniteArguments: "atan2 is niet gedefinieerd wanneer beide argumenten oneindig zijn!",
 		tanUndefined: 'tan is niet gedefinieerd voor veelvouden van pi/2!',
 		loopIterationLimitExceeded: 'De lus heeft het maximum van {{max}} iteraties overschreden.',
+		inputLimitExceeded: 'De invoer van {{function}} overschrijdt de limiet van {{limit}}.',
+		resultOutOfRange: 'Het resultaat valt buiten het representeerbare numerieke bereik.',
 		letRequiresBindingsAndBody:
 			'let vereist een of meer naam/waarde-paren gevolgd door een hoofdexpressie.',
 
@@ -212,6 +219,8 @@ const catalog: MessageCatalog = {
 		cothUndefined: 'coth is niet gedefinieerd voor 0!',
 		cschUndefined: 'csch is niet gedefinieerd voor 0!',
 		atanhUndefined: 'atanh is niet gedefinieerd voor 1!',
+		gammaUndefined: 'gamma is niet gedefinieerd voor nul en negatieve gehele getallen!',
+		doubleFactorialUndefined: 'dfactorial is niet gedefinieerd voor negatieve even gehele getallen!',
 		cannotCreateArrayFromNaN: 'Kan geen array maken van NaN!',
 		expressionExpected: 'Er werd een uitdrukking verwacht! Ontvangen: {{type}}!',
 
@@ -226,6 +235,10 @@ const catalog: MessageCatalog = {
 		cannotCreateMatrix:
 			'Kan de matrix niet maken. De rijafmetingen komen niet overeen!',
 		squareMatrixRequired: 'De matrix moet vierkant zijn!',
+		identitySizeInvalid: 'imatrix vereist een grootte van 0 of meer! Ontvangen: {{size}}.',
+		sampleTooSmall: '{{fn}} vereist minstens twee waarden!',
+		matrixRequired: '{{fn}} vereist een matrix! Ontvangen: {{type}}. Schrijf een matrix als matrix([1,2],[3,4]).',
+		setRequired: '{{fn}} vereist verzamelingen! Ontvangen: {{type}}. Schrijf een verzameling als {1,2,3}.',
 		rowsMustMatch: 'De rijen van de matrices moeten overeenkomen!',
 		singularMatrix: 'De opgegeven matrix is singulier!',
 		// Vector
@@ -238,6 +251,8 @@ const catalog: MessageCatalog = {
 			'Deze functie wordt alleen ondersteund voor univariate polynomen!',
 		// Solve
 		integrationDepthWarning: 'De integratierecursiediepte {{depth}} is bereikt voor {{expression}}.',
+		texPeriodicVariableWarning: 'De TeX-uitvoer toont de periodieke parameter als {{parameter}}, omdat {{name}} al een variabele in de uitdrukking is.',
+		texPeriodicVariableUnavailable: 'TeX kan de periodieke parameter niet tonen: {{names}} zijn allemaal variabelen in de uitdrukking. Stel TEX_PERIODIC_VAR in op een andere naam.',
 		solvePartialResultWarning: 'De oplosser kon niet alle oplossingen bepalen; het geretourneerde resultaat kan onvolledig zijn.',
 		rootIterationWarning: '{{count}} wortelverfijningen hebben de limiet van {{iterations}} iteraties bereikt; de resultaten kunnen onvolledig zijn.',
 		convergenceFailed: 'Convergentie mislukt! Er zijn {{iters}} iteraties geprobeerd.',

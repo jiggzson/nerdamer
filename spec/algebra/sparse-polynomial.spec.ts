@@ -742,6 +742,24 @@ describe('SparsePolynomial adapters', () => {
 		expect(() => polynomialToSparsePolynomial(symbolicCoefficient, ['x'])).toThrow();
 	});
 
+	it('round-trips ascending integer coefficients with missing powers and large values', () => {
+		const coefficients = [-123456789012345678901234567890n, 0n, 7n, 0n, 1n];
+		const sparse = SparsePolynomial.fromCoefficients(coefficients);
+
+		expect(sparse.variableCount).toBe(1);
+		expect(sparse.degree(0)).toBe(4n);
+		expect(sparse.toCoefficients()).toEqual(coefficients);
+	});
+
+	it('converts zero and constant univariate polynomials to coefficient arrays', () => {
+		expect(SparsePolynomial.fromCoefficients([0n]).toCoefficients()).toEqual([0n]);
+		expect(SparsePolynomial.fromCoefficients([9n]).toCoefficients()).toEqual([9n]);
+	});
+
+	it('rejects multivariate sparse polynomials when extracting univariate coefficients', () => {
+		expect(() => SparsePolynomial.variable(2, 0).toCoefficients()).toThrow(RangeError);
+	});
+
 	it('converts sparse polynomials to expressions without narrowing bigint exponents', () => {
 		const exponent = 9007199254740991n + 7654321n;
 		const sparse = new SparsePolynomial(1, [

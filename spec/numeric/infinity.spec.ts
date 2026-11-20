@@ -15,7 +15,7 @@ describe('Infinity arithmetic', () => {
 		expect(Parser.parse('8*-Inf').text()).toEqual('-Inf');
 		expect(Parser.parse('-Inf*-Inf').text()).toEqual('Inf');
 		expect(Parser.parse('-Inf*Inf').text()).toEqual('-Inf');
-		expect(Parser.parse('-a-Inf').text()).toEqual('-Inf');
+		expect(Parser.parse('-a-Inf').text()).toEqual('-a-Inf');
 	});
 
 

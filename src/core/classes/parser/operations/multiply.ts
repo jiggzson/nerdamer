@@ -27,6 +27,16 @@ export function multiply(a: Expression, b: Expression): Expression {
 		retval = merge(Expression.toFunction(WRAP, [a]), Expression.toFunction(WRAP, [b]));
 		retval.deferred = true;
 	} else {
+		// The sign of a non-numeric real factor of something infinite, such as Inf or i*Inf,
+		// when it can be established.
+		let factorSign = 0;
+		if (a.isInfinite() !== b.isInfinite()) {
+			const factor = a.isInfinite() ? b : a;
+			if (!factor.isNUM() && !factor.isComplex()) {
+				factorSign = factor.gt(zero()) ? 1 : factor.lt(zero()) ? -1 : 0;
+			}
+		}
+
 		if (a.isZero()) {
 			if (b.isInf()) {
 				throw new UndefinedError(message('undefinedExpression', { expression: '0*Infinity' }));
@@ -58,6 +68,28 @@ export function multiply(a: Expression, b: Expression): Expression {
 			} else if (a.isZero() || b.isZero()) {
 				throw new UndefinedError(message('undefinedExpression', { expression: '0*Infinity' }));
 			}
+		}
+		// Something infinite times a real factor of known sign keeps its direction and takes
+		// the combined sign, such as log(2)*Inf = Inf, (1-sqrt(2))*Inf = -Inf or
+		// sqrt(2)*i*Inf = i*Inf. A factor whose sign isn't established, like an unrestricted
+		// x, stays as a product.
+		else if (factorSign !== 0) {
+			const infinite = a.isInfinite() ? a : b;
+			retval = factorSign > 0 ? infinite.copy() : infinite.neg();
+		} else if (a.isInfinite() && b.isInfinite() && !(a.isInf() && b.isInf())) {
+			if (a.isInf() || b.isInf()) {
+				// Infinity absorbs another infinite factor, so (i*Inf)*Inf is i*Inf. Only the sign
+				// of the bare infinity can change it.
+				const [bare, product] = a.isInf() ? [a, b] : [b, a];
+				retval = bare.isNegInf() ? product.neg() : product.copy();
+			} else {
+				// Two infinite products multiply their directions: (i*Inf)*(i*Inf) is
+				// i^2*Inf = -Inf. Multiplying in one factor at a time reaches the case above
+				// when the two infinities meet.
+				retval = Object.values(b.getElements())
+					.reduce((product, element) => product.times(element), a)
+					.times(Expression.fromRational(b.getMultiplier()));
+			}
 		} else if (a.value === b.value) {
 			// Define Rule: i * i = -1
 			retval = a.copy();
@@ -66,6 +98,11 @@ export function multiply(a: Expression, b: Expression): Expression {
 			const power = a.getPower().plus(b.getPower());
 			if (power.isZero()) {
 				retval = Expression.fromRational(retval.getMultiplier());
+			} else if (retval.isProduct() && power.isInteger()) {
+				// An integer power of a product distributes over its factors, as it does when the
+				// power is taken directly, so (x*y)*(x*y) is x^2*y^2 like (x*y)^2.
+				const base = Expression.setPower(retval.toUnitMultiplier(), one());
+				retval = base.pow(power).times(Expression.fromRational(retval.getMultiplier()));
 			} else {
 				retval = Expression.setPower(retval, power);
 			}
@@ -102,6 +139,34 @@ export function multiply(a: Expression, b: Expression): Expression {
 		if (Settings.EVALUATE) {
 			retval = retval.distributeMultiplier();
 		}
+
+		// A product with an infinite factor, such as 2*sqrt(2)*i*Inf, has no finite size, so
+		// its coefficient and any real factor of known sign only contribute their signs:
+		// 2*sqrt(2)*i*Inf is i*Inf and -3*pi*i*Inf is -i*Inf. Complex factors give the
+		// direction and factors of unknown sign stay.
+		if (retval.isInfinite() && !retval.isInf()) {
+			let negative = retval.getMultiplier().isNegative();
+			const kept: Expression[] = [];
+			for (const element of Object.values(retval.getElements())) {
+				const real = !element.isInf() && !element.isComplex();
+				if (real && element.gt(zero())) {
+					continue;
+				} else if (real && element.lt(zero())) {
+					negative = !negative;
+				} else {
+					kept.push(element);
+				}
+			}
+			const unchanged =
+				kept.length === Object.keys(retval.getElements()).length &&
+				retval.getMultiplier().abs().isOne();
+			if (!unchanged) {
+				retval = kept.reduce((product, element) => product.times(element));
+				if (negative) {
+					retval = retval.neg();
+				}
+			}
+		}
 	}
 
 	return retval;
@@ -123,12 +188,7 @@ function transfer(a: Expression, b: Expression, but: string) {
 	return multiply(retval, result);
 }
 
-function combine(
-	a: Expression,
-	b: Expression,
-	keyA: string,
-	keyB: string
-): [Expression, Expression[]] {
+function combine(a: Expression, b: Expression, keyA: string, keyB: string): Expression {
 	const retval = Expression.Number('1');
 	// We want the multiplier at the top so remove from a and b
 	retval.elements = {};
@@ -136,7 +196,7 @@ function combine(
 	// TODO: This check should probably be handled by the keyValue method
 	retval.elements[keyA] = a.copy();
 	retval.elements[keyB] = b.copy();
-	return [retval, [a, b]];
+	return retval;
 }
 
 function canMerge(a: Expression) {
@@ -145,7 +205,6 @@ function canMerge(a: Expression) {
 
 export function merge(a: Expression, b: Expression): Expression {
 	let retval;
-	let elements: Expression[] = [];
 	const expressionType = Expression.TYPES.PRD;
 	let aCanMerge = canMerge(a);
 	let bCanMerge = canMerge(b);
@@ -195,7 +254,7 @@ export function merge(a: Expression, b: Expression): Expression {
 				}
 			}
 
-			[retval, elements] = combine(
+			retval = combine(
 				at,
 				multiply(power(bt, minusOne()), a.getMultiplier(true)),
 				a.keyValue(),
@@ -213,16 +272,20 @@ export function merge(a: Expression, b: Expression): Expression {
 				const _b = b.invert();
 				retval = multiply(_a, _b);
 				retval = retval.invert();
-				elements = Object.values(retval.getElements());
+				// multiply returns a complete expression, which need not be a product:
+				// x^-1/(x^-1*y) is y^-1, and rebuilding it as a product would leave it empty.
+				setProperties = false;
 			} else {
-				[retval, elements] = combine(a, b, keyA, keyB);
+				retval = combine(a, b, keyA, keyB);
 			}
 		}
 	}
 	// Case 2: The second has an expression object and the other doesn't. This has to of course be of the
 	// the right type. The first object gets added to the second object's expression container.
 	else if (!aCanMerge && bCanMerge) {
-		const key = a.keyValue();
+		// Products store a GRP under its value, as in Case 1. Its keyValue is the shared base,
+		// e.g. x for 2*x-x^2, which would find the factor x instead.
+		const key = a.type === Expression.TYPES.GRP ? a.value : a.keyValue();
 		retval = b.copy();
 		const subExpressions = retval.getElements();
 
@@ -259,8 +322,6 @@ export function merge(a: Expression, b: Expression): Expression {
 		} else {
 			subExpressions[key] = result;
 		}
-
-		elements = Object.values(subExpressions);
 	}
 	// Case 3: They both have expression objects
 	else {
@@ -283,8 +344,6 @@ export function merge(a: Expression, b: Expression): Expression {
 				retvalElements[x] = e.copy();
 			}
 		}
-
-		elements = Object.values(retvalElements);
 	}
 
 	// Don't set the properties for recursive calls since those have already been set.
@@ -293,7 +352,7 @@ export function merge(a: Expression, b: Expression): Expression {
 		retval.type = expressionType;
 
 		// Update derived aggregate state after the element collection changes.
-		retval.updateValue(elements);
+		retval.updateValue();
 	}
 
 	// Put the multiplier back

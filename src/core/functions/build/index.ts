@@ -14,8 +14,9 @@ import type { ExpressionInput } from '../../types';
  * Compiles an expression into a native JavaScript-number function for repeated evaluation.
  *
  * @remarks
- * Function calls are linked to Nerdamer's numerical implementation registry. Runtime-connected
- * numerical functions are preferred when present. The compiler supports scalar JavaScript-number
+ * Function calls use the JavaScript-number implementations in build/definitions.ts;
+ * runtime-connected numerical functions take precedence. This is separate from
+ * mathFunctionRegistry.decimalFn, which is used only by the Decimal compiler. The compiler supports scalar JavaScript-number
  * semantics rather than Nerdamer's full symbolic or structured object model. Symbolic-only
  * operations such as indexed sums/products, solvers, and matrix operations are rejected if they
  * remain in the expression at compilation time.

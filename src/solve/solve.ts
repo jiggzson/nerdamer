@@ -3,6 +3,7 @@ import Decimal from 'decimal.js';
 import { factorExpressionParts } from '../algebra/factor/factor';
 import { factorCommonPower } from '../algebra/simplify/factorCommon';
 import { toCommonDenominator } from '../algebra/simplify/ratsimp';
+import { normalizeMultiplierDenominators } from '../core/classes/expression/analysis';
 import { Expression } from '../core/classes/expression/Expression';
 import { all, four, half, one, two, zero } from '../core/classes/expression/shortcuts';
 import { requireVariableName } from '../core/classes/expression/utils';
@@ -10,7 +11,8 @@ import { Rational } from '../core/classes/rational/Rational';
 import { Vector } from '../core/classes/vector/Vector';
 import { COS, LOG, SIN } from '../core/constants/functionNames';
 import { PI_NAME } from '../core/constants/symbolNames';
-import { message, NotImplementedError, PolynomialError, UnsupportedOperationError } from '../core/errors';
+import { message, NotImplementedError, PolynomialError, UnexpectedInputError, UnsupportedOperationError } from '../core/errors';
+import { bigintLCM } from '../core/functions/bigint/bigint';
 import { warn } from '../core/warnings';
 import { cos, sin } from '../math/trig';
 
@@ -24,6 +26,40 @@ import type { Equation } from '../core/classes/equation/Equation';
 import type { ExpressionInput } from '../core/types';
 
 /**
+ * The parser supplies an interval as a Vector; direct TypeScript callers can
+ * continue using the existing FunctionSolverOptions object.
+ */
+function numericalOptions(onInterval?: Vector | FunctionSolverOptions): FunctionSolverOptions {
+	if (onInterval === undefined) {return {};}
+	if (!Vector.isVector(onInterval)) {
+		if (typeof onInterval !== 'object' || onInterval === null ||
+			Expression.isExpression(onInterval)) {
+			throw new UnexpectedInputError(message('wrongInput', {
+				expected: 'an interval Vector [lower,upper] or numerical options',
+				received: String(onInterval),
+			}));
+		}
+		return onInterval;
+	}
+
+	const invalidInterval = () => new UnexpectedInputError(message('wrongInput', {
+		expected: 'a two-element interval [lower,upper] with finite real endpoints in ascending order',
+		received: onInterval.toString(),
+	}));
+	if (onInterval.elements.length !== 2) {throw invalidInterval();}
+	const bounds = onInterval.elements.map(value => {
+		if (!Expression.isExpression(value)) {throw invalidInterval();}
+		const evaluated = value.evaluate();
+		if (!evaluated.isNUM()) {throw invalidInterval();}
+		const bound = evaluated.getMultiplier().toDecimal();
+		if (!bound.isFinite()) {throw invalidInterval();}
+		return bound;
+	});
+	if (!bounds[0].lt(bounds[1])) {throw invalidInterval();}
+	return { lowerBound: bounds[0], upperBound: bounds[1] };
+}
+
+/**
  * Accumulates roots from distinct exact polynomial factors.
  *
  * Each factor result has already enforced uniqueness within that factor. Exact univariate
@@ -31,6 +67,13 @@ import type { ExpressionInput } from '../core/types';
  * without repeating general symbolic equality checks across factors.
  */
 class FactorRootAccumulator extends SolutionSet {
+	/** Adds roots already known to be distinct, without symbolic equality checks. */
+	addDistinct(roots: Expression[]): void {
+		for (const root of roots) {
+			this.addKnownUnique(root);
+		}
+	}
+
 	appendFactorSolutions(solutions: SolutionSet): void {
 		for (const solution of solutions.elements) {
 			this.addKnownUnique(solution);
@@ -45,6 +88,130 @@ class FactorRootAccumulator extends SolutionSet {
 			this.solutionsType = 'mixed';
 		}
 	}
+}
+
+/**
+ * Solves an irreducible cubic or quartic with numeric coefficients without factoring or
+ * re-verifying.
+ *
+ * Its numerical roots first rule out a factorization over the rationals. By the rational
+ * root theorem a root p/q has q dividing the leading coefficient, so p/q would appear among
+ * the convergents of the 20-digit value. A quartic can also split into two rational
+ * quadratics, whose root pairs then have a rational sum and product. The closed-form roots
+ * are matched against the numerical ones rather than substituted back, and the numerical
+ * roots are returned if any closed-form root doesn't match. Returns undefined when the
+ * polynomial may factor or the shortcut can't decide, so the caller keeps the general path.
+ */
+function irreducibleRoots(expression: Expression, coeffs: Expression[], variable: string) {
+	let retval: { roots: Expression[]; exact: boolean } | undefined;
+	const degree = coeffs.length - 1;
+	const multipliers = coeffs.map(coefficient => coefficient.getMultiplier());
+	const scale = bigintLCM(multipliers.map(m => m.denominator));
+	const integers = multipliers.map(m => (m.numerator * scale) / m.denominator);
+	const leading = integers[degree] < 0n ? -integers[degree] : integers[degree];
+	// Beyond this, a rational root's convergent may need more than 20 digits to appear.
+	const maxDenominator = 10n ** 9n;
+	const numerical =
+		leading <= maxDenominator
+			? new PolynomialSolver(expression, variable).validatedRoots()
+			: [];
+	const tolerance = new Decimal(10).pow(5 - Decimal.precision);
+
+	// Calls found(h, k) on each convergent h/k of n/d with k <= maxK, stopping at true.
+	const someConvergent = (
+		n: bigint,
+		d: bigint,
+		maxK: bigint,
+		found: (h: bigint, k: bigint) => boolean
+	) => {
+		let retval = false;
+		let [h0, h1, k0, k1] = [0n, 1n, 1n, 0n];
+		while (!retval && d !== 0n) {
+			// Floor division, so negative values expand correctly
+			const a = n / d - (n % d < 0n ? 1n : 0n);
+			[h0, h1] = [h1, a * h1 + h0];
+			[k0, k1] = [k1, a * k1 + k0];
+			if (k1 > maxK) {
+				break;
+			}
+			retval = found(h1, k1);
+			[n, d] = [d, n - a * d];
+		}
+		return retval;
+	};
+	// p(h/k) scaled by k^degree, in exact integers (Horner form)
+	const isRoot = (h: bigint, k: bigint) => {
+		let value = 0n;
+		for (let i = degree; i >= 0; i--) {
+			value = value * h + integers[i] * k ** BigInt(degree - i);
+		}
+		return value === 0n;
+	};
+	const hasRationalRoot = numerical.some(root => {
+		const { numerator, denominator } = root.getMultiplier();
+		return root.isNUM() && someConvergent(numerator, denominator, leading, isRoot);
+	});
+	// A value that a small fraction matches to the working precision. Only used to send a
+	// possibly reducible quartic to the general path, so a false match costs only speed.
+	const looksRational = (value: Decimal) => {
+		const exact = Rational.create(value.toString());
+		const bound = Decimal.max(value.abs(), 1).times(tolerance);
+		const maxK = leading < 10n ** 6n ? leading : 10n ** 6n;
+		return someConvergent(exact.numerator, exact.denominator, maxK, (h, k) =>
+			new Decimal(String(h)).div(String(k)).minus(value).abs().lte(bound)
+		);
+	};
+	const parts = numerical.map(root => [
+		root.realPart().getMultiplier().toDecimal(),
+		root.imagPart().getMultiplier().toDecimal(),
+	]);
+	// For each way to pair the four roots, check the first pair's sum and product.
+	const hasRationalQuadratic =
+		degree === 4 &&
+		numerical.length === 4 &&
+		[
+			[0, 1],
+			[0, 2],
+			[0, 3],
+		].some(([i, j]) => {
+			const [ar, ai] = parts[i];
+			const [br, bi] = parts[j];
+			const sumIm = ai.plus(bi);
+			const productRe = ar.times(br).minus(ai.times(bi));
+			const productIm = ar.times(bi).plus(ai.times(br));
+			const small = (x: Decimal, size: Decimal) =>
+				x.abs().lte(tolerance.times(Decimal.max(size, 1)));
+			return (
+				small(sumIm, ar.abs().plus(br.abs())) &&
+				small(productIm, productRe.abs()) &&
+				looksRational(ar.plus(br)) &&
+				looksRational(productRe)
+			);
+		});
+	if (numerical.length === degree && !hasRationalRoot && !hasRationalQuadratic) {
+		const exact = degree === 3 ? SymbolicSolver.cubic(coeffs) : SymbolicSolver.quartic(coeffs);
+		const unmatched = [...parts];
+		const matches =
+			exact.length === degree &&
+			exact.every(root => {
+				const value = root.evaluate();
+				const re = value.realPart().getMultiplier().toDecimal();
+				const im = value.imagPart().getMultiplier().toDecimal();
+				const index = unmatched.findIndex(([cre, cim]) => {
+					const size = Decimal.max(cre.abs(), cim.abs(), tolerance);
+					return (
+						re.minus(cre).abs().lte(tolerance.times(size)) &&
+						im.minus(cim).abs().lte(tolerance.times(size))
+					);
+				});
+				if (index >= 0) {
+					unmatched.splice(index, 1);
+				}
+				return index >= 0;
+			});
+		retval = { roots: matches ? exact : numerical, exact: matches };
+	}
+	return retval;
 }
 
 /**
@@ -168,7 +335,7 @@ function solveWithInferredBounds(expression: Expression, variable: string) {
 			if (
 				result.converged &&
 				result.root.isFinite() &&
-				solver.evaluate(result.root).abs().lessThan(solver.tolerance)
+				solver.evaluate(result.root).abs().lt(solver.tolerance)
 			) {
 				return [Expression.create(result.root)];
 			}
@@ -196,11 +363,14 @@ function calculateSolutions(
 	factors: Expression[],
 	variable: string,
 	disjointPolynomialFactors = false,
-	recursion?: SolveRecursionContext
+	recursion?: SolveRecursionContext,
+	searchOptions: FunctionSolverOptions = {}
 ) {
 	const solutionSet = disjointPolynomialFactors
 		? new FactorRootAccumulator()
 		: new SolutionSet();
+	// Stays true only if every factor is solved by exact steps in the first pass.
+	let exact = true;
 	// We loop through each element (factor) and try to solve it. If we were successful,
 	// then we return 0. If we fail then we return  the value
 	const firstPass = factors
@@ -223,8 +393,15 @@ function calculateSolutions(
 					solutions = new SymbolicSolver(linearPoly, variable, recursion).solve();
 				}
 
+				exact &&= !solutions.unsolved && solutions.exact;
 				if (!solutions.unsolved) {
-					if (disjointPolynomialFactors) {
+					const accepted = solutionSet.count();
+					if (solutions.exact) {
+						// Exact steps can't add a root that fails fn, so skip substituting back.
+						const exactSolutions = new SolutionSet(solutions.solutions);
+						exactSolutions.solutionsType = 'symbolic';
+						solutionSet.append(exactSolutions);
+					} else if (disjointPolynomialFactors) {
 						// Exact irreducible factors are square-free. Verify each symbolic root
 						// independently to avoid costly equality expansion between distinct radicals.
 						const seen = new Set<string>();
@@ -245,7 +422,13 @@ function calculateSolutions(
 						symbolicSolutions.solutionsType = 'symbolic';
 						solutionSet.addSolutions(symbolicSolutions, fn, variable);
 					}
-					retval = zero();
+					// A closed form can fail verification when it can't be evaluated
+					// accurately enough. Leave a polynomial factor for the numerical pass
+					// rather than dropping its roots.
+					const rejected = solutionSet.count() === accepted;
+					if (solutions.solutions.length === 0 || !rejected || !fn.isPolynomialLike()) {
+						retval = zero();
+					}
 				}
 			}
 
@@ -286,9 +469,11 @@ function calculateSolutions(
 		// Numerical methods are only capable of solving univariate functions so
 		// we need to check as not to waste time.
 		const vars = fn.variables();
-		const options: FunctionSolverOptions = { method: 'Brent' };
+		const options: FunctionSolverOptions = { ...searchOptions, method: 'Brent' };
 		if (vars.length === 1 && vars[0] === variable) {
-			const solutions = solveWithInferredBounds(fn, variable) ??
+			// Caller-supplied bounds take precedence over inferred search enclosures.
+			const hasBounds = options.lowerBound !== undefined || options.upperBound !== undefined;
+			const solutions = (hasBounds ? undefined : solveWithInferredBounds(fn, variable)) ??
 				new FunctionSolver(fn, variable, options).roots();
 			if (solutions.length > 0) {
 				for (const solution of solutions) {
@@ -303,6 +488,7 @@ function calculateSolutions(
 		}
 	}
 
+	solutionSet.exact = exact && secondPass.length === 0;
 	return solutionSet;
 }
 
@@ -313,8 +499,25 @@ function calculateSolutions(
  * the roots API's Vector return type. Numeric constants retain the historical square-root
  * interpretation. Univariate polynomials delegate to PolynomialSolver and therefore return
  * numerical roots.
+ * An optional third argument selects `aberth` (default) or `jenkinstraub`.
  */
-export function roots(input: ExpressionInput, variable?: ExpressionInput): Vector {
+export function roots(
+    input: ExpressionInput,
+    variable?: ExpressionInput,
+    method?: ExpressionInput
+): Vector {
+    let selected: 'aberth' | 'jenkinsTraub' = 'aberth';
+    if (method !== undefined) {
+        const name = requireVariableName(Expression.create(method));
+        if (name === 'jenkinstraub') {
+            selected = 'jenkinsTraub';
+        } else if (name !== 'aberth') {
+            throw new UnexpectedInputError(message('wrongInput', {
+                expected: 'aberth or jenkinstraub',
+                received: name,
+            }));
+        }
+    }
 	const expression = Expression.create(input);
 	const variables = expression.variables();
 
@@ -339,7 +542,7 @@ export function roots(input: ExpressionInput, variable?: ExpressionInput): Vecto
 		return new Vector([expression]);
 	}
 
-	return new Vector(new PolynomialSolver(expression, variableName).validatedRoots());
+	return new Vector(new PolynomialSolver(expression, variableName).validatedRoots(true, selected));
 }
 
 /**
@@ -351,20 +554,22 @@ export function roots(input: ExpressionInput, variable?: ExpressionInput): Vecto
  * factors. Zeros of denominator factors are excluded from the result.
  *
  * @remarks
- * Numerical fallback is heuristic and searches a finite range, so an empty result does
- * not in general prove that no solution exists. A narrow affine-plus-bounded-trig form
+ * Numerical fallback is heuristic and normally scans [-10,10], so an empty result
+ * does not in general prove that no solution exists. A narrow affine-plus-bounded-trig form
  * may supply a certified finite enclosure, but its non-monotone scan remains heuristic.
  * Strategy and input errors are absorbed by this convenience entry point and produce the
  * solutions collected before the failure. Decimal input marks returned solutions for
  * decimal formatting.
  *
- * The `options` parameter is currently reserved and is not forwarded to the
- * numerical strategies.
+ * The optional interval limits only the numerical function scan. Symbolic and
+ * polynomial solutions remain unrestricted. Direct API callers may also use
+ * FunctionSolverOptions; explicit bounds override inferred numerical bounds.
  *
  * @param input - Expression or equation to solve.
  * @param variable - Variable to solve for. When omitted, input preparation
  * infers it where possible.
- * @param _options - Reserved numerical-solver options.
+ * @param onInterval - Optional [lower,upper] Vector for numerical search,
+ * or FunctionSolverOptions when called directly from TypeScript.
  * @returns A {@link SolutionSet}. The special `all` expression represents an
  * identity that is true for every value of the variable.
  *
@@ -376,12 +581,13 @@ export function roots(input: ExpressionInput, variable?: ExpressionInput): Vecto
 export function solve(
 	input: ExpressionInput | Equation,
 	variable?: ExpressionInput,
-	_options?: FunctionSolverOptions,
+	onInterval?: Vector | FunctionSolverOptions,
 	recursion?: SolveRecursionContext
 ) {
 	// The solution set that's being returned
 	const solutions = new SolutionSet();
 	const solveRecursion = recursion ?? { depth: 0 };
+	const searchOptions = numericalOptions(onInterval);
 	let asDecimal = false;
 	let preparedExpression: Expression | undefined;
 
@@ -517,14 +723,26 @@ export function solve(
 					// continue with the existing factorization and numerical strategies below.
 				}
 			}
-			if (directPowerBinomialSolutions) {
+			const earlyRoots =
+				isNumericUnivariatePolynomial &&
+				(directCoeffs.length === 4 || directCoeffs.length === 5)
+					? irreducibleRoots(expression, directCoeffs, x)
+					: undefined;
+			// An irreducible cubic or quartic is solved here, skipping the general path below.
+			if (earlyRoots) {
+				// Each root matched a different numerical root, so they are distinct.
+				const roots = new FactorRootAccumulator();
+				roots.addDistinct(earlyRoots.roots);
+				roots.solutionsType = earlyRoots.exact ? 'symbolic' : 'numeric';
+				solutions.append(roots);
+			} else if (directPowerBinomialSolutions) {
 				const symbolicSolutions = new SolutionSet(directPowerBinomialSolutions);
 				symbolicSolutions.solutionsType = 'symbolic';
 				solutions.addSolutions(symbolicSolutions, expression, x);
 			} else if (commonFactors) {
 				solutions.addSolution(zero(), expression, x);
 				solutions.solutionsType = 'symbolic';
-				const commonSolutions = calculateSolutions(commonFactors, x, false, solveRecursion);
+				const commonSolutions = calculateSolutions(commonFactors, x, false, solveRecursion, searchOptions);
 				if (
 					isNumericUnivariatePolynomial &&
 					commonSolutions.solutionsType === 'numeric'
@@ -542,16 +760,36 @@ export function solve(
 			} else if (rationalNumerator && rationalDenominator) {
 				// A rational expression is zero exactly where its polynomial numerator is zero,
 				// except at denominator singularities. Avoid polynomializing the nested quotient again.
-				const extraneous = calculateSolutions([rationalDenominator], x, false, solveRecursion);
+				const extraneous = calculateSolutions([rationalDenominator], x, false, solveRecursion, searchOptions);
 				solutions.exclude(extraneous);
 				solutions.addSolutions(
-					calculateSolutions([rationalNumerator], x, false, solveRecursion),
+					calculateSolutions([rationalNumerator], x, false, solveRecursion, searchOptions),
 					expression,
 					x
 				);
 			} else {
+				// A sum with one function term, times a number, that occurs nowhere else is
+				// linear in that function with a constant coefficient. As a polynomial in its
+				// functions it can't factor, so skip the costly attempt. Matching by text can
+				// only report false occurrences, which keeps the attempt.
+				const terms =
+					expression.isSum() && expression.getPower().isOne()
+						? expression.elementsArray()
+						: [];
+				const irreducible =
+					terms.every(term => term.getDenominator().isOne()) &&
+					terms.some((term, i) => {
+						const fn = term.toUnitMultiplier().text();
+						return (
+							term.isFunction() &&
+							term.getPower().isOne() &&
+							terms.every((other, j) => j === i || !other.text().includes(fn))
+						);
+					});
 				// Get the factors object
-				const factorObj = factorExpressionParts(expression);
+				const factorObj = irreducible
+					? { numerator: [expression], denominator: [] }
+					: factorExpressionParts(expression);
 				// Exact univariate factorization returns distinct irreducible factors with
 				// repeated factors represented by powers. Their solution sets can therefore
 				// be combined without proving cross-factor equality again.
@@ -561,7 +799,8 @@ export function solve(
 					factorObj.denominator,
 					x,
 					disjointPolynomialFactors,
-					solveRecursion
+					solveRecursion,
+					searchOptions
 				);
 				solutions.exclude(extraneous);
 				// Get the solutions in the numerator
@@ -569,13 +808,35 @@ export function solve(
 					factorObj.numerator,
 					x,
 					disjointPolynomialFactors,
-					solveRecursion
+					solveRecursion,
+					searchOptions
 				);
 				if (
 					isNumericUnivariatePolynomial &&
 					numSolutions.solutionsType === 'numeric'
 				) {
 					solutions.appendValidatedNumerical(numSolutions);
+				} else if (
+					numSolutions.solutionsType === 'numeric' &&
+					factorObj.numerator.length === 1 &&
+					factorObj.numerator[0].eq(expression) &&
+					factorObj.denominator.every(factor => factor.isNUM() && !factor.isZero())
+				) {
+					// The numerical solver has already checked this same, unfactored
+					// expression. Rechecking with an absolute residual would discard
+					// accurately bracketed roots of steep functions.
+					solutions.append(numSolutions);
+				} else if (
+					numSolutions.exact &&
+					factorObj.numerator.length === 1 &&
+					factorObj.denominator.every(factor => factor.isNUM() && !factor.isZero()) &&
+					factorObj.numerator[0].text() ===
+						normalizeMultiplierDenominators(expression).text()
+				) {
+					// Exact steps solved this same expression, at most rescaled to integer
+					// coefficients, so its roots satisfy it. Factoring that cancels a term could
+					// change where the expression is defined, so anything else keeps the check below.
+					solutions.append(numSolutions);
 				} else if (isNumericUnivariatePolynomial) {
 					solutions.append(numSolutions);
 				} else {

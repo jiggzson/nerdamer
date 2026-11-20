@@ -8,11 +8,13 @@ import {
 	message,
 	DivisionByZeroError,
 	UnexpectedInputError,
+	UnsupportedOperationError,
 	ZeroToZeroPowerError,
 } from '../../errors';
 import { convert, simplifyRatio, sign, abs, isEven } from '../../functions/bigint/bigint';
 import { GCD, mod } from '../../functions/bigint/bigint';
 import { scientificToDecimal } from '../../functions/string';
+import { precisionBlock } from '../../Settings';
 import { Expression } from '../expression/Expression';
 
 import type { OptionsObject } from '../parser/types';
@@ -83,6 +85,9 @@ export class Rational {
 	 */
 	private static precision: number = Decimal.precision;
 
+	/** The textual value once built or supplied; see {@link Rational.value}. */
+	private cachedValue?: string;
+
 	/**
 	 * Whether text output should preserve decimal presentation by default.
 	 *
@@ -99,15 +104,6 @@ export class Rational {
 	numerator: bigint;
 
 	/**
-	 * The supplied textual value.
-	 *
-	 * Numeric behavior is defined by {@link Rational.numerator} and
-	 * {@link Rational.denominator}; callers should not treat this field as an independent
-	 * authoritative numeric representation.
-	 */
-	value!: string;
-
-	/**
 	 * Creates a rational from raw numerator and denominator components.
 	 *
 	 * @remarks
@@ -121,7 +117,6 @@ export class Rational {
 	constructor(a: bigint, b: bigint) {
 		this.numerator = a;
 		this.denominator = b;
-		this.value = b === 1n ? String(a) : `${a}/${b}`;
 	}
 
 	/**
@@ -153,6 +148,9 @@ export class Rational {
 	 *
 	 * @throws {@link DivisionByZeroError}
 	 * Thrown when a fraction string has a zero denominator.
+	 * @throws {@link UnexpectedInputError}
+	 * Thrown when the string isn't an integer, an integer fraction such as `-3/4`, or a decimal or
+	 * scientific-notation number. Surrounding whitespace is ignored.
 	 *
 	 * @example
 	 * ```ts
@@ -165,6 +163,20 @@ export class Rational {
 		let a: bigint;
 		let b: bigint;
 		let asDecimal = false;
+		if (typeof value === 'string') {
+			value = value.trim();
+			// Integers, integer fractions, and decimal or scientific numbers. Anything else, such
+			// as '1.5/2' or '1/2/3', would otherwise reach BigInt and fail natively, or lose part
+			// of its value without notice.
+			if (
+				!/^[+-]?\d+(\/[+-]?\d+)?$/.test(value) &&
+				!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(value)
+			) {
+				throw new UnexpectedInputError(
+					message('wrongInput', { expected: 'a numeric string', received: `'${value}'` })
+				);
+			}
+		}
 		if (typeof value === 'bigint') {
 			a = value;
 			b = 1n;
@@ -342,7 +354,7 @@ export class Rational {
 	 */
 	copy() {
 		const copy = new Rational(this.numerator, this.denominator);
-		copy.value = this.value;
+		copy.cachedValue = this.cachedValue;
 		copy.asDecimal = this.asDecimal;
 		return copy;
 	}
@@ -396,6 +408,26 @@ export class Rational {
 			num = Rational.toRational(num);
 			return this.numerator * num.denominator === num.numerator * this.denominator;
 		}
+	}
+
+	/**
+	 * Checks whether this rational equals {@link Rational.E}, Euler's number rounded to the
+	 * working precision. Unlike `Expression.isE()`, this compares a value, not the symbol `e`.
+	 *
+	 * @returns `true` when this rational equals {@link Rational.E}.
+	 */
+	eqE(): boolean {
+		return this.eq(Rational.E);
+	}
+
+	/**
+	 * Checks whether this rational equals {@link Rational.PI}, pi rounded to the working
+	 * precision. Unlike `Expression.isPi()`, this compares a value, not the symbol `pi`.
+	 *
+	 * @returns `true` when this rational equals {@link Rational.PI}.
+	 */
+	eqPi(): boolean {
+		return this.eq(Rational.PI);
 	}
 
 	/**
@@ -677,15 +709,21 @@ export class Rational {
 			// let result: Rational = new Rational('0');
 			// If they have the same denominator then we can add the numerators.
 			if (num.denominator === this.denominator) {
-				numerator = num.numerator + this.numerator;
-				denominator = num.denominator;
+				[numerator, denominator] = simplifyRatio(
+					num.numerator + this.numerator,
+					num.denominator
+				);
 			} else {
-				// Fractional addition and then simplify using their gcd.
-				numerator = this.numerator * num.denominator + num.numerator * this.denominator;
-				denominator = this.denominator * num.denominator;
+				// Henrici's method (Knuth, TAOCP vol. 2, 4.5.1): with reduced operands only the
+				// shared factor g of the denominators can cancel, so the gcds stay small when
+				// one operand is small, unlike one gcd of the whole cross-multiplied fraction.
+				const g = GCD(this.denominator, num.denominator);
+				const t =
+					this.numerator * (num.denominator / g) + num.numerator * (this.denominator / g);
+				const h = GCD(t, g);
+				numerator = t / h;
+				denominator = t === 0n ? 1n : (this.denominator / g) * (num.denominator / h);
 			}
-
-			[numerator, denominator] = simplifyRatio(numerator, denominator);
 
 			retval = new Rational(numerator, denominator);
 
@@ -712,7 +750,10 @@ export class Rational {
 	 * @throws {@link ZeroToZeroPowerError}
 	 * Thrown for the indeterminate form `0^0`.
 	 * @throws {@link DivisionByZeroError}
-	 * Thrown when zero is raised to a negative integer power.
+	 * Thrown when zero is raised to a negative power.
+	 * @throws {@link UnsupportedOperationError}
+	 * Thrown when a negative base is raised to a non-integer power, whose principal value is
+	 * complex. Raise an `Expression` instead, e.g. `(-8)^(1/3)` gives `2*(-1)^(1/3)`.
 	 */
 	pow(num: Expression): Expression;
 	pow(num: Rational | string): Rational;
@@ -737,14 +778,24 @@ export class Rational {
 					baseDenominator = inverted.denominator;
 					exponent = abs(exponent);
 				}
-				const [numerator, denominator] = simplifyRatio(
-					baseNumerator ** exponent,
-					baseDenominator ** exponent
-				);
-				retval = new Rational(numerator, denominator);
+				// Reduce the base, not the power: gcd(a^k, b^k) = 1 whenever gcd(a, b) = 1, and
+				// the GCD of two huge powers is far slower than the powers themselves.
+				const [numerator, denominator] = simplifyRatio(baseNumerator, baseDenominator);
+				retval = new Rational(numerator ** exponent, denominator ** exponent);
 				retval.asDecimal = this.asDecimal;
+			} else if (this.isZero() && num.isNegative()) {
+				throw new DivisionByZeroError(message('divisionByZero'));
+			} else if (this.isNegative()) {
+				// The principal value of a negative base to a non-integer power is complex, which
+				// a Rational can't hold. Expression powers give it, e.g. (-8)^(1/3) = 2*(-1)^(1/3).
+				throw new UnsupportedOperationError(
+					message('wrongInput', {
+						expected: 'a real power',
+						received: `(${this.text()})^(${num.text()})`,
+					})
+				);
 			} else {
-				const s = this.toDecimal().toPower(num.toDecimal()).toString();
+				const s = this.toDecimal().pow(num.toDecimal()).toString();
 				retval = Rational.create(s);
 				retval.asDecimal = this.asDecimal || retval.asDecimal;
 			}
@@ -793,12 +844,7 @@ export class Rational {
 			if (this.isZero()) {
 				scientificValue = '0';
 			} else {
-				const previousPrecision = Decimal.precision;
-				const precision = Math.max(previousPrecision, scientificDigits);
-				try {
-					if (precision !== previousPrecision) {
-						Decimal.set({ precision });
-					}
+				precisionBlock(scientificDigits, () => {
 					const scientific = this.toDecimal().toExponential(scientificDigits - 1);
 					const [coefficient, exponent] = scientific.split('e');
 					const normalizedExponent = BigInt(exponent);
@@ -816,11 +862,7 @@ export class Rational {
 					) {
 						scientificValue = candidate;
 					}
-				} finally {
-					if (Decimal.precision !== previousPrecision) {
-						Decimal.set({ precision: previousPrecision });
-					}
-				}
+				});
 			}
 		}
 
@@ -832,6 +874,8 @@ export class Rational {
 			if (thisIsInteger) {
 				value = `${this.numerator}.0`;
 			} else {
+				// The one exact precision change: output asked for at a given number of digits,
+				// which can be fewer than the current precision, unlike precisionBlock.
 				const previousPrecision = Decimal.precision;
 				const precision = Number(options?.precision) || previousPrecision;
 				if (precision === previousPrecision) {
@@ -880,10 +924,14 @@ export class Rational {
 		} else {
 			num = Rational.toRational(num);
 
-			const [numerator, denominator] = simplifyRatio(
-				this.numerator * num.numerator,
-				this.denominator * num.denominator
-			);
+			// Cancel across the operands first (Knuth, TAOCP vol. 2, 4.5.1). With reduced operands
+			// the product is then reduced, and each gcd involves one factor of each operand, so a
+			// large rational times a small one costs a small gcd rather than a quadratic one.
+			const g = GCD(this.numerator, num.denominator);
+			const h = GCD(num.numerator, this.denominator);
+			const numerator = (this.numerator / g) * (num.numerator / h);
+			const denominator =
+				numerator === 0n ? 1n : (this.denominator / h) * (num.denominator / g);
 			retval = new Rational(numerator, denominator);
 
 			// Ensure that any operation with a decimal results in a decimal
@@ -953,7 +1001,8 @@ export class Rational {
 	}
 
 	/**
-	 * Refreshes {@link Rational.value} from the current numerator and denominator.
+	 * Refreshes {@link Rational.value} from the current numerator and denominator. The text is
+	 * rebuilt on its next read.
 	 *
 	 * @remarks
 	 * This is one of the few mutating methods on `Rational`; it updates this object and returns
@@ -962,11 +1011,32 @@ export class Rational {
 	 * @returns This rational instance.
 	 */
 	updateValue() {
-		this.value =
-			this.denominator === 1n
-				? String(this.numerator)
-				: `${this.numerator}/${this.denominator}`;
+		this.cachedValue = undefined;
 		return this;
+	}
+
+	/**
+	 * The supplied textual value.
+	 *
+	 * Numeric behavior is defined by {@link Rational.numerator} and
+	 * {@link Rational.denominator}; callers should not treat this field as an independent
+	 * authoritative numeric representation.
+	 *
+	 * It is built on first read: converting a huge numerator to decimal text costs far more
+	 * than the arithmetic that produced it, and most intermediate values are never printed.
+	 */
+	get value(): string {
+		if (this.cachedValue === undefined) {
+			this.cachedValue =
+				this.denominator === 1n
+					? String(this.numerator)
+					: `${this.numerator}/${this.denominator}`;
+		}
+		return this.cachedValue;
+	}
+
+	set value(text: string) {
+		this.cachedValue = text;
 	}
 
 	/**

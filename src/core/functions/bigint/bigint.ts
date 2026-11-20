@@ -1,4 +1,4 @@
-import { message } from '../../errors';
+import { message, UnexpectedInputError } from '../../errors';
 import { decimalSplit } from '../string';
 import { arrayUnique } from '../utils';
 
@@ -13,42 +13,76 @@ export function abs(x: bigint) {
 }
 
 /**
- * Returns an array with unique values, sorted, and in reverse order.
+ * Returns the distinct absolute values of an array, sorted in descending order.
  *
  * @param array
  * @returns
  */
 export function uniqueSortedArray(array: bigint[]) {
-	return arrayUnique(
-		[].slice.call(array).map(function (x: bigint) {
-			return abs(x);
-		})
-	).sort();
+	// Compare as numbers: the default sort compares strings, which puts 10 before 9.
+	return arrayUnique(array.map(x => abs(x))).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
 }
 
 /**
- * Calculates the gcd of a set of bigints
+ * Calculates the nonnegative gcd of a set of bigints by Euclid's algorithm, using Lehmer's
+ * algorithm while the values are large. gcd(0, 0) and the gcd of no values are 0.
  *
+ * @see Knuth, The Art of Computer Programming, vol. 2, 4.5.2, Algorithm L.
  * @returns
  */
 export function GCD(...args: bigint[]) {
-	// Get a unique set and convert to absolute values
-	args = uniqueSortedArray(args);
-	// Point to the first element
-	let a = args[0];
-
-	for (let i = 1; i < args.length; i++) {
-		let b = args[i];
-		while (true) {
-			a %= b;
-			if (a === 0n) {
+	let a = 0n;
+	for (const value of args) {
+		let b = value < 0n ? -value : value;
+		if (a < b) {
+			const t = a;
+			a = b;
+			b = t;
+		}
+		// Each Euclid step on bigints costs a pass over both numbers but removes one quotient,
+		// so huge values take quadratic time. Lehmer runs Euclid on the leading 50 bits as
+		// native numbers, then applies the quotients it found to a and b in one step.
+		while (b >= 1n << 64n) {
+			const shift = BigInt(a.toString(16).length * 4 - 50);
+			let x = Number(a >> shift);
+			let y = Number(b >> shift);
+			// a and b become p*a + q*b and r*a + s*b.
+			let p = 1;
+			let q = 0;
+			let r = 0;
+			let s = 1;
+			// Both quotients agree only while the leading bits determine the true one.
+			while (y + r !== 0 && y + s !== 0) {
+				const k = Math.floor((x + p) / (y + r));
+				if (k !== Math.floor((x + q) / (y + s))) {
+					break;
+				}
+				const nr = p - k * r;
+				const ns = q - k * s;
+				const ny = x - k * y;
+				p = r;
+				q = s;
+				x = y;
+				r = nr;
+				s = ns;
+				y = ny;
+			}
+			if (q === 0) {
+				// The leading bits gave no quotient, so take a full Euclid step.
+				const t = a % b;
 				a = b;
-				break;
+				b = t;
+			} else {
+				const t = BigInt(p) * a + BigInt(q) * b;
+				b = BigInt(r) * a + BigInt(s) * b;
+				a = t;
 			}
-			b %= a;
-			if (b === 0n) {
-				break;
-			}
+		}
+		// A plain temporary rather than [a, b] = [b, a % b], which allocates on every step.
+		while (b !== 0n) {
+			const r = a % b;
+			a = b;
+			b = r;
 		}
 	}
 
@@ -56,20 +90,16 @@ export function GCD(...args: bigint[]) {
 }
 
 /**
- * Calculates the LCM of a set of bigints
+ * Calculates the nonnegative LCM of a set of bigints. It is 0 when any value is 0.
  *
  * @param args
  */
 export function LCM(...args: bigint[]) {
-	// Get a unique set and convert to absolute values
-	args = uniqueSortedArray(args);
-
-	let a: bigint = args[0];
-
-	for (let i = 1; i < args.length; i++) {
-		const b = args[i];
-		// Get the LCM of that of the last calculated LCM and the new number
-		a = (a * b) / GCD(a, b);
+	let a = abs(args[0] ?? 0n);
+	for (let i = 1; i < args.length && a !== 0n; i++) {
+		const b = abs(args[i]);
+		// The LCM of the running result and the next value
+		a = b === 0n ? 0n : (a / GCD(a, b)) * b;
 	}
 
 	return a;
@@ -147,6 +177,27 @@ export function integerSquareRoot(value: bigint): bigint {
 	}
 }
 
+/**
+ * Returns the floor of the exact k-th root of a non-negative bigint.
+ */
+export function intRootBig(value: bigint, k: bigint): bigint {
+	let retval = value;
+	if (k === 2n) {
+		retval = integerSquareRoot(value);
+	} else if (value > 1n) {
+		// Newton's method from an overestimate decreases monotonically to the floor.
+		retval = 1n << (BigInt(value.toString(2).length) / k + 1n);
+		while (true) {
+			const next = ((k - 1n) * retval + value / retval ** (k - 1n)) / k;
+			if (next >= retval) {
+				break;
+			}
+			retval = next;
+		}
+	}
+	return retval;
+}
+
 /** Returns the least bigint whose square is at least value. */
 export function ceilIntegerSquareRoot(value: bigint): bigint {
 	const root = integerSquareRoot(value);
@@ -193,7 +244,9 @@ export function fibonacci(n: bigint): bigint {
  */
 export const factorial = (function () {
 	const factorialCache = [1n, 1n];
-	let i = 2;
+	// Only the first values are kept. Storing every intermediate factorial of a large n
+	// takes memory proportional to the square of the result size.
+	const FACTORIAL_CACHE_SIZE = 100;
 	/**
 	 * Leverages JavaScript's native bigInt and the solution provide here:
 	 * https://stackoverflow.com/questions/3959211/what-is-the-fastest-factorial-function-in-javascript
@@ -214,20 +267,28 @@ export const factorial = (function () {
 		if (n < 0) {
 			throw new RangeError(message('factorialNegativeUndefined'));
 		}
+		// A non-integer index would miss the cache and skip the loop, returning the last cached
+		// value, 100!.
+		if (!Number.isInteger(n)) {
+			throw new UnexpectedInputError(
+				message('wrongInput', { expected: 'a nonnegative integer', received: String(n) })
+			);
+		}
 		// If there's a cached version return that instead
 		if (typeof factorialCache[n] != 'undefined') {
 			return factorialCache[n];
 		}
 
-		let result = factorialCache[i - 1];
-
-		for (; i <= n; i++) {
-			factorialCache[i] = result = result * BigInt(i);
+		let result = factorialCache[factorialCache.length - 1];
+		let k = factorialCache.length;
+		for (; k <= Math.min(n, FACTORIAL_CACHE_SIZE); k++) {
+			result *= BigInt(k);
+			factorialCache[k] = result;
 		}
-		return result;
+		return result * productInRange(k, n);
 	}
 
-	bigFactorial(100);
+	bigFactorial(FACTORIAL_CACHE_SIZE);
 
 	return bigFactorial;
 })();
@@ -320,16 +381,24 @@ export function invMod(a: bigint, m: bigint) {
  * Gets the product given a number range start and finish
  *
  * @param start The start of the range
- * @param end The end of the range
+ * @param end The end of the range, included when a step lands on it
  * @param step The increment step
+ * @returns The product of start, start + step, ... up to end, or 1 for an empty range
  */
 export function productInRange(start: number, end: number, step = 1) {
-	let retval = BigInt(start);
-	let n = BigInt(start);
-	const i = BigInt(step);
-	while (n < end) {
-		n += i;
-		retval *= n;
+	let retval = 1n;
+	// Stop before passing end: productInRange(1, 4, 2) is 1*3, not 1*3*5.
+	const count = Math.floor((end - start) / step) + 1;
+	if (count > 16) {
+		// Multiply the halves separately. Multiplying a running product by one term at a time
+		// takes quadratic time, while balanced halves let the engine's fast multiplication of
+		// large numbers do the work.
+		const middle = start + Math.floor(count / 2) * step;
+		retval = productInRange(start, middle - step, step) * productInRange(middle, end, step);
+	} else {
+		for (let n = start; n <= end; n += step) {
+			retval *= BigInt(n);
+		}
 	}
 
 	return retval;
@@ -390,22 +459,11 @@ export function recoverCoeffsZ(num: bigint, primes: { [variable: string]: bigint
 		const prime = primes[v];
 
 		let n = 0;
-		let canDivide = true;
-		// Divide out the max until you hit a remainder
-		do {
-			const q = num / prime;
-			if (q === 0n) {
-				break;
-			}
-			const r = num % q;
-
-			if (r === 0n) {
-				n++;
-				num = q;
-			} else {
-				canDivide = false;
-			}
-		} while (canDivide);
+		// Divide out the prime while it divides evenly. A unit or zero prime would never stop.
+		while (abs(prime) > 1n && num !== 0n && num % prime === 0n) {
+			num /= prime;
+			n++;
+		}
 		// Mark the power of the variable found
 		map[v] = n;
 	}
@@ -453,22 +511,5 @@ export function bigintLCM(values: bigint[]): bigint {
 		return 1n;
 	}
 
-	function gcd(a: bigint, b: bigint): bigint {
-		a = a < 0n ? -a : a;
-		b = b < 0n ? -b : b;
-		while (b !== 0n) {
-			[a, b] = [b, a % b];
-		}
-		return a;
-	}
-
-	function lcm(a: bigint, b: bigint): bigint {
-		return (a / gcd(a, b)) * b;
-	}
-
-	let result = values[0];
-	for (let i = 1; i < values.length; i++) {
-		result = lcm(result, values[i]);
-	}
-	return result;
+	return LCM(...values);
 }

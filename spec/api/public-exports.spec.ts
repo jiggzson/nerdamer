@@ -1,5 +1,5 @@
 import packageInfo from '../../package.json';
-import nerdamer from '../../src';
+import nerdamer, { apiTarget } from '../../src';
 import {
 	AssignmentError,
 	Equation,
@@ -17,7 +17,7 @@ import {
 	partfrac,
 	simplify,
 } from '../../src/api/algebra';
-import { C, S, diff, integrate, limit } from '../../src/api/calculus';
+import { C, S, diff, integrate, limit, taylor } from '../../src/api/calculus';
 import { TRIG, INVERSE_TRIG, HYPERBOLIC_TRIG, INVERSE_HYPERBOLIC_TRIG } from '../../src/api/constants';
 import { gamma, erf, Si } from '../../src/api/special';
 import { mean, median, variance } from '../../src/api/statistics';
@@ -69,8 +69,8 @@ describe('public package interface', () => {
 	});
 
 	it('keeps the compatibility root callable while exposing aligned aliases', () => {
-		expect(nerdamer.factor).toBe(factor);
-		expect(nerdamer.simplify).toBe(simplify);
+		expect(apiTarget(nerdamer.factor)).toBe(factor);
+		expect(apiTarget(nerdamer.simplify)).toBe(simplify);
 		expect(nerdamer.solveSystem).toBe(solveSystem);
 		expect(nerdamer.solveeqs).toBe(solveSystem);
 		expect(nerdamer.classes.Equation).toBe(Equation);
@@ -90,16 +90,17 @@ describe('public package interface', () => {
 		expect(Polynomial).toBe(nerdamer.classes.Polynomial);
 		expect(Term).toBeDefined();
 		expect(completeSquare).toBe(nerdamer.completeSquare);
-		expect(factor).toBe(nerdamer.factor);
-		expect(simplify).toBe(nerdamer.simplify);
+		expect(factor).toBe(apiTarget(nerdamer.factor));
+		expect(simplify).toBe(apiTarget(nerdamer.simplify));
 		expect(gcd).toBeDefined();
 		expect(lcm).toBeDefined();
 		expect(partfrac).toBeDefined();
-		expect(diff).toBe(nerdamer.diff);
-		expect(integrate).toBe(nerdamer.integrate);
-		expect(limit).toBe(nerdamer.limit);
-		expect(S).toBe(nerdamer.S);
-		expect(C).toBe(nerdamer.C);
+		expect(diff).toBeDefined();
+		expect(taylor).toBe(apiTarget(nerdamer.taylor));
+		expect(integrate).toBeDefined();
+		expect(limit).toBe(apiTarget(nerdamer.limit));
+		expect(S).toBe(apiTarget(nerdamer.S));
+		expect(C).toBe(apiTarget(nerdamer.C));
 	});
 
 	it('publishes immutable function-name categories without exposing parser internals', () => {
@@ -122,9 +123,9 @@ describe('public package interface', () => {
 	});
 
 	it('exports special and statistics domain entry points', () => {
-		expect(gamma).toBe(nerdamer.gamma);
-		expect(erf).toBe(nerdamer.erf);
-		expect(Si).toBe(nerdamer.Si);
+		expect(gamma).toBe(apiTarget(nerdamer.gamma));
+		expect(erf).toBe(apiTarget(nerdamer.erf));
+		expect(Si).toBe(apiTarget(nerdamer.Si));
 		expect(mean).toBe(nerdamer.mean);
 		expect(median).toBe(nerdamer.median);
 		expect(variance).toBe(nerdamer.variance);

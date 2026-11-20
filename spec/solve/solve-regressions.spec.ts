@@ -4,6 +4,7 @@ import { solve } from '../../src/solve/solve';
 import nerdamer from '../../src/index';
 import { Expression } from '../../src/core/classes/expression/Expression';
 import { SolutionSet } from '../../src/solve/classes/SolutionSet';
+import { Vector } from '../../src/core/classes/vector/Vector';
 import { SymbolicSolver } from '../../src/solve/classes/SymbolicSolver';
 import { ZeroToZeroPowerError } from '../../src/core/errors';
 import { toCommonDenominator } from '../../src/algebra/simplify/ratsimp';
@@ -310,8 +311,8 @@ describe('Equation-solving regressions', () => {
 		const result = solver.NewtonRaphson(initialGuess);
 
 		expect(result.converged).toBe(false);
-		expect(result.error.greaterThan(solver.tolerance)).toBe(true);
-		expect(solver.evaluate(result.root).abs().greaterThan(new Decimal('1e-12'))).toBe(true);
+		expect(result.error.gt(solver.tolerance)).toBe(true);
+		expect(solver.evaluate(result.root).abs().gt(new Decimal('1e-12'))).toBe(true);
 	});
 
 	// Regression: https://github.com/together-science/nerdamer-prime/issues/129
@@ -338,7 +339,9 @@ describe('Equation-solving regressions', () => {
 	it('keeps numerical roots when the terminal scan endpoint is outside the real domain', () => {
 		const solutions = nerdamer.solve(
 			'0=((2*0.87*x-2*sqrt(x^2(0.87^2-1)+4*4^2))/2)^2+((2*0.86*x-2*sqrt(x^2(0.86^2-1)+4*5^2))/2)^2-0.87*((2*0.87*x-2*sqrt(x^2(0.87^2-1)+4*4^2))/2)*((2*0.86*x-2*sqrt(x^2(0.86^2-1)+4*5^2))/2)-6^2',
-			'x'
+			'x',
+			// The real domain is about |x| <= 16.2, so [-20,20] keeps the scan endpoints outside it.
+			Vector.create([-20, 20])
 		);
 		const roots = solutions.elements
 			.map(solution => Number(solution.evaluate().text({ decimal: true })))
@@ -352,6 +355,9 @@ describe('Equation-solving regressions', () => {
 	// Regression: https://github.com/jiggzson/nerdamer/issues/588
 	it('normalizes nested rational denominators before solving', () => {
 		const derivative = nerdamer.diff('10-110/(20-100/(10+x))-x', 'x');
+		if (!Expression.isExpression(derivative)) {
+			throw new Error('Expected an Expression');
+		}
 		const normalized = toCommonDenominator(derivative);
 		const numerator = normalized.getNumerator().expand();
 		const denominator = normalized.getDenominator().expand();

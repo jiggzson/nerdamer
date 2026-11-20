@@ -1,6 +1,6 @@
 {
 	"name": "nerdamer",
-	"version": "2.0.1",
+	"version": "2.1.0",
 	"publishConfig": {
 		"tag": "latest"
 	},
@@ -16,7 +16,8 @@
 		"docs-data",
 		"index.d.ts",
 		"README.md",
-		"BREAKING_CHANGES.md"
+		"BREAKING_CHANGES.md",
+		"RELEASE_NOTES.md"
 	],
 	"scripts": {
 		"lint": "eslint ./src/**/*.ts",
@@ -36,7 +37,7 @@
 		"docs:update": "node tools/update-docs.mjs",
 		"docs:check": "node tools/check-public-export-docs.mjs",
 		"validate:package": "ts-node tools/validate-package.ts",
-		"prepublishOnly": "npm run test && npm run typecheck && npm run test:coverage && npm run build && npm run validate:package",
+		"prepublishOnly": "npm run test && npm run typecheck && npm run test:coverage && npm run build && npm run docs:update && npm run validate:package",
 		"clean:modules": "node -e \"require('node:fs').rmSync('output', { recursive: true, force: true })\"",
 		"clean:dist": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
 		"dev": "nodemon ./tools/dev.ts"

@@ -11,6 +11,7 @@ import {
 } from '../../../errors';
 import { setFunction } from '../../../functions/setFunction';
 import { Settings } from '../../../Settings';
+import { warn } from '../../../warnings';
 import {
 	assertEQ,
 	assertGT,
@@ -20,10 +21,13 @@ import {
 } from '../../assumption/assertiveFunctions';
 import { Collection } from '../../collection/Collection';
 import { Equation } from '../../equation/Equation';
+import { collectVariablesSet } from '../../expression/collect';
 import { Expression } from '../../expression/Expression';
 import { requireVariableName } from '../../expression/utils';
 import { Matrix } from '../../matrix/Matrix';
+import { ValuesSet } from '../../valuesSet/ValuesSet';
 import { Vector } from '../../vector/Vector';
+import { Parser } from '../Parser';
 import { parserReturnBoundary } from '../scripting/controlFlow';
 import { wrappedFunction } from '../scripting/functions';
 import { assign } from '../scripting/scope';
@@ -42,6 +46,7 @@ import type {
 	PreFixFunction,
 	PostFixFunction,
 	EquationConstructorCall,
+	DeferredArgumentOptions,
 	DeferredFunctionArgument,
 	DeferredOperation,
 } from '../types';
@@ -78,10 +83,19 @@ export function callFunction(
 	}
 
 	// The details regarding the function
-	const attributes = mathFunctionRegistry[functionName];
+	let attributes = mathFunctionRegistry[functionName];
 
 	if (attributes === undefined) {
 		throw new ParserError(message('unsupportedFunction', { function: functionName }));
+	}
+
+	// An alias is a call to the function it stands for, under that function's name.
+	if (attributes.aliasOf) {
+		if (attributes.deprecated) {
+			warn('api.deprecatedFunction', message('deprecatedFunctionWarning', { function: functionName, replacement: attributes.aliasOf }));
+		}
+		functionName = attributes.aliasOf;
+		attributes = mathFunctionRegistry[functionName];
 	}
 
 	const {
@@ -92,6 +106,7 @@ export function callFunction(
 		equationArgs,
 		distElWise,
 		deferArguments,
+		bound,
 		returnBoundary,
 	} = attributes;
 
@@ -117,8 +132,87 @@ export function callFunction(
 		);
 	}
 
+	// A bound variable, such as the index of sum, belongs to the call. A value for its name, whether
+	// passed with the call or stored with setVar, applies outside the call but not in the arguments
+	// it is bound in. Those are resolved here, so the call takes the ordinary path below, including
+	// element-wise distribution, whose recursive calls pass the resolved arguments back in.
+	if (bound && args.some(arg => typeof arg === 'function')) {
+		const resolve = (i: number, options?: DeferredArgumentOptions) => {
+			const arg = args[i];
+			return typeof arg === 'function' ? arg(options) : arg;
+		};
+		const variable = resolve(bound.variable, { inheritValues: false, substitute: false });
+		const name =
+			Expression.isExpression(variable) && variable.isPlainVariable()
+				? variable.text()
+				: undefined;
+		const resolved: ParserEntity[] = [];
+		const scoped: number[] = [];
+		for (let i = 0; i < args.length; i++) {
+			if (name !== undefined && i === bound.variable) {
+				resolved[i] = variable;
+			} else if (name !== undefined && bound.scope.includes(i)) {
+				scoped.push(i);
+			} else {
+				resolved[i] = resolve(i);
+			}
+		}
+		if (name !== undefined && scoped.length > 0) {
+			// Hide a stored value for the name for the rest of the call, as LET does: functions such
+			// as solve parse text while they run, which would substitute it again. The call is
+			// made with the resolved arguments while it is hidden.
+			const stored = Object.prototype.hasOwnProperty.call(Parser.KNOWN_VALUES, name)
+				? Parser.KNOWN_VALUES[name]
+				: undefined;
+			delete Parser.KNOWN_VALUES[name];
+			try {
+				for (const i of scoped) {
+					resolved[i] = resolve(i, { excludeValues: [name] });
+				}
+				return callFunction(functionName, resolved);
+			} finally {
+				if (stored !== undefined) {
+					Parser.KNOWN_VALUES[name] = stored;
+				}
+			}
+		}
+		args = resolved;
+	}
+
+	// A bound function called without its variable uses the input's only one, counted after
+	// substitution across the whole input: both sides of an equation and every element of a
+	// vector or matrix, before element-wise distribution splits them up. Choosing among several
+	// would be a guess that depends on input order, so that is an error. With none, the function
+	// decides, as diff(5) is 0.
+	if (bound && args.length <= bound.variable) {
+		const expressions = (
+			arg: ParserEntity | DeferredFunctionArgument | undefined
+		): Expression[] => {
+			let retval: Expression[] = [];
+			if (Expression.isExpression(arg)) {
+				retval = [arg];
+			} else if (Equation.isEquation(arg)) {
+				retval = [arg.LHS, arg.RHS];
+			} else if (Vector.isVector(arg)) {
+				retval = arg.elements.flatMap(element => expressions(element));
+			} else if (Matrix.isMatrix(arg)) {
+				retval = arg.elements.flat();
+			}
+			return retval;
+		};
+		const names = collectVariablesSet(bound.scope.flatMap(i => expressions(args[i])));
+		if (names.length > 1) {
+			const input = bound.scope.map(i => String(args[i])).join(', ');
+			throw new UnexpectedInputError(message('ambiguousVariable', { expression: input }));
+		}
+		if (names.length === 1) {
+			args = [...args];
+			args[bound.variable] = Expression.Variable(names[0]);
+		}
+	}
+
 	let result: ParserEntity;
-	if (deferArguments) {
+	if (deferArguments && !bound) {
 		// Deferred functions own the timing and frequency of argument evaluation.
 		const invoke = () => invokeMathFunction(fn, args);
 		result = returnBoundary ? parserReturnBoundary(invoke) : invoke();
@@ -146,6 +240,8 @@ export function callFunction(
 				(arg): arg is Vector | Matrix => Vector.isVector(arg) || Matrix.isMatrix(arg)
 			)
 			: [];
+
+		const setArgs = distElWise ? entityArgs.filter(arg => ValuesSet.isValuesSet(arg)) : [];
 
 		if (elementWiseArgs.length > 0) {
 			const structure = elementWiseArgs[0];
@@ -179,6 +275,14 @@ export function callFunction(
 					return callFunction(functionName, scalarArgs);
 				},
 				structure
+			);
+		}
+		// A set argument, as the result of solve, gets the function applied to each member on
+		// a copy, so the set keeps its type and solver details and equal results merge.
+		else if (distElWise && setArgs.length === 1) {
+			const set = setArgs[0];
+			result = set.copy().each(member =>
+				callFunction(functionName, entityArgs.map(arg => (arg === set ? member : arg)))
 			);
 		}
 		// Call and return

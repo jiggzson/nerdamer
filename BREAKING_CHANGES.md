@@ -1,244 +1,350 @@
-# Breaking changes in Nerdamer 2.0
+---
+title: Migrating from Nerdamer 1.x
+description: What changed between Nerdamer 1.x and 2, and how to update an app that uses 1.x.
+route: /docs/migration/
+---
+# Migrating from Nerdamer 1.x
 
-Nerdamer 2.0 is a TypeScript rewrite of Nerdamer. Normal expression-oriented usage remains intentionally familiar, but 2.0 is not a drop-in replacement for code that depends on Nerdamer 1.x internals, stored-expression state, add-on loading, or legacy JavaScript result shapes.
+Nerdamer 2 is a rewrite in TypeScript. Everyday code that parses expressions and reads `.text()` mostly works as before, but loading, return types, stored state, solving results, scripting and the low-level extension hooks changed. Plan for more than a version bump.
 
-This document lists the compatibility changes that application authors should review when moving from Nerdamer 1.x to 2.0.
+This guide compares Nerdamer 1.1.13 with Nerdamer 2. If you can't migrate yet, [Nerdamer-Prime](https://github.com/together-science/nerdamer-prime), a fork of 1.x, is still maintained.
 
-## Runtime and package layout
+Version 2 aims to keep everything 1.x could do. Because it is a rewrite, some rarely used features, aliases or edge cases may be missing. If you find one, please [open an issue](https://github.com/jiggzson/nerdamer/issues) with a small example of the 1.x behavior.
 
-- Node.js 18 or newer is required.
-- TypeScript declarations ship with the package.
-- The old side-effect add-on loading model (`Algebra`, `Calculus`, `Solve`, and `Extra`) is not used in 2.0.
-- The normal `nerdamer` entry point assembles the complete CAS.
-- Supported direct package entry points include `nerdamer/core`, `nerdamer/algebra`, `nerdamer/calculus`, `nerdamer/solve`, `nerdamer/structures`, `nerdamer/assumptions`, `nerdamer/parser`, `nerdamer/advanced`, and `nerdamer/debug`.
-- Browser builds are split into the complete `dist/bundle.js` target and the smaller `dist/parser.js` target.
+## In short
 
-The parser entry point is intentionally not the complete CAS. It registers the parser/core, scripting, assumptions, structures, polynomial, complex, and general math domains without importing the higher-level algebra, calculus, and solver domains.
+If your app mostly calls `nerdamer('...')`, reads `.text()` or `.toTeX()`, and uses the common algebra and calculus functions, the move is small. Look more closely if you use:
 
-## The main `nerdamer(...)` call
+- the `Algebra`, `Calculus`, `Solve` or `Extra` add-ons;
+- the third or fourth argument of `nerdamer(...)`;
+- the stored expression history (`expressions()`, `clear()` and the rest);
+- the shape of solver results;
+- `getCore()`, `register()` or other low-level hooks.
 
-Nerdamer 1.x accepted additional arguments for post-parse behavior and stored-expression history:
+## What stays the same
+
+```js
+const nerdamer = require('nerdamer');
+
+nerdamer('x+x').text();               // '2*x'
+nerdamer('x^2+y', { x: 3 }).text();   // '9+y'
+```
+
+The common expression methods are still there: `text()`, `toString()`, `toTeX()`, `evaluate()`, `buildFunction()`, `variables()`, `sub()`, `solveFor()`, `each()`, `numerator()`, `denominator()`, `hasFunction()`, `isNumber()`, `isImaginary()`, `toDecimal()`, the comparisons, and the arithmetic methods, including the short names `plus()`, `minus()`, `times()`, `div()` and `subst()`.
+
+## Requirements
+
+- Node.js 18 or newer.
+- An environment with `BigInt`: Nerdamer 2 uses it for large integers, so some older browsers and runtimes can't run it.
+- TypeScript types ship with the package.
+
+## Loading Nerdamer
+
+Nerdamer 1.x was a core plus add-ons:
+
+```js
+var nerdamer = require('nerdamer');
+require('nerdamer/Algebra');
+require('nerdamer/Calculus');
+require('nerdamer/Solve');
+require('nerdamer/Extra');
+```
+
+or one `all.min.js`. In Nerdamer 2, one import gives you everything:
+
+```js
+const nerdamer = require('nerdamer');
+
+nerdamer.factor('x^2-1').text();
+nerdamer.diff('x^3', 'x').text();
+nerdamer.solve('x^2-4', 'x').text();
+```
+
+Don't recreate the 1.x loading order, and don't import `nerdamer/all.min`: it isn't a Nerdamer 2 path.
+
+### Importing parts of Nerdamer
+
+You can also import functions, classes and types from these paths:
+
+| Path | Contents |
+| --- | --- |
+| `nerdamer/core` | Expressions, equations, numbers, conversion, errors |
+| `nerdamer/algebra` | Polynomials, factoring, simplification, partial fractions |
+| `nerdamer/calculus` | Derivatives, integrals, limits, sums, products, Laplace transforms |
+| `nerdamer/solve` | Solving equations and systems |
+| `nerdamer/structures` | Matrices, vectors, sets, collections, dictionaries |
+| `nerdamer/assumptions` | Assumptions about variables |
+| `nerdamer/statistics` | Mean, median, mode, variance, standard deviation, z-scores |
+| `nerdamer/special` | Gamma, error and integral functions, and other special functions |
+| `nerdamer/constants` | Named groups of functions, such as `TRIG` |
+| `nerdamer/parser` | The smaller parser-only package (below) |
+| `nerdamer/advanced` | Complex values, Gröbner bases and other advanced tools |
+| `nerdamer/debug` | Debugging aids |
+
+```ts
+import nerdamer from 'nerdamer';
+import { Expression, Rational } from 'nerdamer/core';
+import { Polynomial, gcd, lcm, partfrac } from 'nerdamer/algebra';
+import { diff, integrate, limit } from 'nerdamer/calculus';
+import { solve, PolynomialSolver } from 'nerdamer/solve';
+import { Matrix, Vector, ValuesSet } from 'nerdamer/structures';
+import { Parser } from 'nerdamer/parser';
+import { mean, variance } from 'nerdamer/statistics';
+```
+
+These imports are optional; `nerdamer('...')` works as before.
+
+### The smaller parser package
+
+`nerdamer/parser` has Notation and Scripting, assumptions, vectors, matrices and sets, polynomial and complex operations, and the general math functions, but not the algebra, calculus and solving functions.
+
+```ts
+import { Parser } from 'nerdamer/parser';
+
+const value = Parser.parse('sqrt(x^2+1)');
+console.log(value.text());
+```
+
+The browser builds follow the same split: `dist/bundle.js` is the complete package, and `dist/parser.js` the parser package, which defines `nerdamerParser` instead of `nerdamer`.
+
+## The main call has two arguments
+
+Nerdamer 1.x accepted up to four:
 
 ```ts
 nerdamer(expression, substitutions?, option?, location?)
 ```
 
-Nerdamer 2.0 uses:
+The third argument requested behavior such as `numer` or `expand`; the fourth was a position in the stored expression list. Nerdamer 2 takes two:
 
 ```ts
 nerdamer(input, values?)
 ```
 
-Use methods on the returned entity instead of the old third argument:
+Call a method on the result instead of passing the third argument:
 
-```javascript
+```js
 // 1.x
+nerdamer('cos(x)', { x: 6 }, 'numer');
 nerdamer('(x+1)^3', undefined, 'expand');
 
-// 2.0
+// 2
+nerdamer('cos(x)').evaluate({ x: 6 });
 nerdamer('(x+1)^3').expand();
 ```
 
-The old location argument is gone because 2.0 does not maintain the 1.x global expression history.
+## The expression history is gone
 
-## Stored expression history was removed
+Nerdamer 1.x kept every parsed expression in a global list. Nerdamer 2 doesn't, so these are gone: `expressions()`, `getExpression()`, `getEquation()`, `clear()`, `flush()`, `numExpressions()` and `numEquations()`. Keep results in your own variables instead.
 
-The following history-oriented 1.x APIs are not part of 2.0:
+## Results keep their type
 
-- `expressions()`
-- `getExpression()`
-- `getEquation()`
-- `clear()`
-- `flush()`
-- `numExpressions()`
-- `numEquations()`
+Nerdamer 1.x wrapped almost every result in its `Expression` object. Nerdamer 2 returns the type of the input:
 
-Store parsed entities in normal JavaScript variables instead.
+| Input | Result |
+| --- | --- |
+| `x^2+1` | `Expression` |
+| `x^2=4` | `Equation` |
+| `[x,y,z]` | `Vector` |
+| `matrix(...)` | `Matrix` |
+| `{a,b}` | `ValuesSet` (a set) |
+| `{a=>1}` | `Dictionary` |
 
-## Parser return types
+In TypeScript the return type of `nerdamer(...)` is `ParserEntity`, the union of these. For ordinary expressions nothing changes. If your code can receive an equation, vector or other type, check the type before calling a method that only some types have, such as `buildFunction()`.
 
-Nerdamer 2.0 returns the Nerdamer entity represented by the input rather than wrapping every parser result as an `Expression`.
+## Variables, constants, settings and your own functions
 
-Scalar symbolic input normally returns `Expression`. Structured input can return `Equation`, `Vector`, `Matrix`, `Collection`, `ValuesSet`, or `Dictionary`. The TypeScript return type of the callable API is therefore `ParserEntity`.
+These work as before:
 
-Code that assumes every call returns an `Expression` must narrow the result when it accepts structured notation.
+```js
+nerdamer.setVar('a', 5);
+nerdamer.getVars();
+nerdamer.clearVars();
 
-## Root API is explicit
+nerdamer.setConstant('g', 9.81);
+nerdamer.getConstant('g');
+nerdamer.setConstant('g', 'delete');
 
-Nerdamer 1.x exposed many registered parser/add-on functions automatically on the root `nerdamer` object. Nerdamer 2.0 has an explicit, tested root API instead.
-
-Many compatibility names have been deliberately restored, including:
-
-- algebra/calculus names such as `expand`, `factor`, `simplify`, `gcd`, `lcm`, `partfrac`, `diff`, `integrate`, `limit`, `laplace`, and `ilt`;
-- trigonometric aliases such as `arccos`, `arcsin`, and `arctan`;
-- `factorial`, `dfactorial`, `atan2`, `nthroot`, `min`, `max`, and `sinc`;
-- `radians`, `degrees`, `log10`, `step`, `rect`, `tri`, `continued_fraction`, `gamma_incomplete`, and `gamma_incomplete_lower`;
-- `scientific`, `pfactor`, `pfactord`, `parens`, `invert`, `roots`, `coeffs`, and `line`;
-- `sqcomp`, `polyFactors`, `uSub`, `uUnSub`, `conjugate`, `csgn`, `isPrime`, and `nullspace`;
-- `isReserved(name)` for the supported live reserved-name check.
-
-Compatibility names are backed by the 2.0 implementations; they are not copies of the 1.x internals.
-
-The statistics functions from the old `Extra` add-on have been restored as supported Nerdamer 2.0 functions:
-
-- `mean`
-- `median`
-- `mode`
-- `smpvar`
-- `variance`
-- `smpstdev`
-- `stdev`
-- `zscore`
-
-## Lower-level extension and inspection APIs
-
-The following 1.x internal/extension hooks are not restored as public 2.0 APIs:
-
-- `getCore()`
-- `register()`
-- `replaceFunction()`
-- `tree()`
-- `htmlTree()`
-- `addPeeker()`
-- `removePeeker()`
-- `rpn()`
-
-Use the supported package entry points and exported TypeScript classes for direct access to the 2.0 implementation. `setFunction()` remains available for user-defined symbolic functions.
-
-`updateAPI()` still exists, but its role is narrower than in 1.x. The complete package uses it to connect a selected set of higher-level operations to parsed entities; it does not expose every registered parser function as a root method.
-
-## Parser access changed
-
-The old root helpers `parse()`, `reserved()`, `supported()`, `validateName()`, and `validVarName()` are not exposed in the same form.
-
-`nerdamer.isReserved(name)` is supported, and parser APIs are available from `nerdamer/parser` instead of through the old `getCore().PARSER` object.
-
-## Solver results
-
-Single-variable solving returns a `SolutionSet`.
-
-System solving returns a `Vector` containing a `Dictionary` for each solution rather than the nested JavaScript arrays used by older code.
-
-The legacy `solveEquations` name was replaced by the parser-style `solveeqs`; the direct JavaScript and TypeScript API is `solveSystem()`.
-
-Code that consumes solver results by indexing native arrays must be updated for the Nerdamer structures.
-
-## Prime factorization return types
-
-`pfactor(n)` returns a `Vector` containing repeated prime factors in ascending order.
-
-For example:
-
-```text
-pfactor(100) -> [2,2,5,5]
+nerdamer.setFunction('f', ['x'], 'x^2+1');
 ```
 
-`pfactord(n)` returns a `Dictionary` mapping each prime to its multiplicity:
+So do `set()` and `get()`. A value passed to `nerdamer(...)` takes priority over an assigned variable. The single-value `getVar()` is gone; use `getVars()`.
 
-```text
-pfactord(100) -> {2=>2,5=>2}
+## Functions on `nerdamer`
+
+Nerdamer 1.x copied every function it knew onto the `nerdamer` object. Nerdamer 2 lists them explicitly, so nothing internal appears by accident and TypeScript knows exactly what's there. Familiar 1.x names were kept wherever version 2 has the same operation. They use the version 2 code; they aren't copies of 1.x.
+
+| Area | Names on `nerdamer` |
+| --- | --- |
+| Algebra | `expand`, `factor`, `simplify`, `gcd`, `lcm`, `divide`, `div`, `partfrac`, `deg`, `completeSquare` (Notation: `sqcomp`), `polyFactors`, `uSub`, `uUnSub`, `pfactor`, `pfactord`, `roots`, `coeffs`, `line` |
+| Calculus | `diff`, `integrate`, `sum`, `product`, `defint`, `limit`, `laplace`, `ilaplace` and its 1.x name `ilt` (in Notation too), the Fresnel integrals `S` and `C` |
+| Trigonometry | `arccos`, `arcsin`, `arctan` (the same as `acos`, `asin`, `atan`), `atan2`. Every inverse trigonometric and hyperbolic function also has its `arc` name, such as `arcsec` and `arcsinh`, in Notation too. These are permanent and don't warn. |
+| Other functions | `factorial` and `dfactorial` (also `fact`, `dfact`), `nthroot`, `min`, `max`, `sinc`, `radians`, `degrees`, `log10`, `step`, `rect`, `tri`, `continued_fraction`, `gamma_incomplete`, `gamma_incomplete_lower`, `scientific`, `parens`, `subst` |
+| Complex numbers | `conjugate`, `csgn` |
+| Number theory | `isPrime` |
+| Matrices | `invert`, `nullspace` |
+| Sets | `union`, `intersection`, `difference`, `intersects`, `issubset` (`is_subset` also works, but is deprecated and records a warning) |
+| Statistics (the 1.x Extra add-on) | `mean`, `median`, `mode`, `variance`, `smpvar`, `stdev`, `smpstdev`, `zscore` |
+| Names | `isReserved(name)` |
+
+Notes on some of these:
+
+- **`pfactor` and `pfactord`.** `pfactor(100)` gives `[2, 2, 5, 5]`, the repeated prime factors. `pfactord(100)` gives `{2 => 2, 5 => 2}`, each prime with its count. Choose the form you need.
+- **`roots`.** It returns a vector, as in 1.x. For a number it returns its two square roots. For new code, `solve` returns a solution set and handles more than polynomials.
+- **`scientific(value[, digits])`.** It sets how a number is displayed, with 1 to 1e9 significant digits and trailing zeros kept, without changing its value.
+- **`gamma_incomplete`** is the upper incomplete gamma function and **`gamma_incomplete_lower`** the lower one. For a positive integer first argument they are written out exactly.
+- **Statistics.** Population variance divides by `n` and sample variance (`smpvar`) by `n-1`, as in 1.x; the standard deviations are their square roots.
+- **`vector(...)` and `Set(...)`** are not back. Write `[...]` for a vector and `{...}` for a set.
+
+### Deprecated 1.x names
+
+Some 1.x names were replaced in version 2. They still work, and give exactly what the new name gives, but each call records an `api.deprecatedFunction` [warning](https://nerdamer.com/docs/guides/warnings/) that names the replacement. They will be removed in a later major version.
+
+| 1.x name | Use instead |
+| --- | --- |
+| `IF(condition, a, b)` | `if(condition, a, b)` |
+| `is_in(values, x)` | `contains(values, x)` |
+| `is_subset(A, B)` | `issubset(A, B)` |
+| `solveEquations` (Notation and `nerdamer.solveEquations`) | `solveeqs` |
+
+`is_in` takes a vector or a set, as `contains` does; unlike 1.x, it doesn't search a matrix. `solveEquations` returns what `solveeqs` returns: a vector of dictionaries, such as `[{x => 2, y => 1}]`, not the 1.x array of pairs.
+
+## Solving returns Nerdamer results
+
+Solving one equation returns a `SolutionSet`:
+
+```js
+nerdamer.solve('x^2-4', 'x').text();   // {2, -2}
 ```
 
-Code expecting the older prime-factor representation should choose the form it actually needs.
+Solving a system uses `solveSystem()` and returns a vector with one dictionary per solution, instead of nested JavaScript arrays:
 
-## Expression and chaining behavior
-
-The complete package adds selected operations to parser entities without making the core classes import the higher-level CAS modules. Chainable operations include differentiation, expansion, factorization, integration, numeric evaluation, simplification, and substitution where appropriate.
-
-Operations on structured entities are applied according to the entity's supported semantics; scalar-only operations such as `buildFunction()` reject structured results.
-
-Several familiar `Expression` conveniences are retained, including `latex()`, `isInfinity()`, `isFraction()`, `hasIntegral()`, `equals()`, and `solveFor()`.
-
-`equals()` and `eq()` are not synonyms in 2.0: `equals()` constructs an `Equation`; `eq()` tests equality.
-
-The following older methods were not restored automatically because the closest 2.0 operation is not semantically identical in every case:
-
-- `isPolynomial()`
-- `contains()`
-- `operation()`
-
-## Text output and formatting
-
-The default symbolic `text()` representation preserves Nerdamer's normal canonical ordering. Presentation-oriented ordering is opt-in per call:
-
-```javascript
-nerdamer('x^2+2*x+1').text();
-// 1+2*x+x^2
-
-nerdamer('x^2+2*x+1').text({ sort: true });
-// x^2+2*x+1
+```js
+nerdamer.solveSystem(['x+y=3', 'x-y=1'], ['x', 'y']).text();
+// [{x => 2, y => 1}]
 ```
 
-`TextOptions` is exported from the root package and `nerdamer/core`. Per-call sorting does not mutate the expression or change the process-wide `SORT_TERMS` setting.
+In Notation, and on `nerdamer` for compatibility, it is also called `solveeqs`. The 1.x name `solveEquations` still works, but it's deprecated: it returns the same vector and records a warning (see [Deprecated 1.x names](#deprecated-1x-names)). If your code indexed the old arrays, update it for the vector and dictionaries.
 
-Scientific formatting is also available per call. It preserves mathematical exactness rather than rounding a symbolic exponent into a different value.
+## Chaining methods
+
+The complete package adds these operations as methods on every result: `diff()`, `expand()`, `factor()`, `integrate()`, `numeric()`, `simplify()` and `subst()`. A type that already has its own version of a method keeps it.
+
+On a vector, matrix, set or dictionary, the method applies to each element and returns the same kind of value. On an equation it applies to both sides:
+
+```js
+nerdamer('x^2').diff('x');                                       // 2*x
+nerdamer('[x^2, sin(x)]').diff('x');                             // [2*x, cos(x)]
+nerdamer('matrix([cos(x)^2+sin(x)^2], [(1+x)/x])').simplify();
+nerdamer('x^2=y').diff('x');                                     // 2*x=0
+```
+
+Differentiating or integrating both sides of an equation gives a new equation, but not necessarily one with the same solutions.
+
+These methods exist only when you load the complete package; importing a class from `nerdamer/core` doesn't add them. `buildFunction()` works on a single expression only.
+
+`updateAPI()` still exists but does less than in 1.x: it attaches the methods above. It doesn't copy every function onto `nerdamer`.
+
+## Expression methods kept from 1.x
+
+The complete package keeps these 1.x conveniences:
+
+- `latex()`: TeX output;
+- `isInfinity()`: the same as `isInf()`;
+- `isFraction()`: whether the number in front is a fraction;
+- `hasIntegral()`: whether the expression contains `integrate(...)`;
+- `equals()`: makes an `Equation` from the expression and another value;
+- `solveFor()`: on both `Expression` and `Equation`.
+
+`equals()` and `eq()` are different: `equals()` makes an equation; `eq()` checks whether two expressions are equal.
+
+Three methods are not back:
+
+- `isPolynomial()`: `isPolynomialLike()` is close, but differs in some edge cases;
+- `contains()`: `hasVariable()` differs when the variable is in an exponent;
+- `operation()`: an internal helper with no public equivalent.
+
+## Text output
+
+`text()` writes terms in Nerdamer's usual order, so `x^2+2*x+1` prints as `1+2*x+x^2`. For conventional order, pass `{ sort: true }`:
+
+```ts
+const expression = nerdamer('x^2+2*x+1');
+
+expression.text();               // '1+2*x+x^2'
+expression.text({ sort: true }); // 'x^2+2*x+1'
+expression.toText();             // 'x^2+2*x+1'
+```
+
+The options for `text()` are `sort`, `decimal`, `precision`, `scientific` and `wrapPow`; their type, `TextOptions`, is exported from `nerdamer` and `nerdamer/core`. They affect only that call, not the `SORT_TERMS` setting. `toText()` always uses conventional order.
+
+`convertToTeX()` is the name for TeX output; `convertToLaTeX()` still works but is deprecated.
+
+## Extension hooks are gone
+
+Nerdamer 1.x let code reach into its internals with `getCore()`, `register()`, `replaceFunction()`, `addPeeker()`, `removePeeker()`, `load()`, `tree()`, `htmlTree()` and `rpn()`. None of these are back. Use the import paths above and the exported classes instead. `setFunction()` still defines your own functions.
+
+Projects that used `getCore()` or `register()` to reach deep into 1.x need the most work.
+
+## Parser access
+
+`parse()`, `reserved()`, `supported()`, `validateName()` and `validVarName()` aren't on `nerdamer` in the same form. `nerdamer.isReserved(name)` is back, and `nerdamer/parser` has the same check as `Parser.isReserved(name)`, along with the other parser functions that used to be on `getCore().PARSER`. See [Reserved names](https://nerdamer.com/docs/guides/reserved-names/).
+
+## Scripting
+
+Scripting was rebuilt. It has functions, assignments, local values, conditions, loops, blocks, logic, `return`, `break`, `continue` and error handling. Separate statements with semicolons, even on separate lines.
+
+A loop or condition that produces no value isn't an empty vector or any other value; using it where a value is needed is an error. If your scripts relied on undocumented 1.x behavior, test them again.
 
 ## Assumptions
 
-Assumption handling was rewritten around numeric interval assumptions. Assumptions are process-wide and participate in comparisons and sign-sensitive simplifications.
+Assumptions were rewritten around ranges of real numbers, and are public through `nerdamer/assumptions`. Repeated assumptions about one variable combine; one that contradicts them is an error. They apply everywhere until you clear them, and comparisons and sign-dependent simplifications use them. See [Assumptions](https://nerdamer.com/docs/guides/assumptions/).
 
-Repeated assumptions for a symbol are intersected. Contradictory assumptions are rejected rather than silently replacing the previous interval.
+## Numbers
 
-Use the public APIs from `nerdamer/assumptions` when assumptions need to be inspected, removed, or cleared.
+Numbers are handled differently inside: `BigInt` for large integers, Decimal.js for decimals, exact fractions where possible, and new complex-number code. If your code used undocumented 1.x number objects, use the public number classes instead.
 
-## Scripting and no-result semantics
+## Polynomials, factoring and Gröbner bases
 
-The scripting implementation has been rewritten. Assignments, local bindings, conditionals, loops, blocks, `return`, `break`, `continue`, and error-handling helpers operate on the 2.0 parser entity model.
-
-A control-flow operation that intentionally produces no mathematical result is represented internally by a null signal. It is not represented by an empty `Vector`, and it is not a legitimate mathematical value that can be assigned accidentally. If an internal no-result signal escapes to a parser boundary where a value is required, it is converted to the corresponding localized error.
-
-Code that depended on undocumented 1.x scripting internals should be revalidated rather than assuming identical control-flow behavior.
+Polynomials, GCDs, factoring, polynomial solving, partial fractions and Gröbner bases are all new code. Through Notation nothing changes; code that imported undocumented 1.x algorithms should use `nerdamer/algebra`, `nerdamer/solve` and `nerdamer/advanced`.
 
 ## Deferred simplification
 
-The parser has a `DEFER_SIMPLIFICATION` mode intended for workflows that need to preserve an unevaluated parse structure, such as instructional tooling. It is not equivalent to the normal simplifying parser and has documented limitations. Code should not assume that deferred and normal parsing produce interchangeable internal trees.
+The `DEFER_SIMPLIFICATION` setting keeps an expression in the form it was typed, for example for teaching tools that show simplification steps. It has limits: don't assume a deferred parse and a normal one produce the same structure.
 
-## Numeric implementation
+## Error messages in other languages
 
-The numeric implementation has changed substantially. Nerdamer 2.0 uses native `BigInt` for large integers, Decimal.js for decimal arithmetic, exact rational arithmetic where possible, and rewritten complex-number handling.
+Error messages come in English, Spanish, French, German, Portuguese, Italian and Dutch (`eng`, `spa`, `fra`, `deu`, `por`, `ita`, `nld`). The standard browser bundle has only English; build with `--env language=...` or `--env language=all` to include others.
 
-Code that reached into undocumented 1.x numeric representations should use the public numeric classes and APIs instead.
+## New, or easier to use
 
-## Polynomial, factorization, and Groebner internals
+From TypeScript you can now use directly:
 
-Polynomial representation, GCD, factorization, polynomial solving, and Groebner machinery have been substantially rewritten. These changes are implementation details for normal Nerdamer notation, but they are breaking for applications that imported or depended on undocumented 1.x algorithm internals.
-
-Use the supported `nerdamer/algebra`, `nerdamer/solve`, and `nerdamer/advanced` entry points for direct algorithm access.
-
-## Browser builds and localization
-
-The browser build now has explicit complete and parser targets. Build-time language selection supports:
-
-- `eng`
-- `spa`
-- `fra`
-- `deu`
-- `por`
-- `ita`
-- `nld`
-- `all`
-
-English is the default. The selected language set affects bundled localized error messages.
+- `Equation`, `Rational` and `Polynomial`;
+- sparse polynomials and Gröbner bases;
+- `PolynomialSolver`, `SolutionSet` and the other solver classes;
+- `ValuesSet`, `Dictionary`, `Collection`, `Matrix` and `Vector`;
+- assumptions;
+- parser functions;
+- error classes, also on `nerdamer.errors`;
+- types for every import path.
 
 ## License
 
-Nerdamer 2.0 is licensed under the Apache License 2.0. Nerdamer 1.x releases used the MIT License.
+Nerdamer 2 is licensed under the Apache License 2.0. Nerdamer 1.x used the MIT License.
 
-## Migration checklist
+## Checklist
 
-For an existing Nerdamer 1.x application:
+1. Remove the `Algebra`, `Calculus`, `Solve` and `Extra` imports.
+2. Remove the third and fourth arguments of `nerdamer(...)`.
+3. Replace the expression history with your own variables.
+4. Check the type of results where input can be an equation, vector, matrix, set or dictionary.
+5. Update code that read the old system-solving arrays.
+6. Replace `getCore()`, `register()` and similar hooks with the public functions and import paths.
+7. Use the statistics functions on `nerdamer` or from `nerdamer/statistics` instead of loading Extra.
+8. Test scripts that relied on undocumented loop or condition behavior.
+9. Test code that relied on undocumented behavior of numbers, polynomials, solving, assumptions or sets.
+10. Choose the complete package, or the parser package if it has everything you use.
+11. Run your own tests against version 2 before upgrading production code.
 
-1. Remove side-effect imports of `Algebra`, `Calculus`, `Solve`, and `Extra`.
-2. Remove use of the third and fourth `nerdamer(...)` arguments.
-3. Replace stored-expression-history APIs with normal application state.
-4. Account for `ParserEntity` return types when input can produce structured values.
-5. Update system-solver consumers for `Vector`/`Dictionary` results.
-6. Replace direct use of 1.x internals with supported package entry points.
-7. Check any old root helper against the documented 2.0 root API rather than assuming every registered parser function is exported.
-8. Revalidate code that depends on numeric, polynomial, parser, assumptions, set, or scripting internals.
-9. Choose the complete package or parser entry point/build according to the functionality actually required.
-10. Run the application's own behavioral tests against 2.0 before upgrading production code.
-
-Current public documentation and examples are available at https://nerdamer.com/documentation.
-
-Source and issue tracking for the release are at https://github.com/jiggzson/nerdamer.
+Documentation: https://nerdamer.com/docs/. Source and issues: https://github.com/jiggzson/nerdamer.

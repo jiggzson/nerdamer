@@ -173,7 +173,7 @@ describe('inferred numerical function bounds', () => {
 				solve(input, 'x');
 			}
 
-			expect(observedBounds).toEqual(new Array(4).fill(['-100', '100']));
+			expect(observedBounds).toEqual(new Array(4).fill(['-10', '10']));
 			expect(brentSpy).not.toHaveBeenCalled();
 		} finally {
 			brentSpy.mockRestore();
@@ -225,8 +225,8 @@ describe('inferred numerical function bounds', () => {
 	it('retains the default scan when an inferred non-monotone scan exceeds its budget', () => {
 		const rootsSpy = jest.spyOn(FunctionSolver.prototype, 'roots')
 			.mockImplementation(function (this: FunctionSolver) {
-				expect(this.lowerBound.eq(-100)).toBe(true);
-				expect(this.upperBound.eq(100)).toBe(true);
+				expect(this.lowerBound.eq(-10)).toBe(true);
+				expect(this.upperBound.eq(10)).toBe(true);
 				return [];
 			});
 
@@ -241,8 +241,8 @@ describe('inferred numerical function bounds', () => {
 	it('rechecks the scan budget after aligning an inferred interval', () => {
 		const rootsSpy = jest.spyOn(FunctionSolver.prototype, 'roots')
 			.mockImplementation(function (this: FunctionSolver) {
-				expect(this.lowerBound.eq(-100)).toBe(true);
-				expect(this.upperBound.eq(100)).toBe(true);
+				expect(this.lowerBound.eq(-10)).toBe(true);
+				expect(this.upperBound.eq(10)).toBe(true);
 				return [];
 			});
 

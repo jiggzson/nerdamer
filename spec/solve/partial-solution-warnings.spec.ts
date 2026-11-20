@@ -14,7 +14,7 @@ describe('Partial solution warnings', () => {
 		jest.spyOn(factorModule, 'factorExpressionParts').mockImplementation(() => {
 			throw new UnsupportedOperationError('Unsupported factoring case');
 		});
-		const result = solve('sin(x)+x^2+1', 'x');
+		const result = solve('x*sin(x)+sin(x)^2+1', 'x');
 		expect(result.unsolved).toBeDefined();
 		expect(getWarnings()).toEqual([{
 			code: 'solve.partialResult',
